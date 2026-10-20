@@ -1,7 +1,8 @@
-# TempoTapp 1.4.4
+# TempoTapp 1.5.0
 
-Click-track creator, beat analyzer, and audio warp tool. Single-page web app with no backend;
-all user data stays on the device.
+Click-track creator, beat analyzer, and audio warp tool. Single-page web app. Runs in two modes:
+**device-only** (no backend, everything stays on the device) or **cloud accounts** (Firebase; the
+library follows the user across devices). The mode is chosen by `vendor/cloud-config.js`.
 
 ## Layout
 
@@ -17,6 +18,10 @@ vendor/beatnet_weights.f32    1.6 MB model weights (+ .json layout, beatnet_fron
 vendor/fonts/                 Libre Caslon Text + Source Sans 3 (woff2, OFL)
 design/engraved.css           the visual layer (also embedded in index.html as #engraved-theme)
 design/retheme.py             the color-family remap that produced the base palette
+vendor/cloud-config.js        null = device-only; a Firebase web config = cloud accounts
+vendor/firebase-bundle.js     Firebase JS SDK 13 (Auth, Firestore, Storage), bundled with esbuild
+firebase/                     Firestore + Storage security rules for the cloud mode
+tests/                        Playwright suites: e2e_full.py (device-only), cloud_e2e.py (cloud)
 THIRD-PARTY-LICENSES.txt
 ```
 
@@ -24,7 +29,27 @@ Keep the `vendor/` folder next to `index.html`. If it is missing, the app falls 
 pinned versions on jsdelivr (network required). For an App Store build, ship `vendor/` so the
 app is self-contained and works offline.
 
-## Data & privacy
+## Cloud accounts (sync across devices)
+
+Set `window.TEMPOTAPP_CLOUD = { firebase: { ...web config... } }` in `vendor/cloud-config.js`.
+The app then uses Firebase Auth (email/password + Google, email verification, password reset),
+Firestore for the library metadata and Storage for saved warped audio, all under `users/{uid}/…`
+and protected by the rules in `firebase/`. IDs stay numeric, so the UI is identical in both modes.
+
+One-time Firebase setup: create a project; enable Authentication → Email/Password and Google;
+create a Firestore database and a Storage bucket (Blaze plan with a budget alert); paste the
+rules from `firebase/` into the console (Firestore → Rules, Storage → Rules) or run
+`firebase deploy --only firestore:rules,storage` from that folder; add the site's domain under
+Authentication → Settings → Authorized domains.
+
+First sign-in on a device that already has a device-only library offers to upload it (once).
+Audio is cached in IndexedDB after the first download. `Delete account` removes the Auth user,
+every document and every file.
+
+Test it without a project: `python3 tests/cloud_e2e.py` swaps the SDK for `tests/fake-fb.js`,
+a same-surface stand-in. `--real` runs against the Firebase emulators instead.
+
+## Data & privacy (device-only mode)
 
 - Account list and encrypted per-user "vaults": `localStorage` (`tempotap-web-data-v1`, format 2).
 - Rendered audio, encrypted: IndexedDB (`tempotap-web-audio-v1`).
@@ -107,6 +132,12 @@ gradients, glows or shadows. Light-only by choice (sheet-music apps are light be
 screen is a white PDF). To change a color, edit the tokens at the top of `#engraved-theme`.
 
 ## Changelog
+
+### 1.5.0 — cloud accounts
+- Optional Firebase-backed accounts: same email/password on every device, Google sign-in,
+  email verification, password reset; library and saved audio sync. Device-only mode unchanged.
+- One-time upload of a pre-existing device library on first cloud sign-in.
+- Help/privacy text is mode-aware; CSP extended for Firebase hosts.
 
 ### 1.4.4 — name
 - App is now spelled "TempoTapp" in all user-facing text. Storage keys and the `.tempotap.json` share format are unchanged.
