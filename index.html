@@ -1,6 +1,7 @@
 <!doctype html>
 <!--
   TempoTapp — Click Track Creator, Beat Analyzer, and Audio Warp
+  Version 1.5.1 (2026-10-25) — sheet-music PDF now creates the click track
   Version 1.5.0 (2026-10-20) — cloud accounts (optional), "Engraved" visual system
 
   ARCHITECTURE
@@ -267,6 +268,7 @@ main{padding-top:34px}.recorder-header,.library-header,.warp-header,.help-header
 .score-practice-status{margin-top:8px;color:var(--muted);font-size:.8rem}
 .score-help{color:var(--muted);font-size:.78rem;line-height:1.55}
 .score-file-name{color:var(--soft);font-size:.8rem;font-weight:800;overflow-wrap:anywhere}
+.score-click-card{margin-top:4px;padding:12px;border:1px solid rgba(20,20,20,0.28);border-radius:14px;background:rgba(20,20,20,0.06);display:grid;gap:9px}.score-click-head{display:grid;gap:3px}.score-click-head strong{font-size:.9rem}.score-click-head span{font-size:.75rem;line-height:1.5;color:var(--muted)}.score-click-card input{min-height:38px;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:#e8e8e5;color:var(--text);width:110px;font:inherit}
 .score-auto-card{margin-top:4px;padding:12px;border:1px solid rgba(20,20,20,0.18);border-radius:14px;background:rgba(20,20,20,0.04);display:grid;gap:9px}
 .score-auto-row{display:flex;gap:8px;align-items:end;flex-wrap:wrap}.score-auto-row label{display:grid;gap:5px;color:var(--muted);font-size:.7rem}.score-auto-row select{min-height:38px;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:#e8e8e5;color:var(--text);min-width:170px}.score-analysis-status{font-size:.75rem;line-height:1.5;color:var(--muted)}.score-analysis-status.working{color:#141414}.score-analysis-status.good{color:#1f6b3a}.score-analysis-status.warn{color:#9a6b00}.score-analysis-progress{height:7px;background:#ecebe9;border:1px solid var(--line);border-radius:999px;overflow:hidden}.score-analysis-progress>span{display:block;height:100%;width:0%;background:linear-gradient(90deg,#1f6b3a,#141414);transition:width .18s ease}.score-measure-box{position:absolute;border:1px solid rgba(31,107,58,0.34);background:rgba(31,107,58,0.025);border-radius:4px;pointer-events:none}.score-measure-box.active{border-color:#b5121b;background:rgba(181,18,27,0.07);box-shadow:0 0 0 2px rgba(181,18,27,0.12)}.score-measure-label{position:absolute;left:3px;top:2px;padding:1px 4px;border-radius:4px;background:rgba(242,242,240,0.72);color:#1f6b3a;font-size:.55rem;font-weight:900;line-height:1.2}.score-beat-mark{position:absolute;width:7px;height:7px;border-radius:50%;transform:translate(-50%,-50%);background:rgba(20,20,20,0.82);border:1px solid #fff;pointer-events:none}.score-beat-mark.accent{width:10px;height:10px;background:#b5121b}.score-auto-note{font-size:.7rem;color:var(--muted);line-height:1.45}.score-auto-count{font-weight:900;color:#1f6b3a}
 @media(max-width:720px){
@@ -732,6 +734,11 @@ html,body{background:var(--ground)!important}
 .text-input,.stepper,.accent-combo,.number-wrap,.compact-select,.accent-combo select,.stepper input{background:var(--surface)!important}
 .stepper button{background:var(--paper-3)!important}
 .secondary,.ghost-btn,.nav-btn,.icon-btn,.hero-secondary,.compact-primary,.cleanup-option,.version-chip,.track-actions select{background:var(--surface)!important;border-color:var(--ink-4)!important}
+/* v1.5.1 fix: the rule above turned every .hero-primary.compact-primary button (Analyze Score, Practice,
+   Fix / Add Marker, Analyze recording, dialog OK…) white-on-white. Primary actions stay dark. */
+.hero-primary.compact-primary{background:var(--bar)!important;color:var(--bar-text)!important;border-color:var(--bar)!important}
+.hero-primary.compact-primary:hover:not(:disabled){background:#2a2a2a!important}
+.hero-primary.compact-primary:disabled{opacity:.45}
 .secondary:hover:not(:disabled),.ghost-btn:hover:not(:disabled),.nav-btn:hover:not(:disabled){background:var(--paper-3)!important;border-color:var(--ink)!important}
 
 /* dark header */
@@ -913,7 +920,7 @@ html,body{background:var(--ground)!important}
 
   <section class="panel score-follow-panel media-workflow-section">
     <div class="section-head">
-      <div><h2>Score Follow · Learn With the PDF</h2><p>Optional: add the sheet-music PDF, map your recorded beats or measure starts onto the score, then practice with a moving marker that follows your click track and turns pages automatically.</p></div>
+      <div><h2>Score Follow · Learn With the PDF</h2><p>Add the sheet-music PDF and TempoTapp builds a click track for the piece, then practice with a moving marker that follows the clicks and turns pages automatically.</p></div>
       <span class="tap-along-badge idle" id="scorePdfBadge"><i></i><span>No score loaded</span></span>
     </div>
     <div class="score-follow-grid">
@@ -923,7 +930,7 @@ html,body{background:var(--ground)!important}
       </label>
       <div class="score-follow-copy">
         <div class="score-file-name" id="scorePdfFileInfo">No PDF loaded.</div>
-        <div class="score-help"><strong>How it works:</strong> make the click track while the piece plays, then add the PDF. TempoTapp analyzes staff systems and barlines, lays your measures and beats onto the score, and builds the moving practice cursor automatically.</div>
+        <div class="score-help"><strong>How it works:</strong> add the PDF and TempoTapp counts the measures, reads the tempo marking when the PDF has one, and builds a click track for the whole piece. Check the tempo and time signature below. Already tapped a click track along with a recording? Adding the PDF lays your beats onto the score instead.</div>
         <div class="score-auto-card">
           <div class="score-auto-row">
             <label>Score layout<select id="scoreLayoutMode"><option value="auto" selected>Auto detect</option><option value="piano">Piano / grand staff</option><option value="single">Single staff</option></select></label>
@@ -932,6 +939,15 @@ html,body{background:var(--ground)!important}
           <div class="score-analysis-progress" aria-hidden="true"><span id="scoreAnalysisProgressBar"></span></div>
           <div class="score-analysis-status" id="scoreAnalysisStatus">Add a PDF and TempoTapp will analyze the score automatically. A few seconds is normal.</div>
           <div class="score-auto-note">If the score is unusual or a barline is missed, use <strong>Fix / Add Marker</strong> below to correct that spot; the rest of the automatic mapping stays intact.</div>
+        </div>
+        <div class="score-click-card" id="scoreClickCard">
+          <div class="score-click-head"><strong>Click track from this score</strong><span id="scoreClickSource">Add a PDF and the click track is built automatically.</span></div>
+          <div class="score-auto-row">
+            <label>Tempo (BPM)<input id="scoreClickBpm" type="number" inputmode="numeric" min="20" max="400" step="1" value="100"></label>
+            <label>Time signature<select id="scoreClickMeter"><option>4/4</option><option>3/4</option><option>2/4</option><option>2/2</option><option>6/8</option><option>9/8</option><option>12/8</option><option>5/4</option><option>7/8</option><option>3/8</option></select></label>
+            <label>Measures<input id="scoreClickMeasures" type="number" inputmode="numeric" min="1" max="2000" step="1" value=""></label>
+            <button class="hero-primary compact-primary" id="scoreMakeClickButton" disabled>Make Click Track</button>
+          </div>
         </div>
       </div>
     </div>
@@ -964,7 +980,7 @@ html,body{background:var(--ground)!important}
             <button class="secondary compact-primary" id="scoreNextMapBeat">Next →</button>
             <button class="secondary compact-primary" id="scoreClearMappingButton">Clear Fixes</button>
           </div>
-          <div class="score-map-readout" id="scoreMapReadout">Make a click track first, then map it to the PDF.</div>
+          <div class="score-map-readout" id="scoreMapReadout">Add the sheet-music PDF to build a click track from it.</div>
         </div>
         <div class="score-page-label" id="scoreAnchorCount">0 anchors</div>
       </div>
@@ -1537,7 +1553,7 @@ html,body{background:var(--ground)!important}
 <script>
 (() => {
   'use strict';
-  const APP_VERSION='1.5.0';
+  const APP_VERSION='1.5.1';
   const $ = id => document.getElementById(id);
   if($('appVersionLabel'))$('appVersionLabel').textContent=`TempoTapp ${APP_VERSION} · All data stays on this device.`;
   // ---------------------------------------------------------------------------
@@ -3081,8 +3097,9 @@ html,body{background:var(--ground)!important}
     if($('scoreStartMappingButton'))$('scoreStartMappingButton').disabled=!has||!track.taps.length;
     if($('scoreAnalyzeButton'))$('scoreAnalyzeButton').disabled=!has||scoreAnalysisRunning;
     const hasScoreMap=(track.scoreMeasureBoxes||[]).length||(track.scoreAnchors||[]).length;
-    if($('scorePracticeStart'))$('scorePracticeStart').disabled=!has||!tapAlongUrl||!track.taps.length||!hasScoreMap;
-    if($('scoreAnchorCount')){const auto=(track.scoreMeasureBoxes||[]).length,manual=(track.scoreAnchors||[]).length;$('scoreAnchorCount').innerHTML=auto?`<span class="score-auto-count">${auto} measures</span>${manual?` · ${manual} fixes`:''}`:`${manual} marker${manual===1?'':'s'}`;}
+    if($('scorePracticeStart'))$('scorePracticeStart').disabled=!has||!track.taps.length||!hasScoreMap;
+    if($('scoreMakeClickButton')){$('scoreMakeClickButton').disabled=!has||scoreAnalysisRunning||recording||playing;$('scoreMakeClickButton').textContent=track.taps.length&&!track.fromScore?'Replace Click Track':track.fromScore?'Update Click Track':'Make Click Track'}
+    if($('scoreAnchorCount')){const auto=(track.scoreMeasureBoxes||[]).length,manual=(track.scoreAnchors||[]).filter(a=>a.source!=='auto').length;$('scoreAnchorCount').innerHTML=auto?`<span class="score-auto-count">${auto} measures</span>${manual?` · ${manual} fixes`:''}`:`${manual} marker${manual===1?'':'s'}`;}
   }
   async function loadScorePdf(file){
     if(!file)return;
@@ -3099,6 +3116,7 @@ html,body{background:var(--ground)!important}
       scorePdfDoc=await pdfjs.getDocument({data:scorePdfBytes,isEvalSupported:false,...(scorePdfFontUrl?{standardFontDataUrl:scorePdfFontUrl}:{})}).promise;scorePdfPage=1;track.scorePdfName=file.name||'Score.pdf';
       $('scorePdfFileInfo').textContent=`${track.scorePdfName} · ${scorePdfDoc.numPages} page${scorePdfDoc.numPages===1?'':'s'}`;$('scorePdfDropTitle').textContent='Replace the sheet music';
       syncScorePdfUi();await renderScorePage(1);updateScoreMapReadout();
+      scoreDetectedTempo=await detectScoreTempo(scorePdfDoc).catch(()=>null);
       setTimeout(()=>analyzeScorePdf(true),80);
     }catch(err){scorePdfDoc=null;$('scorePdfFileInfo').textContent=err.message||'Could not open that PDF.';setScoreAnalysisStatus(err.message||'Could not open that PDF.','warn',0);syncScorePdfUi()}
   }
@@ -3199,7 +3217,44 @@ html,body{background:var(--ground)!important}
     const down=downbeatTapIndices(),raw=[...scoreDetectedRawBoxes].sort((a,b)=>a.page-b.page||a.system-b.system||a.x0-b.x0),need=Math.max(trackMeasureCount(),down.length),used=Math.min(raw.length,need||raw.length);
     track.scoreMeasureBoxes=raw.slice(0,used).map((b,i)=>({...b,measure:i+1}));
     const manual=(track.scoreAnchors||[]).filter(a=>a.source!=='auto'),auto=[];for(let i=0;i<Math.min(down.length,track.scoreMeasureBoxes.length);i++){const b=track.scoreMeasureBoxes[i];auto.push({beatIndex:down[i],page:b.page,x:b.x0+(b.x1-b.x0)*.045,y:b.y,source:'auto'})}track.scoreAnchors=[...auto,...manual].sort((a,b)=>a.beatIndex-b.beatIndex);
-    const found=track.scoreMeasureBoxes.length,total=need||found,kind=found===total?'good':'warn';setScoreAnalysisStatus(found===total?`Score analyzed · ${found} measures matched to your click track.`:`Score analyzed · ${found} likely measures found for ${total} click-track measures. The automatic map is usable; fix any missed barline with Fix / Add Marker.`,kind,100);renderScoreOverlay();updateScoreMapReadout();syncScorePdfUi();
+    const found=track.scoreMeasureBoxes.length,total=need||found,kind=found===total?'good':'warn';if(!need){setScoreAnalysisStatus(`Score analyzed · ${found} measure${found===1?'':'s'} found.`,'good',100);renderScoreOverlay();updateScoreMapReadout();syncScorePdfUi();return}setScoreAnalysisStatus(found===total?`Score analyzed · ${found} measures matched to your click track.`:`Score analyzed · ${found} likely measures found for ${total} click-track measures. The automatic map is usable; fix any missed barline with Fix / Add Marker.`,kind,100);renderScoreOverlay();updateScoreMapReadout();syncScorePdfUi();
+  }
+  // ---- v1.5.1: build a click track straight from the sheet-music PDF ----
+  let scoreDetectedTempo=null;
+  const SCORE_TEMPO_WORDS=[['prestissimo',200],['presto',176],['vivacissimo',172],['vivace',156],['allegro molto',152],['allegro assai',152],['allegro moderato',116],['allegretto',112],['allegro',132],['moderato',104],['andantino',92],['andante',84],['adagietto',72],['adagio',66],['larghetto',60],['lento',52],['largo',50],['grave',40]];
+  async function detectScoreTempo(doc){
+    // Engraved (digital) PDFs keep their text: read "= 120" / "120 BPM" or an Italian tempo word.
+    // Scanned PDFs have no text layer, so this returns null and the user's BPM field is used.
+    const pages=Math.min(2,doc?.numPages||0);let text='';
+    for(let p=1;p<=pages;p++){const c=await (await doc.getPage(p)).getTextContent();text+=' '+c.items.map(i=>i.str||'').join(' ')}
+    text=text.replace(/\s+/g,' ');
+    let m=text.match(/=\s*c?\.?\s*(\d{2,3})(?!\d)/i)||text.match(/(\d{2,3})\s*(?:bpm|b\.p\.m)/i)||text.match(/M\.\s*M\.\s*(\d{2,3})/i);
+    if(m){const bpm=Number(m[1]);if(bpm>=20&&bpm<=400)return{bpm,label:`tempo marking (= ${bpm})`}}
+    const lower=text.toLowerCase();for(const [word,bpm] of SCORE_TEMPO_WORDS){if(new RegExp(`\\b${word}\\b`).test(lower))return{bpm,label:`"${word[0].toUpperCase()+word.slice(1)}" (typical tempo, adjust if needed)`}}
+    return null;
+  }
+  function scoreClickPrefill(measures){
+    if($('scoreClickMeasures')&&measures)$('scoreClickMeasures').value=String(measures);
+    if(scoreDetectedTempo&&$('scoreClickBpm')&&!track.fromScore)$('scoreClickBpm').value=String(scoreDetectedTempo.bpm);
+    if($('scoreClickSource'))$('scoreClickSource').textContent=`${measures} measure${measures===1?'':'s'} found. Tempo ${scoreDetectedTempo?`from the ${scoreDetectedTempo.label}`:'not printed in this PDF; set it below'}. Check the time signature. TempoTapp can't read it from the page yet.`;
+  }
+  function makeClickTrackFromScore(auto=false){
+    if(recording||playing)return;
+    const bpm=Math.max(20,Math.min(400,Math.round(Number($('scoreClickBpm')?.value)||0)||100)),meter=cleanMeter($('scoreClickMeter')?.value||'4/4');
+    const measures=Math.max(1,Math.min(2000,Math.round(Number($('scoreClickMeasures')?.value)||scoreDetectedRawBoxes.length||0)));
+    if(!measures){setScoreAnalysisStatus('Enter how many measures the piece has, then press Make Click Track.','warn',100);return}
+    $('scoreClickBpm').value=String(bpm);$('scoreClickMeasures').value=String(measures);
+    const bpb=scoreBeatsPerMeasure(meter),beats=bpb*measures,interval=60000/bpm;
+    if(scorePracticeActive)stopScorePractice(true);
+    track.taps=Array.from({length:beats},(_,i)=>Math.round(i*interval));
+    track.tapAccents=track.taps.map((_,i)=>i%bpb===0?1:null);
+    track.durationMs=Math.round(beats*interval);track.targetBpm=bpm;track.accentMode='custom';
+    track.scoreMap=[{startMeasure:1,meter}];track.subdivisionMap=[];track.scoreAnchors=(track.scoreAnchors||[]).filter(a=>a.source!=='auto'&&Number(a.beatIndex)<beats);
+    track.fromScore=true;track.loadedId=null;track.loadedFolderId=null;track.loadedName=(track.scorePdfName||'Score').replace(/\.pdf$/i,'')+' click track';
+    editHistory=[];frozenViewMs=track.durationMs;segmentBaseMs=track.durationMs;
+    syncControls();setCreateMode('review');renderDetails();autoMapDetectedScore();
+    const msg=`Click track ready · ${measures} measures of ${meter} at ${bpm} BPM (${Math.round(track.durationMs/1000)} s). Press Play to hear it, or Practice to follow the score.`;
+    setScoreAnalysisStatus(msg,'good',100);$('status').textContent=auto?`Click track built from ${track.scorePdfName||'the score'}. Check the tempo and time signature in Score Follow.`:msg;
   }
   async function analyzeScorePdf(silent=false){
     if(!scorePdfDoc||scoreAnalysisRunning)return;scoreAnalysisRunning=true;scoreDetectedRawBoxes=[];syncScorePdfUi();const button=$('scoreAnalyzeButton');if(button)button.textContent='Analyzing…';
@@ -3211,7 +3266,11 @@ html,body{background:var(--ground)!important}
         const c=canvas.getContext('2d',{willReadFrequently:true});c.fillStyle='#fff';c.fillRect(0,0,canvas.width,canvas.height);await page.render({canvasContext:c,viewport:vp}).promise;const result=analyzeRenderedScorePage(canvas,p,layout);scoreDetectedRawBoxes.push(...result.boxes);await new Promise(r=>setTimeout(r,0));
       }
       if(!scoreDetectedRawBoxes.length){track.scoreMeasureBoxes=[];setScoreAnalysisStatus('TempoTapp could not confidently find the staff systems/barlines. Try changing Score layout to Piano or Single staff, then Analyze Score again; manual Fix / Add Marker still works.','warn',100);renderScoreOverlay();return}
-      autoMapDetectedScore();if(scorePdfPage)await renderScorePage(scorePdfPage);
+      scoreClickPrefill(scoreDetectedRawBoxes.length);
+      // v1.5.1: a PDF on its own now produces the click track. Only build automatically when there is
+      // no click track yet (or the current one came from this score) so a tapped track is never replaced.
+      if(!track.taps.length||track.fromScore){makeClickTrackFromScore(true)}else autoMapDetectedScore();
+      if(scorePdfPage)await renderScorePage(scorePdfPage);
     }catch(err){setScoreAnalysisStatus(err?.message||'Score analysis failed. You can still map the score manually.','warn',100)}finally{scoreAnalysisRunning=false;if(button)button.textContent='Analyze Score';syncScorePdfUi()}
   }
   function scoreBoxForMeasure(measure){return (track.scoreMeasureBoxes||[]).find(b=>Number(b.measure)===Number(measure))||null}
@@ -3225,7 +3284,7 @@ html,body{background:var(--ground)!important}
   function currentScoreTargetIndex(){const t=scoreMapTargets();if(!t.length)return null;scoreMapCursor=Math.max(0,Math.min(t.length-1,scoreMapCursor));return t[scoreMapCursor]}
   function updateScoreMapReadout(){
     const idx=currentScoreTargetIndex(),mapped=(track.scoreAnchors||[]).length;if(!$('scoreMapReadout'))return;
-    if(!track.taps.length){$('scoreMapReadout').textContent='Make a click track first, then map it to the PDF.';syncScorePdfUi();return}
+    if(!track.taps.length){$('scoreMapReadout').textContent=scorePdfDoc?'Set the tempo and time signature, then press Make Click Track.':'Add the sheet-music PDF to build a click track from it.';syncScorePdfUi();return}
     if(idx===null){$('scoreMapReadout').textContent=`${mapped} score anchors mapped.`;syncScorePdfUi();return}
     const m=trackBeatMeta(idx),existing=(track.scoreAnchors||[]).find(a=>Number(a.beatIndex)===idx),autoBoxes=(track.scoreMeasureBoxes||[]).length;
     $('scoreMapReadout').textContent=autoBoxes&&!scoreMappingActive?`Automatic score map ready · ${autoBoxes} measures. Use Fix / Add Marker only where TempoTapp is wrong.`:`${scoreMappingActive?'Click the PDF for':'Selected'} M${m.measure}.${m.beat} · beat ${idx+1}${existing?` · already on page ${existing.page}`:''}. ${mapped} marker${mapped===1?'':'s'} total.`;syncScorePdfUi();
@@ -3265,7 +3324,10 @@ html,body{background:var(--ground)!important}
     }
     if(Number.isInteger(activeBeat)){const p=scorePointForBeat(activeBeat);if(p&&Number(p.page)===scorePdfPage){const h=document.createElement('span');h.className='score-playhead';h.id='scorePlayhead';h.style.left=`${p.x*100}%`;h.style.top=`${p.y*100}%`;ov.appendChild(h);setTimeout(()=>h.scrollIntoView?.({block:'center',inline:'center',behavior:'smooth'}),0)}}
   }
+  let scorePracticeClock=null; // v1.5.1: {start,offset} when practicing a score-built track with no recording loaded
+  function scorePracticeNowMs(){if(scorePracticeClock)return scorePracticeClock.offset+(scorePracticeClock.start?performance.now()-scorePracticeClock.start:0);const a=tapAlongAudio();return a?a.currentTime*1000:0}
   function stopScorePractice(reset=false){
+    if(scorePracticeClock){scorePracticeClock.offset=reset?0:scorePracticeNowMs();scorePracticeClock.start=0;if(reset)scorePracticeClock=null}
     scorePracticeTimers.forEach(clearTimeout);scorePracticeTimers=[];if(scorePracticeRaf){cancelAnimationFrame(scorePracticeRaf);scorePracticeRaf=null}scorePracticeActive=false;
     const a=tapAlongAudio();if(a&&!a.paused)a.pause();if(reset&&a)a.currentTime=0;if(reset)renderScoreOverlay();if($('scorePracticeStatus'))$('scorePracticeStatus').textContent=reset?'Practice stopped.':'Practice paused.'
   }
@@ -3273,14 +3335,15 @@ html,body{background:var(--ground)!important}
     scorePracticeTimers.forEach(clearTimeout);scorePracticeTimers=[];for(const ev of expandedTrackClickEvents()){if(ev.ms<fromMs-15)continue;scorePracticeTimers.push(setTimeout(()=>{if(scorePracticeActive)clickSound(ev.accent,ev.primary?'primary':'subdivision')},Math.max(0,ev.ms-fromMs)))}
   }
   function scorePracticeTick(){
-    if(!scorePracticeActive)return;const a=tapAlongAudio();if(!a||a.paused)return;const ms=a.currentTime*1000;let i=0;while(i+1<track.taps.length&&track.taps[i+1]<=ms)i++;const p=scorePointForBeat(i);
+    if(!scorePracticeActive)return;let ms;if(scorePracticeClock){ms=scorePracticeNowMs();if(ms>=track.durationMs){stopScorePractice(false);scorePracticeClock=null;$('scorePracticeStatus').textContent='Practice finished.';return}}else{const a=tapAlongAudio();if(!a||a.paused)return;ms=a.currentTime*1000}let i=0;while(i+1<track.taps.length&&track.taps[i+1]<=ms)i++;const p=scorePointForBeat(i);
     if(i!==scorePracticeLastBeat){scorePracticeLastBeat=i;if(p&&Number(p.page)!==scorePdfPage&&!scorePdfRendering){renderScorePage(Number(p.page)).then(()=>renderScoreOverlay(i))}else renderScoreOverlay(i);const meta=trackBeatMeta(i);$('scorePracticeStatus').textContent=`Following M${meta.measure}.${meta.beat} · beat ${i+1}${explicitTapAccent(i,meta.downbeat||isAccent(i))?' · accent':''}`}
     scorePracticeRaf=requestAnimationFrame(scorePracticeTick)
   }
   async function startScorePractice(){
     // Keep generated score-follow clicks audible on iPhone/iPad.
     await unlockAudioForMobile().catch(()=>{});
-    if(!scorePdfDoc||!tapAlongUrl||!track.taps.length||(!(track.scoreMeasureBoxes||[]).length&&!(track.scoreAnchors||[]).length)){$('scorePracticeStatus').textContent='Add audio, record the click track, then let TempoTapp analyze the PDF (or add a manual marker).';return}
+    if(!scorePdfDoc||!track.taps.length||(!(track.scoreMeasureBoxes||[]).length&&!(track.scoreAnchors||[]).length)){$('scorePracticeStatus').textContent='Add the PDF and make the click track first.';return}
+    if(!tapAlongUrl){if(recording)endRecording();if(playing)stopReplay(false);if(!scorePracticeClock||scorePracticeClock.offset>=track.durationMs-20)scorePracticeClock={start:0,offset:0};const from=scorePracticeClock.offset;scorePracticeClock.start=performance.now();scorePracticeActive=true;scorePracticeLastBeat=-1;scheduleScorePracticeClicks(from);$('scorePracticeStatus').textContent='Practice running · clicks only, score follows.';scorePracticeTick();return}
     if(recording)endRecording();if(playing)stopReplay(false);const a=tapAlongAudio();let from=Math.max(0,(a.currentTime||0)*1000);if(a.ended||from>=track.durationMs-20){a.currentTime=0;from=0}
     scorePracticeActive=true;scorePracticeLastBeat=-1;scheduleScorePracticeClicks(from);try{await a.play()}catch{$('scorePracticeStatus').textContent='Press Practice again to allow audio playback.';scorePracticeActive=false;return}$('scorePracticeStatus').textContent='Practice running — score follows your beat map.';scorePracticeTick()
   }
@@ -3302,11 +3365,11 @@ html,body{background:var(--ground)!important}
   }
 
   function resetTrack(message='Ready.'){
-    stopReplay(false);if(tapAlongActive){tapAlongActive=false;const a=tapAlongAudio();if(a&&!a.paused)a.pause()}recording=false;track.taps=[];track.tapAccents=[];track.durationMs=0;track.loadedId=null;track.loadedName=null;track.loadedFolderId=null;track.scoreMap=[{startMeasure:1,meter:'4/4'}];track.subdivisionMap=[];track.scoreAnchors=[];track.scoreMeasureBoxes=[];track.scorePdfName='';scoreDetectedRawBoxes=[];scoreMappingActive=false;scoreMapCursor=0;editHistory=[];frozenViewMs=0;segmentBaseMs=0;$('cutStart').value='1';$('cutEnd').value='2';$('timingFeedback').className='';$('timingFeedback').textContent='Press Start Clicks to begin.';$('status').textContent=message;renderDetails();
+    stopReplay(false);if(tapAlongActive){tapAlongActive=false;const a=tapAlongAudio();if(a&&!a.paused)a.pause()}recording=false;track.taps=[];track.tapAccents=[];track.durationMs=0;track.fromScore=false;track.loadedId=null;track.loadedName=null;track.loadedFolderId=null;track.scoreMap=[{startMeasure:1,meter:'4/4'}];track.subdivisionMap=[];track.scoreAnchors=[];track.scoreMeasureBoxes=[];track.scorePdfName='';scoreDetectedRawBoxes=[];scoreMappingActive=false;scoreMapCursor=0;editHistory=[];frozenViewMs=0;segmentBaseMs=0;$('cutStart').value='1';$('cutEnd').value='2';$('timingFeedback').className='';$('timingFeedback').textContent='Press Start Clicks to begin.';$('status').textContent=message;renderDetails();
   }
   function startRecording(){ if(recording||playing)return;if(window.innerWidth<=900){setTimeout(()=>{try{document.querySelector('.timeline-card')?.scrollIntoView({block:'start',behavior:'smooth'})}catch{}},60)}tapAlongActive=false;const a=tapAlongAudio();if(a&&!a.paused)a.pause();segmentBaseMs=track.durationMs;segmentStartReal=performance.now();recording=true;frozenViewMs=track.durationMs;$('status').textContent=segmentBaseMs>0?'Recording continued.':'Recording…';$('timingFeedback').textContent=track.targetBpm===0?'No target beat selected.':(segmentBaseMs>0?'Continuing from where you stopped.':'Recording started.');renderDetails();startAnimation(); }
   function endRecording(){ if(!recording)return;const wasTapAlong=tapAlongActive,endMs=currentRecordTime();tapAlongActive=false;if(wasTapAlong){const a=tapAlongAudio();if(a&&!a.paused)a.pause()}track.durationMs=Math.max(endMs,track.taps.length?track.taps.at(-1):0);frozenViewMs=track.durationMs;recording=false;stopAnimation();$('status').textContent=`Recording ended · ${track.taps.length} beat${track.taps.length===1?'':'s'}.`;$('timingFeedback').textContent=wasTapAlong?'Tap-along stopped. Seek and press Play & Tap to continue.':'Press Start Clicks to continue, Replay to review, or Save when ready.';if(wasTapAlong)setTapAlongStatus('Tap-along stopped. Seek if needed, then press Play & Tap to continue.');renderDetails(); }
-  function recordTap(style='auto'){ if(!recording||playing){if(!recording)$('status').textContent=tapAlongUrl?'Press Play & Tap or Start Clicks first.':'Press Start Clicks first.';return}if(tapAlongActive&&tapAlongAudio()?.paused){setTapAlongStatus('The recording is paused. Press Play & Tap to continue.','error');return}const now=currentRecordTime(),prev=track.taps.length?track.taps.at(-1):null;if(prev!==null&&now<=prev+12){$('status').textContent='That tap was too close to the previous beat.';return}const i=track.taps.length;track.taps.push(now);track.tapAccents=track.tapAccents||[];track.tapAccents.push(style==='accent'?1:style==='plain'?0:null);const auto=trackBeatMeta(i).downbeat||isAccent(i),accent=explicitTapAccent(i,auto);clickSound(accent);animateConductor(prev===null?520:now-prev);timingFeedback(nearestGuideDelta(now));$('status').textContent=style==='accent'?'Accented beat recorded.':(track.taps.length===1?'First tap recorded.':(tapAlongActive?'Beat locked to the recording.':'Beat recorded.'));renderDetails(); }
+  function recordTap(style='auto'){if(recording&&!playing)track.fromScore=false;/* v1.5.1: hand-tapped edits make this the user's own track */ if(!recording||playing){if(!recording)$('status').textContent=tapAlongUrl?'Press Play & Tap or Start Clicks first.':'Press Start Clicks first.';return}if(tapAlongActive&&tapAlongAudio()?.paused){setTapAlongStatus('The recording is paused. Press Play & Tap to continue.','error');return}const now=currentRecordTime(),prev=track.taps.length?track.taps.at(-1):null;if(prev!==null&&now<=prev+12){$('status').textContent='That tap was too close to the previous beat.';return}const i=track.taps.length;track.taps.push(now);track.tapAccents=track.tapAccents||[];track.tapAccents.push(style==='accent'?1:style==='plain'?0:null);const auto=trackBeatMeta(i).downbeat||isAccent(i),accent=explicitTapAccent(i,auto);clickSound(accent);animateConductor(prev===null?520:now-prev);timingFeedback(nearestGuideDelta(now));$('status').textContent=style==='accent'?'Accented beat recorded.':(track.taps.length===1?'First tap recorded.':(tapAlongActive?'Beat locked to the recording.':'Beat recorded.'));renderDetails(); }
   function replay(){ if(recording||playing||track.durationMs<=0)return;playing=true;replayStartReal=performance.now();replayViewMs=0;frozenViewMs=0;$('status').textContent='Replaying measures + subdivisions…';renderDetails();audio();expandedTrackClickEvents().forEach(ev=>{playbackTimers.push(setTimeout(()=>{if(!playing)return;clickSound(ev.accent,ev.primary?'primary':'subdivision');if(ev.primary){const ms=ev.ms,i=ev.index;animateConductor(i?ms-track.taps[i-1]:520);timingFeedback(nearestGuideDelta(ms))}},Math.max(0,ev.ms)))});playbackTimers.push(setTimeout(()=>{if(!playing)return;playing=false;frozenViewMs=track.durationMs;playbackTimers=[];stopAnimation();$('status').textContent='Replay finished.';renderDetails()},track.durationMs));startAnimation(); }
   function stopReplay(update=true){playbackTimers.forEach(clearTimeout);playbackTimers=[];if(playing)frozenViewMs=Math.min(track.durationMs,performance.now()-replayStartReal);playing=false;stopAnimation();if(update)$('status').textContent='Replay stopped.';renderDetails();}
   function removeSection(){if(recording||playing||track.durationMs<=0||!track.taps.length)return;const startBeat=Math.max(1,Math.round(Number($('cutStart').value))),endBeat=Math.min(track.taps.length,Math.round(Number($('cutEnd').value)));if(!Number.isFinite(startBeat)||!Number.isFinite(endBeat)||endBeat<startBeat){$('status').textContent='Choose an end beat at or after the start beat.';return}const a=track.taps[startBeat-1],b=endBeat<track.taps.length?track.taps[endBeat]:track.durationMs;if(!Number.isFinite(a)||!Number.isFinite(b)||b<=a){$('status').textContent='That beat range cannot be removed.';return}editHistory.push({taps:[...track.taps],tapAccents:[...(track.tapAccents||[])],durationMs:track.durationMs});const cut=b-a,keep=track.taps.map((_,i)=>i<startBeat-1||i>endBeat-1);track.taps=track.taps.filter((_,i)=>keep[i]).map(t=>t>=b?t-cut:t);track.tapAccents=(track.tapAccents||[]).filter((_,i)=>keep[i]);track.durationMs=Math.max(0,track.durationMs-cut);frozenViewMs=track.durationMs;$('cutStart').value='1';$('cutEnd').value=String(Math.min(2,Math.max(1,track.taps.length)));$('status').textContent=`Removed beat${startBeat===endBeat?'':'s'} ${startBeat}${startBeat===endBeat?'':`–${endBeat}`}.`;renderDetails()}
@@ -4954,6 +5017,8 @@ html,body{background:var(--ground)!important}
   for(const type of ['dragleave','drop'])$('scorePdfDrop').addEventListener(type,e=>{e.preventDefault();$('scorePdfDrop').classList.remove('dragover')});
   $('scorePdfDrop').addEventListener('drop',e=>loadScorePdf(e.dataTransfer?.files?.[0]||null));
   $('scoreAnalyzeButton').addEventListener('click',()=>analyzeScorePdf(false));
+  $('scoreMakeClickButton').addEventListener('click',()=>makeClickTrackFromScore(false));
+  for(const id of ['scoreClickBpm','scoreClickMeter','scoreClickMeasures'])$(id).addEventListener('change',()=>{if(track.fromScore&&scoreDetectedRawBoxes.length)makeClickTrackFromScore(false)});
   $('scoreLayoutMode').addEventListener('change',()=>{if(scorePdfDoc)analyzeScorePdf(false)});
   $('scorePrevPage').addEventListener('click',()=>renderScorePage(scorePdfPage-1));
   $('scoreNextPage').addEventListener('click',()=>renderScorePage(scorePdfPage+1));

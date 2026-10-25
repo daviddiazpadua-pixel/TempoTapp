@@ -1,4 +1,4 @@
-# TempoTapp 1.5.0
+# TempoTapp 1.5.1
 
 Click-track creator, beat analyzer, and audio warp tool. Single-page web app. Runs in two modes:
 **device-only** (no backend, everything stays on the device) or **cloud accounts** (Firebase; the
@@ -132,6 +132,16 @@ gradients, glows or shadows. Light-only by choice (sheet-music apps are light be
 screen is a white PDF). To change a color, edit the tokens at the top of `#engraved-theme`.
 
 ## Changelog
+
+### 1.5.1 — the PDF makes the click track
+- Adding a sheet-music PDF now builds a click track on its own: measures counted from the barlines,
+  tempo read from the printed marking ("♩ = 120", "120 BPM", or an Italian tempo word) when the PDF
+  has a text layer. Tempo, time signature and measure count are editable and re-build the track.
+- A click track you tapped yourself is never replaced automatically; the button offers "Replace".
+- Score practice works without a recording (clicks only, score follows).
+- Fixed: primary buttons (Analyze Score, Practice, Fix / Add Marker, Analyze recording, dialog OK)
+  rendered white-on-white and were invisible.
+- Fixed: status no longer claims measures were "matched to your click track" when none existed.
 
 ### 1.5.0 — cloud accounts
 - Optional Firebase-backed accounts: same email/password on every device, Google sign-in,
