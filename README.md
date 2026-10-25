@@ -1,4 +1,4 @@
-# TempoTapp 1.7.2
+# TempoTapp 1.7.3
 
 Click-track creator, beat analyzer, and audio warp tool. Single-page web app. Runs in two modes:
 **device-only** (no backend, everything stays on the device) or **cloud accounts** (Firebase; the
@@ -132,6 +132,10 @@ gradients, glows or shadows. Light-only by choice (sheet-music apps are light be
 screen is a white PDF). To change a color, edit the tokens at the top of `#engraved-theme`.
 
 ## Changelog
+
+### 1.7.3
+- Count-in before Listen: Recording + Clicks and before score Practice (also on resume).
+- "Recording volume while listening" slider (remembered on this device; changes the level live).
 
 ### 1.7.2 — listening and count-ins
 - Listen: Recording + Clicks is audible over a full-level recording: the recording plays at 55%

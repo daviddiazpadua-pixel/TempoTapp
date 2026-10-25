@@ -14,9 +14,9 @@ await pg.selectOption('#scoreClickMeter','3/4');await pg.waitForTimeout(500);con
 await pg.selectOption('#scoreClickMeter','4/4');await pg.waitForTimeout(500);
 // practice without audio
 console.log('practice disabled?',await pg.evaluate(()=>document.getElementById('scorePracticeStart').disabled));
-await pg.evaluate(()=>document.getElementById('scorePracticeStart').click());await pg.waitForTimeout(2200);console.log('practice',await t('scorePracticeStatus'));
+await pg.evaluate(()=>document.getElementById('scorePracticeStart').click());await pg.waitForTimeout(3600);console.log('practice',await t('scorePracticeStatus'));
 await pg.evaluate(()=>document.getElementById('scorePracticePause').click());await pg.waitForTimeout(300);console.log('paused',await t('scorePracticeStatus'));
-await pg.evaluate(()=>document.getElementById('scorePracticeStart').click());await pg.waitForTimeout(800);console.log('resumed',await t('scorePracticeStatus'));
+await pg.evaluate(()=>document.getElementById('scorePracticeStart').click());await pg.waitForTimeout(2600);console.log('resumed',await t('scorePracticeStatus'));
 await pg.evaluate(()=>document.getElementById('scorePracticeStop').click());
 await pg.evaluate(()=>document.querySelector('.score-follow-panel').scrollIntoView());await pg.waitForTimeout(300);
 await pg.screenshot({path:'/tmp/pdf_click.png'});

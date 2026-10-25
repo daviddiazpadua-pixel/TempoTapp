@@ -933,6 +933,7 @@ html,body{background:var(--ground)!important}
           <button class="secondary" id="tapAlongListenButton" disabled>▶ Listen: Recording + Clicks</button>
           <button class="secondary" id="tapAlongRemoveButton" disabled>Remove Audio</button>
         </div>
+        <div class="click-volume-control listen-mix-control"><div class="click-volume-head"><label class="field-label" for="listenRecVolume">Recording volume while listening</label><span class="click-volume-value" id="listenRecVolumeValue">55%</span></div><input id="listenRecVolume" type="range" min="0" max="100" step="5" value="55" aria-label="Recording volume while listening"></div>
         <div class="tap-dual-actions">
           <button class="tap-beat-btn" id="tapRegularButton" disabled>BEAT<small>Space · normal click</small></button>
           <button class="tap-accent-btn" id="tapAccentButton" disabled>ACCENT<small>A · stronger click</small></button>
@@ -1605,7 +1606,7 @@ html,body{background:var(--ground)!important}
 <script>
 (() => {
   'use strict';
-  const APP_VERSION='1.7.2';
+  const APP_VERSION='1.7.3';
   const $ = id => document.getElementById(id);
   if($('appVersionLabel'))$('appVersionLabel').textContent=`TempoTapp ${APP_VERSION} · All data stays on this device.`;
   // ---------------------------------------------------------------------------
@@ -3483,6 +3484,7 @@ html,body{background:var(--ground)!important}
     await unlockAudioForMobile().catch(()=>{});
     if(!scorePdfDoc||!track.taps.length||(!(track.scoreMeasureBoxes||[]).length&&!(track.scoreAnchors||[]).length)){$('scorePracticeStatus').textContent='Add the PDF and make the click track first.';return}
     if(recording)endRecording();if(playing)stopReplay(false);if(listenActive)stopListenWithAudio(true);
+    if(countdownBusy||scorePracticeActive)return;$('scorePracticeStatus').textContent='Get ready…';await runCountdown($('recCountdown'),{n:3,ms:countInMs()});if(scorePracticeActive)return;
     if(!tapAlongUrl){if(!scorePracticeClock||scorePracticeClock.offset>=track.durationMs-20)scorePracticeClock={start:0,offset:0};scorePracticeClock.start=performance.now()+120;scorePracticeActive=true;scorePracticeLastBeat=-1;
       const clk=scorePracticeClock;scorePracticeSched=startClickScheduler({events:scorePracticeEvents(),perfAt:t=>clk.start+(t*1000-clk.offset)});$('scorePracticeStatus').textContent='Practice running · clicks only, score follows.';scorePracticeTick();syncScoreClickPlayUi();return}
     const a=tapAlongAudio();if(a.ended||a.currentTime*1000>=track.durationMs-20)a.currentTime=0;
@@ -3524,6 +3526,7 @@ html,body{background:var(--ground)!important}
   let listenSched=null,listenActive=false;
   // Listening clicks have to cut through a full-level recording: the recording is turned down while
   // listening (restored afterwards) and each click gets a bright attack layer on top of the tone.
+  function listenRecLevel(){const v=Number($('listenRecVolume')?.value);return Number.isFinite(v)?Math.max(0,Math.min(1,v/100)):.55}
   let listenPrevVolume=null,listenUserScrollAt=0,listenRefreshTimer=null,listenLastHit=null;
   function listenClick(when,ev,bus){const c=audio(),vol=clampClickVolume(track.clickVolume)/100*2.2,sub=ev.kind==='subdivision';clickAt(when,ev.accent,ev.kind||'primary',clampClickVolume(track.clickVolume)*2.2,bus);if(vol<=0)return;const o=c.createOscillator(),g=c.createGain(),t=Math.max(when,c.currentTime),pk=(ev.accent?.22:(sub?.06:.14))*vol;o.type='square';o.frequency.setValueAtTime(ev.accent?3100:(sub?1800:2400),t);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(Math.max(.0001,pk),t+.0015);g.gain.exponentialRampToValueAtTime(.0001,t+.018);o.connect(g);g.connect(bus);o.start(t);o.stop(t+.025)}
   function makeListenScheduler(a){const evs=expandedTrackClickEvents().map(ev=>({...ev,t:ev.ms/1000,kind:ev.primary?'primary':'subdivision'}));
@@ -3539,7 +3542,8 @@ html,body{background:var(--ground)!important}
     await unlockAudioForMobile().catch(()=>{});const a=tapAlongAudio();if(!tapAlongUrl||!a||!track.taps.length)return;
     if(recording)endRecording();if(playing)stopReplay(false);if(scorePracticeActive)stopScorePractice(false);
     if(a.ended||(Number.isFinite(a.duration)&&a.currentTime>=a.duration-.05))a.currentTime=0;
-    listenPrevVolume=a.volume;a.volume=Math.min(a.volume,0.55);
+    if(countdownBusy)return;setTapAlongStatus('Get ready… the recording starts after the count-in.','active');await runCountdown($('recCountdown'),{n:3,ms:countInMs()});if(listenActive||recording)return;
+    listenPrevVolume=a.volume;a.volume=listenRecLevel();
     listenActive=true;try{await a.play()}catch{listenActive=false;a.volume=listenPrevVolume??1;setTapAlongStatus('Your browser blocked playback. Press Listen again.','error');syncTapAlongUi();return}
     listenSched=makeListenScheduler(a);listenUserScrollAt=0;
     try{document.querySelector('.panel.editor')?.scrollIntoView({block:'center',behavior:'smooth'})}catch{}
@@ -5420,6 +5424,8 @@ html,body{background:var(--ground)!important}
     bindTouchDrag($('dragEditor'),beginDragClick,moveDragClick,endDragClick);
   }
 
+  try{const v=localStorage.getItem('tt-listen-rec-vol');if(v!==null&&$('listenRecVolume'))$('listenRecVolume').value=v}catch{}
+  if($('listenRecVolume')){const sync=()=>{const v=$('listenRecVolume').value;$('listenRecVolumeValue').textContent=v+'%';try{localStorage.setItem('tt-listen-rec-vol',v)}catch{}if(listenActive){const a=tapAlongAudio();if(a)a.volume=listenRecLevel()}};$('listenRecVolume').addEventListener('input',sync);sync()}
   for(const ev of ['wheel','touchstart','pointerdown'])$('dragEditorScroll').addEventListener(ev,()=>{if(listenActive)listenUserScrollAt=performance.now()},{passive:true});
   // Unlock Web Audio from the first real touch/click on mobile Safari.
   const firstAudioGesture=()=>{unlockAudioForMobile().catch(()=>{})};
