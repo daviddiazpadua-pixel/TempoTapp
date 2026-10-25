@@ -288,6 +288,8 @@ main{padding-top:34px}.recorder-header,.library-header,.warp-header,.help-header
 .score-measure-box.addable{pointer-events:auto;cursor:copy}.score-measure-box.addable:hover{background:rgba(31,107,58,.08)}
 .tap-cal-controls{display:flex;gap:6px;align-items:center}.tap-cal-panel{display:grid;gap:8px;margin:6px 0 10px}.tap-cal-panel .tap{min-height:110px}
 .score-auto-row label.score-follow,.score-follow{display:flex!important;flex-direction:row!important;align-items:center;gap:10px;font-weight:650;width:auto}.score-follow input[type=checkbox]{width:20px!important;height:20px!important;min-height:0!important;flex:0 0 20px;margin:0;padding:0;accent-color:#111}
+.score-float-bar{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:900;display:flex;align-items:center;gap:12px;padding:8px 10px 8px 8px;border-radius:999px;background:#111;color:#fff;box-shadow:0 8px 28px rgba(0,0,0,.28);max-width:calc(100vw - 32px)}
+  .score-float-bar.hidden{display:none}.score-float-bar button{border:0;border-radius:999px;background:#c8102e;color:#fff;font-weight:800;padding:10px 18px;font-size:15px;cursor:pointer;min-height:44px}.score-float-bar span{font-size:13px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:6px}
   .score-click-card{margin-top:4px;padding:12px;border:1px solid rgba(20,20,20,0.28);border-radius:14px;background:rgba(20,20,20,0.06);display:grid;gap:9px}.score-click-head{display:grid;gap:3px}.score-click-head strong{font-size:.9rem}.score-click-head span{font-size:.75rem;line-height:1.5;color:var(--muted)}.score-click-card input{min-height:38px;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:#e8e8e5;color:var(--text);width:110px;font:inherit}
 .score-auto-card{margin-top:4px;padding:12px;border:1px solid rgba(20,20,20,0.18);border-radius:14px;background:rgba(20,20,20,0.04);display:grid;gap:9px}
 .score-auto-row{display:flex;gap:8px;align-items:end;flex-wrap:wrap}.score-auto-row label{display:grid;gap:5px;color:var(--muted);font-size:.7rem}.score-auto-row select{min-height:38px;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:#e8e8e5;color:var(--text);min-width:170px}.score-analysis-status{font-size:.75rem;line-height:1.5;color:var(--muted)}.score-analysis-status.working{color:#141414}.score-analysis-status.good{color:#1f6b3a}.score-analysis-status.warn{color:#9a6b00}.score-analysis-progress{height:7px;background:#ecebe9;border:1px solid var(--line);border-radius:999px;overflow:hidden}.score-analysis-progress>span{display:block;height:100%;width:0%;background:linear-gradient(90deg,#1f6b3a,#141414);transition:width .18s ease}.score-measure-box{position:absolute;border:1px solid rgba(31,107,58,0.34);background:rgba(31,107,58,0.025);border-radius:4px;pointer-events:none}.score-measure-box.active{border-color:#b5121b;background:rgba(181,18,27,0.07);box-shadow:0 0 0 2px rgba(181,18,27,0.12)}.score-measure-label{position:absolute;left:3px;top:2px;padding:1px 4px;border-radius:4px;background:rgba(242,242,240,0.72);color:#1f6b3a;font-size:.55rem;font-weight:900;line-height:1.2}.score-beat-mark{position:absolute;width:7px;height:7px;border-radius:50%;transform:translate(-50%,-50%);background:rgba(20,20,20,0.82);border:1px solid #fff;pointer-events:none}.score-beat-mark.accent{width:10px;height:10px;background:#b5121b}.score-auto-note{font-size:.7rem;color:var(--muted);line-height:1.45}.score-auto-count{font-weight:900;color:#1f6b3a}
@@ -388,7 +390,9 @@ button{-webkit-user-select:none;user-select:none}
 .create-mode-banner span{display:block;color:var(--muted);font-size:.76rem;margin-top:2px}
 .create-mode-pill{font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;color:#141414;background:rgba(20,20,20,0.1);border:1px solid rgba(20,20,20,0.22);padding:6px 9px;border-radius:999px;font-weight:850}
 body.create-mode-scratch .media-workflow-section{display:none!important}
-body.create-mode-media .media-workflow-section,body.create-mode-review .media-workflow-section{display:block}
+body.create-mode-media .media-workflow-section,body.create-mode-review .media-workflow-section,body.create-mode-sheet .media-workflow-section{display:block}
+  body.create-mode-media .score-follow-panel{display:none!important}body.create-mode-sheet .tap-along-panel{display:none!important}
+  body.create-mode-review:not(.create-has-score) .score-follow-panel{display:none!important}body.create-mode-review.create-score-only .tap-along-panel{display:none!important}
 @media(max-width:720px){.create-choice-grid{grid-template-columns:1fr}.create-choice-card{min-height:225px}.create-choice-main{padding-top:28px}}
 
 /* Home screen polish: keep the landing screen focused on three primary actions. */
@@ -886,9 +890,9 @@ html,body{background:var(--ground)!important}
       </button>
       <button class="create-choice-card media" id="createMediaButton" type="button">
         <span class="create-choice-icon">♫</span>
-        <h2>With Audio / PDF</h2>
-        <p>Play a real piece while you tap BEAT or ACCENT, and optionally follow the score PDF.</p>
-        <div class="create-choice-points"><span>Tap while the recording plays</span><span>Add and analyze sheet-music PDF</span><span>Practice with moving score follow</span></div>
+        <h2>With Audio</h2>
+        <p>Play a real recording while you tap BEAT or ACCENT on the beat.</p>
+        <div class="create-choice-points"><span>Tap while the recording plays</span><span>Listen back with the clicks</span><span>Drag any click to fix it</span></div>
         <b>Build alongside the piece →</b>
       </button>
     </section>
@@ -984,6 +988,7 @@ html,body{background:var(--ground)!important}
         </div>
       </div>
     </div>
+    <div class="score-float-bar hidden" id="scoreFloatBar" role="group" aria-label="Score playback"><button type="button" id="scoreFloatStop">■ Stop</button><span id="scoreFloatInfo"></span></div>
     <div class="score-workspace hidden" id="scoreWorkspace">
       <div class="score-toolbar">
         <div class="score-toolbar-group">
@@ -1613,7 +1618,7 @@ html,body{background:var(--ground)!important}
 <script>
 (() => {
   'use strict';
-  const APP_VERSION='1.8.0';
+  const APP_VERSION='1.8.1';
   const $ = id => document.getElementById(id);
   if($('appVersionLabel'))$('appVersionLabel').textContent=`TempoTapp ${APP_VERSION} · All data stays on this device.`;
   // ---------------------------------------------------------------------------
@@ -2742,14 +2747,17 @@ html,body{background:var(--ground)!important}
   // Analyze and Warp remain independent screens and are never disabled here.
   // -----------------------------------------------------------------------
   function setCreateMode(mode='scratch'){
-    createMode=['scratch','media','review'].includes(mode)?mode:'scratch';
+    createMode=['scratch','media','sheet','review'].includes(mode)?mode:'scratch';
+    document.body.classList.toggle('create-mode-sheet',createMode==='sheet');syncCreateScoreVisibility();
     document.body.classList.toggle('create-mode-scratch',createMode==='scratch');
     document.body.classList.toggle('create-mode-media',createMode==='media');
     document.body.classList.toggle('create-mode-review',createMode==='review');
     const config=createMode==='scratch'
       ?{pill:'From scratch',title:'From Scratch',desc:'Tap a click track without loading media.',eyebrow:'Create · From Scratch',heading:'Build your timing.',copy:'Press Start, then tap exactly how you want the music to move.'}
       :createMode==='media'
-        ?{pill:'With audio or PDF',title:'With Audio / PDF',desc:'Build the click track alongside a real recording and optional score.',eyebrow:'Create · With Audio / PDF',heading:'Build it with the piece.',copy:'Play the recording, tap BEAT or ACCENT as it goes, and optionally add the score PDF.'}
+        ?{pill:'With audio',title:'With Audio',desc:'Build the click track alongside a real recording.',eyebrow:'Create · With Audio',heading:'Build it with the piece.',copy:'Play the recording and tap BEAT or ACCENT as it goes.'}
+        :createMode==='sheet'
+        ?{pill:'From sheet music',title:'From Sheet Music',desc:'TempoTapp reads the PDF and builds the click track.',eyebrow:'Create · From Sheet Music',heading:'Build it from the score.',copy:'Add the PDF; TempoTapp reads the measures, time signatures and tempo marks, then you can practice with the moving score.'}
         :{pill:'Review and edit',title:'Review & Edit',desc:'A saved or analyzed click track is loaded. Every creation tool remains available.',eyebrow:'Create · Review / Edit',heading:'Refine your click track.',copy:'Review timing, measures, subdivisions, audio/PDF alignment, MIDI, and score following.'};
     if($('createModePill'))$('createModePill').textContent=config.pill;
     if($('createModeTitle'))$('createModeTitle').textContent=config.title;
@@ -2760,12 +2768,14 @@ html,body{background:var(--ground)!important}
   }
   // v1.5.2: a sheet-music PDF dropped or chosen anywhere goes to the score workflow, which builds the click track.
   function isPdfFile(f){return !!f&&(f.type==='application/pdf'||/\.pdf$/i.test(String(f.name||'')))}
+  // which workflow sections show in Review: the score only for a track that has one, the recording panel unless the track came from the score
+  function syncCreateScoreVisibility(){const hasScore=!!scorePdfDoc||!!track.fromScore||!!(track.scoreMeasureBoxes||[]).length;document.body.classList.toggle('create-has-score',hasScore);document.body.classList.toggle('create-score-only',!!track.fromScore&&!tapAlongUrl)}
   async function openSheetMusicPdf(file){
     if(!file)return;
-    const inCreate=currentScreen==='recorder'&&(createMode==='media'||createMode==='review');
+    const inCreate=currentScreen==='recorder'&&(createMode==='sheet'||(createMode==='review'&&(track.fromScore||!!scorePdfDoc)));
     if(!inCreate){
       if(track.taps.length&&!track.loadedId&&!track.fromScore&&!(await uiConfirm('Your unsaved taps will be cleared.',{title:'Make a click track from this PDF?',okLabel:'Continue'})))return;
-      resetTrack('Reading the sheet music…');setCreateMode('media');showScreen('recorder');
+      resetTrack('Reading the sheet music…');setCreateMode('sheet');showScreen('recorder');
     }
     setTimeout(()=>{try{document.querySelector('.score-follow-panel')?.scrollIntoView({block:'start',behavior:'smooth'})}catch{}},120);
     await loadScorePdf(file);
@@ -3157,6 +3167,7 @@ html,body{background:var(--ground)!important}
   function tapAlongAudio(){return $('tapAlongAudio')}
   function setTapAlongStatus(text,state=''){const el=$('tapAlongStatus');if(!el)return;el.textContent=text;el.className='tap-along-status'+(state?' '+state:'')}
   function syncTapAlongUi(){
+    syncCreateScoreVisibility();
     const a=tapAlongAudio(),has=!!tapAlongUrl;
     $('tapAlongStartButton').disabled=!has||playing||(recording&&!tapAlongActive);
     $('tapAlongPauseButton').disabled=!(recording&&tapAlongActive);
@@ -3168,7 +3179,7 @@ html,body{background:var(--ground)!important}
   }
   function loadTapAlongFile(file){
     if(!file)return;
-    if(isPdfFile(file)){loadScorePdf(file);setTimeout(()=>{try{document.querySelector('.score-follow-panel')?.scrollIntoView({block:'start',behavior:'smooth'})}catch{}},120);return}
+    if(isPdfFile(file)){openSheetMusicPdf(file);return}
     const ok=(file.type||'').startsWith('audio/')||/\.(wav|mp3|m4a|aac|flac|ogg|opus)$/i.test(file.name||'');
     if(!ok){setTapAlongStatus('Choose an audio file such as WAV, MP3, M4A, FLAC, OGG, or Opus.','error');return}
     if(tapAlongActive)endRecording();
@@ -3317,7 +3328,13 @@ html,body{background:var(--ground)!important}
     const lower=text.toLowerCase();for(const [word,bpm] of SCORE_TEMPO_WORDS){if(new RegExp(`\\b${word}\\b`).test(lower))return{bpm,label:`"${word[0].toUpperCase()+word.slice(1)}" (typical tempo, adjust if needed)`}}
     return null;
   }
-  function syncScoreClickPlayUi(){const pb=$('scoreClickPlayButton'),sb=$('scoreClickStopButton');if(!pb||!sb)return;const busy=playing||scorePracticeActive;pb.disabled=!track.taps.length||recording||busy;sb.disabled=!busy;const st=$('scoreClickPlayStatus');if(st)st.textContent=playing?'Playing…':scorePracticeActive?'Practicing with the score…':''}
+  let scoreUserScrollAt=0;
+  function scoreFollowScroll(h){if(!h||!h.isConnected)return;if(Date.now()-scoreUserScrollAt<5000)return;const r=h.getBoundingClientRect(),vh=window.innerHeight||800,vw=window.innerWidth||400;
+    const shell=$('scoreStageShell');if(shell&&shell.scrollWidth>shell.clientWidth){const sr=shell.getBoundingClientRect();if(r.left<sr.left+20||r.right>sr.right-20)shell.scrollTo({left:shell.scrollLeft+(r.left-sr.left)-sr.width/2,behavior:'smooth'})}
+    if(r.top<70||r.bottom>vh-140)window.scrollTo({top:window.scrollY+r.top-vh*.4,behavior:'smooth'})}
+  for(const ev of ['wheel','touchmove'])window.addEventListener(ev,()=>{if(scorePracticeActive||playing)scoreUserScrollAt=Date.now()},{passive:true});
+  window.addEventListener('keydown',e=>{if((scorePracticeActive||playing)&&['PageUp','PageDown','ArrowUp','ArrowDown','Home','End'].includes(e.key))scoreUserScrollAt=Date.now()});
+  function syncScoreClickPlayUi(){const fb=$('scoreFloatBar');if(fb){const on=(scorePracticeActive||(playing&&!!scorePdfDoc&&!listenActive))&&currentScreen==='recorder';fb.classList.toggle('hidden',!on);if(on&&$('scoreFloatInfo'))$('scoreFloatInfo').textContent=scorePracticeActive?($('scorePracticeStatus')?.textContent||'Practicing').replace(/^Following /,''):'Playing the click track'}const pb=$('scoreClickPlayButton'),sb=$('scoreClickStopButton');if(!pb||!sb)return;const busy=playing||scorePracticeActive;pb.disabled=!track.taps.length||recording||busy;sb.disabled=!busy;const st=$('scoreClickPlayStatus');if(st)st.textContent=playing?'Playing…':scorePracticeActive?'Practicing with the score…':''}
   function scoreMeterOption(meter){const sel=$('scoreClickMeter');if(sel&&![...sel.options].some(o=>o.value===meter)){const o=document.createElement('option');o.value=o.textContent=meter;sel.appendChild(o)}}
   let scoreTempoBase=null,scoreLastBuildMsg=''; // printed tempo at the start of the chosen section ({bpm,unit,qpm}); the BPM field scales the whole map
   function scoreUnitGlyph(u){return u===1?'♩':u===1.5?'♩.':u===.5?'♪':u===.75?'♪.':u===2?'𝅗𝅥':u===3?'𝅗𝅥.':u===4?'𝅝':'♩'}
@@ -3585,7 +3602,7 @@ html,body{background:var(--ground)!important}
       const bi=Number(a.beatIndex)||0,meta=trackBeatMeta(bi),dot=document.createElement('button');dot.type='button';dot.className=`score-anchor${beatAccent(bi,meta)?' accent':''}${meta.downbeat?' downbeat':''}`;dot.style.left=`${a.x*100}%`;dot.style.top=`${a.y*100}%`;dot.title=`M${scoreMeasureLabel(meta.measure)}.${meta.beat} · beat ${bi+1}`;dot.dataset.scoreBeat=String(bi);ov.appendChild(dot);
       const lab=document.createElement('span');lab.className='score-anchor-label';lab.style.left=`${a.x*100}%`;lab.style.top=`${a.y*100}%`;lab.textContent=`M${scoreMeasureLabel(meta.measure)}.${meta.beat}`;ov.appendChild(lab)
     }
-    if(Number.isInteger(activeBeat)){const p=scorePointForBeat(activeBeat);if(p&&Number(p.page)===scorePdfPage){const h=document.createElement('span');h.className='score-playhead';h.id='scorePlayhead';h.style.left=`${p.x*100}%`;h.style.top=`${p.y*100}%`;ov.appendChild(h);setTimeout(()=>h.scrollIntoView?.({block:'center',inline:'center',behavior:'smooth'}),0)}}
+    if(Number.isInteger(activeBeat)){const p=scorePointForBeat(activeBeat);if(p&&Number(p.page)===scorePdfPage){const h=document.createElement('span');h.className='score-playhead';h.id='scorePlayhead';h.style.left=`${p.x*100}%`;h.style.top=`${p.y*100}%`;ov.appendChild(h);setTimeout(()=>scoreFollowScroll(h),0)}}
   }
   let scorePracticeClock=null,scorePracticeSched=null; // clock: {start,offset} when practicing a score-built track with no recording loaded
   function scorePracticeNowMs(){if(scorePracticeClock)return scorePracticeClock.offset+(scorePracticeClock.start?Math.max(0,performance.now()-scorePracticeClock.start):0);const a=tapAlongAudio();return a?mediaTimeAt(a)*1000:0}
@@ -3597,7 +3614,7 @@ html,body{background:var(--ground)!important}
   function scorePracticeEvents(){return expandedTrackClickEvents().map(ev=>({...ev,t:ev.ms/1000,kind:ev.primary?'primary':'subdivision'}))}
   function scorePracticeTick(){
     if(!scorePracticeActive)return;let ms;if(scorePracticeClock){ms=scorePracticeNowMs();if(ms>=track.durationMs){stopScorePractice(false);scorePracticeClock=null;$('scorePracticeStatus').textContent='Practice finished.';return}}else{const a=tapAlongAudio();if(!a||a.paused)return;ms=mediaTimeAt(a)*1000}let i=0;while(i+1<track.taps.length&&track.taps[i+1]<=ms)i++;if(ms<track.taps[0]-40)i=-1;const p=i>=0?scorePointForBeat(i):null;
-    if(i!==scorePracticeLastBeat&&i>=0&&!(p&&Number(p.page)!==scorePdfPage&&scorePdfRendering)){scorePracticeLastBeat=i;if(p&&Number(p.page)!==scorePdfPage){renderScorePage(Number(p.page)).then(()=>renderScoreOverlay(scorePracticeLastBeat))}else renderScoreOverlay(i);const meta=trackBeatMeta(i);$('scorePracticeStatus').textContent=`Following M${scoreMeasureLabel(meta.measure)}.${meta.beat} · beat ${i+1}${beatAccent(i,meta)?' · accent':''}`}
+    if(i!==scorePracticeLastBeat&&i>=0&&!(p&&Number(p.page)!==scorePdfPage&&scorePdfRendering)){scorePracticeLastBeat=i;if(p&&Number(p.page)!==scorePdfPage){renderScorePage(Number(p.page)).then(()=>renderScoreOverlay(scorePracticeLastBeat))}else renderScoreOverlay(i);const meta=trackBeatMeta(i);$('scorePracticeStatus').textContent=`Following M${scoreMeasureLabel(meta.measure)}.${meta.beat} · beat ${i+1}${beatAccent(i,meta)?' · accent':''}`;if($('scoreFloatInfo'))$('scoreFloatInfo').textContent=`M${scoreMeasureLabel(meta.measure)}.${meta.beat}`}
     scorePracticeRaf=requestAnimationFrame(scorePracticeTick)
   }
   async function startScorePractice(){
@@ -3616,6 +3633,7 @@ html,body{background:var(--ground)!important}
   function scorePracticeAudioEnded(){if(scorePracticeActive){stopScorePractice(false);$('scorePracticeStatus').textContent='Practice finished.'}}
 
   function renderDetails(){
+    syncCreateScoreVisibility();
     const bpm=recentBpm(); $('bpm').textContent=bpm??'—';
     $('startButton').disabled=recording||playing;$('endButton').disabled=!recording||playing;$('undoTapButton').disabled=!recording||!track.taps.length||playing;$('playButton').disabled=recording||playing||track.durationMs<=0;$('stopButton').disabled=!playing;$('saveButton').disabled=recording||playing||track.durationMs<=0||!track.taps.length;/* Security review: a recording with no taps is not a click track */$('exportButton').disabled=recording||playing||track.durationMs<=0||!track.taps.length;for(const id of ['exportMp3Button','exportWavButton','exportMixMp3Button'])if($(id))$(id).disabled=$('exportButton').disabled;if($('exportMixMp3Button'))$('exportMixMp3Button').classList.toggle('hidden',!tapAlongUrl);$('cutButton').disabled=recording||playing||track.durationMs<=0;$('undoEditButton').disabled=!editHistory.length;
     $('startButton').textContent=recording?'● Recording…':'● Start Clicks';
@@ -3662,7 +3680,7 @@ html,body{background:var(--ground)!important}
   async function startListenWithAudio(){
     await unlockAudioForMobile().catch(()=>{});const a=tapAlongAudio();if(!tapAlongUrl||!a||!track.taps.length)return;
     if(recording)endRecording();if(playing)stopReplay(false);if(scorePracticeActive)stopScorePractice(false);
-    if(a.ended||(Number.isFinite(a.duration)&&a.currentTime>=a.duration-.05))a.currentTime=0;
+    a.currentTime=0; // Listen always plays the whole piece from the top
     if(countdownBusy)return;setTapAlongStatus('Get ready… the recording starts after the count-in.','active');await runCountdown($('recCountdown'),{n:3,ms:countInMs()});if(listenActive||recording)return;
     listenPrevVolume=a.volume;a.volume=listenRecLevel();
     listenActive=true;try{await a.play()}catch{listenActive=false;a.volume=listenPrevVolume??1;setTapAlongStatus('Your browser blocked playback. Press Listen again.','error');syncTapAlongUi();return}
@@ -5501,6 +5519,7 @@ html,body{background:var(--ground)!important}
   $('scorePracticeStart').addEventListener('click',startScorePractice);
   $('scorePracticePause').addEventListener('click',pauseScorePractice);
   $('scorePracticeStop').addEventListener('click',()=>stopScorePractice(true));
+  $('scoreFloatStop').addEventListener('click',()=>{if(scorePracticeActive)stopScorePractice(true);if(playing)stopReplay(true);syncScoreClickPlayUi()});
   $('startButton').addEventListener('click',startRecording);
   $('trackStartMeter').addEventListener('change',()=>{track.scoreMap=normalizeTrackScoreMap([{startMeasure:1,meter:$('trackStartMeter').value},...track.scoreMap.filter(x=>Number(x.startMeasure)!==1)]);renderDetails()});
   $('addTrackMeterButton').addEventListener('click',addTrackMeterChange);

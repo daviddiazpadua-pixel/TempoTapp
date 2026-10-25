@@ -122,13 +122,20 @@ async def main():
                 report("media mode → tap-along with recording", media_visible and taps >= 4, f"file={info!r} intervalChips={taps} status={st!r}")
             except Exception as e: report("tap-along", False, repr(e))
 
+            # save this media track too
+            try:
+                await js("endButton"); await pg.wait_for_timeout(200)
+                await js("saveButton"); await pg.wait_for_timeout(300); await pg.fill("#saveName", "Media Track"); await js("confirmSaveButton"); await pg.wait_for_timeout(1200)
+                report("save media track", "Media Track" in (await txt("#status") or ""), await txt("#status"))
+            except Exception as e: report("save media track", False, repr(e))
+
             # ---------- 5. PDF score: load, auto-analyze, practice ----------
             try:
-                await pg.set_input_files("#scorePdfFile", f"{TD}/score_real.pdf"); await pg.wait_for_timeout(4000)
-                await pg.select_option("#scoreLayoutMode", "piano")
+                # v1.8.1: the PDF has its own workflow (From Sheet Music), not the audio one
+                await js("changeCreateModeButton"); await pg.wait_for_timeout(500)
+                await pg.set_input_files("#createSheetPdfFile", f"{TD}/score_real.pdf"); await pg.wait_for_timeout(1500)
+                st = await wait_text("#scoreAnalysisStatus", r"ready|Read exactly", timeout=90)
                 info = await txt("#scorePdfFileInfo")
-                await js("scoreAnalyzeButton")
-                st = await wait_text("#scoreAnalysisStatus", r".+", timeout=90)
                 anchors = await txt("#scoreAnchorCount")
                 boxes = await pg.evaluate("() => document.querySelectorAll('#scoreOverlay *').length")
                 page_label = await txt("#scorePageLabel")
@@ -137,15 +144,8 @@ async def main():
                 await js("scorePracticeStop"); await pg.wait_for_timeout(300)
                 nmeas = int(re.search(r"(\d+) measures", anchors or "0 measures").group(1)) if re.search(r"(\d+) measures", anchors or "") else 0
                 ok = ("1 page" in (info or "")) and nmeas >= 8 and boxes > 0 and ("running" in (pst or "").lower() or "following" in (pst or "").lower())
-                report("PDF score (engraved): load, auto-detect ≥8 measures, practice mode", ok, f"info={info!r} anchors={anchors!r} overlayNodes={boxes} page={page_label!r} practice={pst!r}")
+                report("PDF score (From Sheet Music): load, auto-detect ≥8 measures, practice mode", ok, f"info={info!r} anchors={anchors!r} overlayNodes={boxes} page={page_label!r} practice={pst!r}")
             except Exception as e: report("PDF score", False, repr(e))
-
-            # save this media track too
-            try:
-                await js("endButton"); await pg.wait_for_timeout(200)
-                await js("saveButton"); await pg.wait_for_timeout(300); await pg.fill("#saveName", "Media Track"); await js("confirmSaveButton"); await pg.wait_for_timeout(1200)
-                report("save media track (with score map)", "Media Track" in (await txt("#status") or ""), await txt("#status"))
-            except Exception as e: report("save media track", False, repr(e))
 
             # ---------- 6. Library: open, rename (prompt), move, share, import, delete ----------
             try:
