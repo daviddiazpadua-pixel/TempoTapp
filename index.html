@@ -1602,7 +1602,7 @@ html,body{background:var(--ground)!important}
 <script>
 (() => {
   'use strict';
-  const APP_VERSION='1.7.0';
+  const APP_VERSION='1.7.1';
   const $ = id => document.getElementById(id);
   if($('appVersionLabel'))$('appVersionLabel').textContent=`TempoTapp ${APP_VERSION} · All data stays on this device.`;
   // ---------------------------------------------------------------------------
@@ -3129,8 +3129,11 @@ html,body{background:var(--ground)!important}
   function renderTrackMusicalMap(){if(!$('trackMeterMapList'))return;const score=normalizeTrackScoreMap(),subs=normalizeTrackSubdivisionMap();$('trackStartMeter').value=score[0].meter;$('trackMeterMapList').innerHTML=score.map((x,i)=>`<span class="music-map-chip"><strong>M${x.startMeasure}</strong> ${escapeHtml(x.meter)}${i?` <button data-remove-track-meter="${x.startMeasure}" title="Remove">×</button>`:''}</span>`).join('');$('trackSubdivisionMapList').innerHTML=subs.length?subs.map((x,i)=>`<span class="music-map-chip sub">M${x.startMeasure}–${x.endMeasure}: ${escapeHtml(subdivisionName(x.factor))} <button data-remove-track-sub="${i}" title="Remove">×</button></span>`).join(''):'<span class="muted small">No extra subdivisions.</span>';const measures=trackMeasureCount();$('measureCountPill').textContent=`${measures} measure${measures===1?'':'s'}`;$('trackMeasureSummary').textContent=track.taps.length?`${track.taps.length} primary beats across ${measures} measure${measures===1?'':'s'}. Click labels use measure.beat positions.`:'Each tap is a primary beat. Measure labels will appear once you record.'}
   function addTrackMeterChange(){const measure=Math.max(2,Math.round(Number($('trackMeterMeasure').value)||2)),meter=cleanMeter($('trackMeterValue').value);track.scoreMap=normalizeTrackScoreMap([...track.scoreMap.filter(x=>Number(x.startMeasure)!==measure),{startMeasure:measure,meter}]);renderDetails();$('status').textContent=`${meter} now begins at measure ${measure}.`}
   function addTrackSubdivision(){const a=Math.max(1,Math.round(Number($('trackSubStart').value)||1)),b=Math.max(a,Math.round(Number($('trackSubEnd').value)||a)),factor=Number($('trackSubType').value)||3;track.subdivisionMap=normalizeTrackSubdivisionMap([...track.subdivisionMap,{startMeasure:a,endMeasure:b,factor}]);renderDetails();$('status').textContent=`${subdivisionName(factor)} added for measures ${a}–${b}.`}
+  function scoreDrivesMeter(){return !!(track.scoreMeasureBoxes||[]).length}
+  // With a PDF mapped, the printed bars decide the accents: beat 1 of every measure, nothing else.
+  function beatAccent(i,meta=trackBeatMeta(i)){if(scoreDrivesMeter())return !!meta.downbeat;return explicitTapAccent(i,meta.downbeat||isAccent(i))}
   function explicitTapAccent(i,autoAccent=false){const v=track.tapAccents?.[i];return v===1?true:v===0?false:!!autoAccent}
-  function expandedTrackClickEvents(){const ev=[];for(let i=0;i<track.taps.length;i++){const meta=trackBeatMeta(i),accent=explicitTapAccent(i,meta.downbeat||isAccent(i));ev.push({ms:track.taps[i],primary:true,index:i,accent,meta});if(i<track.taps.length-1){const factor=trackSubdivisionFactorForMeasure(meta.measure);if(factor>1){const a=track.taps[i],b=track.taps[i+1];for(let k=1;k<factor;k++)ev.push({ms:a+(b-a)*k/factor,primary:false,index:i,accent:false,meta,sub:k,factor})}}}return ev.sort((a,b)=>a.ms-b.ms||Number(b.primary)-Number(a.primary))}
+  function expandedTrackClickEvents(){const ev=[];for(let i=0;i<track.taps.length;i++){const meta=trackBeatMeta(i),accent=beatAccent(i,meta);ev.push({ms:track.taps[i],primary:true,index:i,accent,meta});if(i<track.taps.length-1){const factor=trackSubdivisionFactorForMeasure(meta.measure);if(factor>1){const a=track.taps[i],b=track.taps[i+1];for(let k=1;k<factor;k++)ev.push({ms:a+(b-a)*k/factor,primary:false,index:i,accent:false,meta,sub:k,factor})}}}return ev.sort((a,b)=>a.ms-b.ms||Number(b.primary)-Number(a.primary))}
 
   function tapAlongAudio(){return $('tapAlongAudio')}
   function setTapAlongStatus(text,state=''){const el=$('tapAlongStatus');if(!el)return;el.textContent=text;el.className='tap-along-status'+(state?' '+state:'')}
@@ -3271,11 +3274,12 @@ html,body{background:var(--ground)!important}
   function median(values){const a=values.filter(Number.isFinite).sort((x,y)=>x-y);if(!a.length)return 0;const m=Math.floor(a.length/2);return a.length%2?a[m]:(a[m-1]+a[m])/2}
   function downbeatTapIndices(){return track.taps.map((_,i)=>i).filter(i=>trackBeatMeta(i).downbeat)}
   function autoMapDetectedScore(){
+    if(!track.fromScore&&track.taps.length&&scoreDetectedRawBoxes.length&&$('scoreClickMeter'))track.scoreMap=normalizeTrackScoreMap(scoreMeterMapForClick().map(x=>({...x})));
     const down=downbeatTapIndices(),raw=[...scoreDetectedRawBoxes].sort((a,b)=>a.page-b.page||a.system-b.system||a.x0-b.x0),need=Math.max(trackMeasureCount(),down.length);
     let n=0,lastM=null;const boxes=[];for(const b of raw){const m=Number.isFinite(b.measure)?b.measure:null;if(m===null||m!==lastM){n++;lastM=m}if(need&&n>need)break;boxes.push({...b,measure:n})}
     track.scoreMeasureBoxes=boxes;
     const firsts=[];for(const b of boxes)if(!firsts.length||firsts.at(-1).measure!==b.measure)firsts.push(b);
-    const manual=(track.scoreAnchors||[]).filter(a=>a.source!=='auto'),auto=[];for(let i=0;i<Math.min(down.length,firsts.length);i++){const b=firsts[i];auto.push({beatIndex:down[i],page:b.page,x:(Number.isFinite(b.cx0)?b.cx0:b.x0)+(b.x1-b.x0)*.02,y:b.y,source:'auto'})}track.scoreAnchors=[...auto,...manual].sort((a,b)=>a.beatIndex-b.beatIndex);
+    const manual=(track.scoreAnchors||[]).filter(a=>a.source!=='auto'),auto=[];for(let i=0;i<Math.min(down.length,firsts.length);i++){const b=firsts[i];auto.push({beatIndex:down[i],page:b.page,x:(Number.isFinite(b.cx0)?b.cx0:b.x0)+(b.x1-b.x0)*.02,y:b.y,source:'auto'})}track.scoreAnchors=[...auto,...manual].sort((a,b)=>a.beatIndex-b.beatIndex);remapManualAnchors();
     const found=firsts.length,total=need||found,kind=found===total?'good':'warn';if(!need){setScoreAnalysisStatus(`Score analyzed · ${found} measure${found===1?'':'s'} found.`,'good',100);renderScoreOverlay();updateScoreMapReadout();syncScorePdfUi();return}setScoreAnalysisStatus(found===total?`Score analyzed · ${found} measures matched to your click track.`:`Score analyzed · ${found} likely measures found for ${total} click-track measures. The automatic map is usable; fix any missed barline with Fix / Add Marker.`,kind,100);renderScoreOverlay();updateScoreMapReadout();syncScorePdfUi();
   }
   // ---- v1.5.1: build a click track straight from the sheet-music PDF ----
@@ -3319,7 +3323,7 @@ html,body{background:var(--ground)!important}
     const taps=[],acc=[];let t=0;for(let m=1;m<=measures;m++){const bpb=scoreBeatsPerMeasure(meterAt(m));for(let k=0;k<bpb;k++){taps.push(Math.round(t));acc.push(k===0?1:0);t+=interval}}
     const beats=taps.length;track.taps=taps;track.tapAccents=acc;
     track.durationMs=Math.round(beats*interval);track.targetBpm=bpm;track.accentMode='custom';
-    track.scoreMap=map.map(x=>({...x}));track.subdivisionMap=[];track.scoreAnchors=(track.scoreAnchors||[]).filter(a=>a.source!=='auto'&&Number(a.beatIndex)<beats);
+    track.scoreMap=map.map(x=>({...x}));track.subdivisionMap=[];track.scoreAnchors=(track.scoreAnchors||[]).filter(a=>a.source!=='auto');
     track.fromScore=true;track.loadedId=null;track.loadedFolderId=null;track.loadedName=(track.scorePdfName||'Score').replace(/\.pdf$/i,'')+' click track';
     editHistory=[];frozenViewMs=track.durationMs;segmentBaseMs=track.durationMs;
     syncControls();setCreateMode('review');renderDetails();autoMapDetectedScore();
@@ -3327,7 +3331,7 @@ html,body{background:var(--ground)!important}
     setScoreAnalysisStatus(msg,'good',100);if(auto)setTimeout(()=>{try{$('scoreClickCard')?.scrollIntoView({block:'center',behavior:'smooth'})}catch{}},150);$('status').textContent=auto?`Click track built from ${track.scorePdfName||'the score'}. Check the tempo and time signature in Score Follow.`:msg;
   }
   // Test hook for tests/score_corpus.js (read-only; only present with ?tt-test in the URL).
-  if(/[?&]tt-test\b/.test(location.search))window.__TT_TEST__={scoreBoxes:()=>scoreDetectedRawBoxes.map(b=>({...b})),track:()=>({taps:track.taps.length,tapMs:[...track.taps],scoreMap:JSON.parse(JSON.stringify(track.scoreMap||[])),bpm:track.targetBpm}),rec:()=>({recording,segmentStartReal,segmentBaseMs,listenActive,playing}),analysis:()=>({taps:[...analysisTrainingTaps],down:analysisFirstDownbeatSec,beats:beatAnalysis?.rawBeats?.length||0,firstBeats:(beatAnalysis?.rawBeats||[]).slice(0,6),pos:(beatAnalysis?.barPositions||[]).slice(0,12)}),tempo:()=>scoreDetectedTempo,meters:()=>scoreDetectedMeters,total:()=>scoreDetectedTotal,busy:()=>scoreAnalysisRunning,renderPage:async p=>{const page=await scorePdfDoc.getPage(p),base=page.getViewport({scale:1}),scale=Math.min(170/72,Math.sqrt(7e6/Math.max(1,base.width*base.height))),vp=page.getViewport({scale}),cv=document.createElement('canvas');cv.width=Math.round(vp.width);cv.height=Math.round(vp.height);const c=cv.getContext('2d');c.fillStyle='#fff';c.fillRect(0,0,cv.width,cv.height);await page.render({canvasContext:c,viewport:vp}).promise;return cv.toDataURL('image/png')}};
+  if(/[?&]tt-test\b/.test(location.search))window.__TT_TEST__={scoreBoxes:()=>scoreDetectedRawBoxes.map(b=>({...b})),track:()=>({taps:track.taps.length,tapMs:[...track.taps],scoreMap:JSON.parse(JSON.stringify(track.scoreMap||[])),bpm:track.targetBpm}),rec:()=>({recording,segmentStartReal,segmentBaseMs,listenActive,playing}),analysis:()=>({taps:[...analysisTrainingTaps],down:analysisFirstDownbeatSec,beats:beatAnalysis?.rawBeats?.length||0,firstBeats:(beatAnalysis?.rawBeats||[]).slice(0,6),pos:(beatAnalysis?.barPositions||[]).slice(0,12)}),tempo:()=>scoreDetectedTempo,meters:()=>scoreDetectedMeters,total:()=>scoreDetectedTotal,busy:()=>scoreAnalysisRunning,renderPage:async p=>{const page=await scorePdfDoc.getPage(p),base=page.getViewport({scale:1}),scale=Math.min(170/72,Math.sqrt(7e6/Math.max(1,base.width*base.height))),vp=page.getViewport({scale}),cv=document.createElement('canvas');cv.width=Math.round(vp.width);cv.height=Math.round(vp.height);const c=cv.getContext('2d');c.fillStyle='#fff';c.fillRect(0,0,cv.width,cv.height);await page.render({canvasContext:c,viewport:vp}).promise;return cv.toDataURL('image/png')},setRecordedTrack:(taps,accents,map)=>{track.taps=[...taps];track.tapAccents=[...accents];track.durationMs=taps.at(-1)+600;track.scoreMap=map;track.fromScore=false;track.scoreAnchors=[];renderDetails();autoMapDetectedScore()},anchors:()=>JSON.parse(JSON.stringify(track.scoreAnchors||[])),boxes:()=>JSON.parse(JSON.stringify(track.scoreMeasureBoxes||[])),events:()=>expandedTrackClickEvents().filter(e=>e.primary).map(e=>({i:e.index,m:e.meta.measure,b:e.meta.beat,acc:e.accent})),page:()=>scorePdfPage};
   async function analyzeScorePdf(silent=false){
     if(!scorePdfDoc||scoreAnalysisRunning)return;scoreAnalysisRunning=true;scoreDetectedRawBoxes=[];syncScorePdfUi();const button=$('scoreAnalyzeButton');if(button)button.textContent='Analyzing…';
     try{
@@ -3367,8 +3371,10 @@ html,body{background:var(--ground)!important}
     const m=trackBeatMeta(idx),existing=(track.scoreAnchors||[]).find(a=>Number(a.beatIndex)===idx),autoBoxes=(track.scoreMeasureBoxes||[]).length;
     $('scoreMapReadout').textContent=autoBoxes&&!scoreMappingActive?`Automatic score map ready · ${autoBoxes} measures. Use Fix / Add Marker only where TempoTapp is wrong.`:`${scoreMappingActive?'Click the PDF for':'Selected'} M${m.measure}.${m.beat} · beat ${idx+1}${existing?` · already on page ${existing.page}`:''}. ${mapped} marker${mapped===1?'':'s'} total.`;syncScorePdfUi();
   }
+  function endScoreMapping(){scoreMappingActive=false;$('scoreStage').classList.remove('mapping-active');$('scoreStartMappingButton').textContent='Fix / Add Marker';updateScoreMapReadout();renderScoreOverlay()}
   function startScoreMapping(){
-    if(!scorePdfDoc||!track.taps.length)return;const targets=scoreMapTargets(),firstUnmapped=targets.findIndex(i=>!(track.scoreAnchors||[]).some(a=>Number(a.beatIndex)===i));scoreMapCursor=firstUnmapped>=0?firstUnmapped:0;scoreMappingActive=true;
+    if(scoreMappingActive){endScoreMapping();return}
+    if(!scorePdfDoc||!track.taps.length)return;if(scoreEditMode!=='off')setScoreEditMode(scoreEditMode);const targets=scoreMapTargets(),firstUnmapped=targets.findIndex(i=>!(track.scoreAnchors||[]).some(a=>Number(a.beatIndex)===i));scoreMapCursor=firstUnmapped>=0?firstUnmapped:0;scoreMappingActive=true;
     // Only disable score scrolling while the user is intentionally placing a marker.
     $('scoreStage').classList.add('mapping-active');$('scoreStartMappingButton').textContent='Mapping… click the PDF';updateScoreMapReadout();renderScoreOverlay()
   }
@@ -3378,9 +3384,13 @@ html,body{background:var(--ground)!important}
   function clearScoreMapping(){track.scoreAnchors=(track.scoreAnchors||[]).filter(a=>a.source==='auto');scoreMapCursor=0;scoreMappingActive=false;$('scoreStage').classList.remove('mapping-active');$('scoreStartMappingButton').textContent='Fix / Add Marker';renderScoreOverlay();updateScoreMapReadout()}
   function mapScoreClick(e){
     if(!scoreMappingActive||!scorePdfDoc||!track.taps.length)return;const stage=$('scoreStage'),r=stage.getBoundingClientRect();if(r.width<=0||r.height<=0)return;
-    const idx=currentScoreTargetIndex();if(idx===null)return;const x=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width)),y=Math.max(0,Math.min(1,(e.clientY-r.top)/r.height));
-    track.scoreAnchors=(track.scoreAnchors||[]).filter(a=>Number(a.beatIndex)!==idx);track.scoreAnchors.push({beatIndex:idx,page:scorePdfPage,x,y,source:'manual'});track.scoreAnchors.sort((a,b)=>a.beatIndex-b.beatIndex);
-    const targets=scoreMapTargets();if(scoreMapCursor<targets.length-1)scoreMapCursor++;else{scoreMappingActive=false;$('scoreStage').classList.remove('mapping-active');$('scoreStartMappingButton').textContent='Fix / Add Marker'}renderScoreOverlay();updateScoreMapReadout()
+    let idx=currentScoreTargetIndex();if(idx===null)return;const x=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width)),y=Math.max(0,Math.min(1,(e.clientY-r.top)/r.height));
+    // A marker goes to the measure and beat it was dropped on, so its label always matches its place on the page
+    // (before, every click took the "next" downbeat, so dots dropped on beats 2-3 became the next measures' beat 1).
+    {const hit=(track.scoreMeasureBoxes||[]).filter(b=>Number(b.page)===scorePdfPage&&y>=b.y0-0.02&&y<=b.y1+0.02&&x>=b.x0&&x<=b.x1)[0];
+      if(hit){const bpb=scoreBeatsPerMeasure(trackMeterAtMeasure(Number(hit.measure))),L=Number.isFinite(hit.cx0)&&hit.cx0>hit.x0&&hit.cx0<hit.x1?Math.min(hit.cx0,x):hit.x0,f=(x-L)/Math.max(1e-6,hit.x1-L),beat=Math.max(1,Math.min(bpb,Math.round(f*bpb)+1)),j=trackIndexForMeasureBeat(Number(hit.measure),beat);if(j>=0){idx=j;const t=scoreMapTargets(),k=t.indexOf(j);if(k>=0)scoreMapCursor=k}}}
+    track.scoreAnchors=(track.scoreAnchors||[]).filter(a=>Number(a.beatIndex)!==idx);track.scoreAnchors.push({beatIndex:idx,beat:trackBeatMeta(idx).beat,page:scorePdfPage,x,y,source:'manual'});track.scoreAnchors.sort((a,b)=>a.beatIndex-b.beatIndex);
+    if((track.scoreMeasureBoxes||[]).length||scoreMapCursor>=scoreMapTargets().length-1){endScoreMapping();return}scoreMapCursor++;renderScoreOverlay();updateScoreMapReadout()
   }
   function scorePointForBeat(index){
     const anchors=[...(track.scoreAnchors||[])].sort((a,b)=>a.beatIndex-b.beatIndex),exactManual=anchors.find(a=>Number(a.beatIndex)===index&&a.source!=='auto');if(exactManual)return exactManual;
@@ -3399,20 +3409,32 @@ html,body{background:var(--ground)!important}
   function renumberScoreBoxes(){const L=scoreBoxesSorted();let n=0;for(const b of L){if(b.cont&&n>0)b.measure=n;else{n++;b.measure=n}}scoreDetectedTotal=n;return n}
   function shiftScoreMeters(fromMeasure,delta){for(const m of scoreDetectedMeters)if(m.measure>fromMeasure)m.measure=Math.max(2,m.measure+delta);const seen=new Set();scoreDetectedMeters=scoreDetectedMeters.filter(m=>{if(seen.has(m.measure))return false;seen.add(m.measure);return true})}
   function scoreEditSnapshot(){scoreEditHistory.push({boxes:scoreDetectedRawBoxes.map(b=>({...b})),meters:scoreDetectedMeters.map(m=>({...m})),total:scoreDetectedTotal});if(scoreEditHistory.length>40)scoreEditHistory.shift();if($('scoreEditUndo'))$('scoreEditUndo').disabled=false}
+  // A marker the user placed belongs to the measure it sits in on the page, not to a beat number:
+  // after a barline is added/removed or the tempo/meter changes, find its measure again and keep its beat.
+  function remapManualAnchors(){
+    const manual=(track.scoreAnchors||[]).filter(a=>a.source!=='auto'),boxes=track.scoreMeasureBoxes||[];if(!manual.length||!boxes.length)return;const kept=[];
+    for(const a of manual){const cand=boxes.filter(b=>Number(b.page)===Number(a.page)&&a.y>=b.y0-0.02&&a.y<=b.y1+0.02);const d=b=>a.x<b.x0?b.x0-a.x:a.x>b.x1?a.x-b.x1:0;cand.sort((p,q)=>d(p)-d(q));const box=cand[0];
+      if(!box||d(box)>0.03){if(Number(a.beatIndex)<track.taps.length)kept.push(a);continue}
+      const bpb=scoreBeatsPerMeasure(trackMeterAtMeasure(Number(box.measure))),beat=Math.max(1,Math.min(bpb,Number(a.beat)||trackBeatMeta(a.beatIndex).beat)),idx=trackIndexForMeasureBeat(Number(box.measure),beat);if(idx>=0)kept.push({...a,beatIndex:idx,beat})}
+    const seen=new Set(),man=kept.reverse().filter(a=>{if(seen.has(a.beatIndex))return false;seen.add(a.beatIndex);return true});
+    track.scoreAnchors=[...(track.scoreAnchors||[]).filter(a=>a.source==='auto'),...man].sort((a,b)=>a.beatIndex-b.beatIndex)}
   function applyScoreEdits(msg){
+    for(const a of track.scoreAnchors||[])if(a.source!=='auto'&&!a.beat)a.beat=trackBeatMeta(a.beatIndex).beat;
     renumberScoreBoxes();scoreClickPrefill(scoreDetectedTotal);
     if(track.fromScore||!track.taps.length)makeClickTrackFromScore(false);else autoMapDetectedScore();
     renderScoreOverlay();if(msg)setScoreAnalysisStatus(`${msg} · ${scoreDetectedTotal} measures now.`,'good',100);
   }
   function undoScoreEdit(){const h=scoreEditHistory.pop();if(!h)return;scoreDetectedRawBoxes=h.boxes;scoreDetectedMeters=h.meters;scoreDetectedTotal=h.total;$('scoreEditUndo').disabled=!scoreEditHistory.length;applyScoreEdits('Undone')}
-  function setScoreEditMode(m){scoreEditMode=scoreEditMode===m?'off':m;document.querySelectorAll('[data-score-edit]').forEach(b=>b.classList.toggle('on',b.dataset.scoreEdit===scoreEditMode));$('scoreStage')?.classList.toggle('edit-remove',scoreEditMode==='remove');
+  function setScoreEditMode(m){scoreEditMode=scoreEditMode===m?'off':m;if(scoreEditMode!=='off'&&scoreMappingActive)endScoreMapping();document.querySelectorAll('[data-score-edit]').forEach(b=>b.classList.toggle('on',b.dataset.scoreEdit===scoreEditMode));$('scoreStage')?.classList.toggle('edit-remove',scoreEditMode==='remove');
     const hint=$('scoreEditHint');if(hint){hint.classList.toggle('hidden',scoreEditMode==='off');hint.textContent=scoreEditMode==='move'?'Drag a red barline left or right to where the real barline is. Drag a green ▼ to where beat 1 of that measure starts.':scoreEditMode==='add'?'Click inside a measure exactly where a missed barline is. A new measure is created and every later measure renumbers.':scoreEditMode==='remove'?'Click a red barline that isn’t a real barline. The two measures merge and every later measure renumbers.':''}
     ensureScoreContFlags();renderScoreOverlay()}
   function scoreStageFrac(e){const r=$('scoreStage').getBoundingClientRect();return{x:Math.max(0,Math.min(1,(e.clientX-r.left)/r.width)),y:Math.max(0,Math.min(1,(e.clientY-r.top)/r.height))}}
   function scoreBoxById(id){return scoreDetectedRawBoxes.find(b=>String(b.id)===String(id))}
   function scoreNextInSystem(b){const L=scoreBoxesSorted(),i=L.indexOf(b),n=L[i+1];return n&&n.page===b.page&&n.system===b.system?n:null}
   function scoreEditPointerDown(e){
-    if(scoreEditMode==='off'||!scoreDetectedRawBoxes.length)return;const h=e.target.closest('.score-bar-handle,.score-start-handle,.score-measure-box.addable');if(!h)return;const b=scoreBoxById(h.dataset.boxKey);if(!b)return;e.preventDefault();e.stopPropagation();
+    if(scoreEditMode==='off'||!scoreDetectedRawBoxes.length)return;let h=e.target.closest('.score-bar-handle,.score-start-handle,.score-measure-box.addable');
+    if(scoreEditMode==='add'){const f=scoreStageFrac(e),hit=scoreDetectedRawBoxes.find(b=>b.page===scorePdfPage&&f.x>b.x0&&f.x<b.x1&&f.y>=b.y0-0.01&&f.y<=b.y1+0.01);h=hit?{classList:{contains:c=>c==='score-measure-box'},dataset:{boxKey:scoreBoxKey(hit)}}:null}
+    if(!h)return;const b=scoreBoxById(h.dataset.boxKey);if(!b)return;e.preventDefault();e.stopPropagation();
     if(scoreEditMode==='remove'&&h.classList.contains('score-bar-handle')){scoreEditSnapshot();const n=scoreNextInSystem(b);
       if(n){b.x1=n.x1;scoreDetectedRawBoxes=scoreDetectedRawBoxes.filter(x=>x!==n);if(!n.cont)shiftScoreMeters(b.measure,-1)}
       else{const L=scoreBoxesSorted(),nx=L[L.indexOf(b)+1];if(!nx)return;if(!nx.cont){nx.cont=true;shiftScoreMeters(b.measure,-1)}}
@@ -3429,12 +3451,12 @@ html,body{background:var(--ground)!important}
     const ov=$('scoreOverlay');if(!ov)return;ov.innerHTML='';const activeMeta=Number.isInteger(activeBeat)?trackBeatMeta(activeBeat):null;
     for(const b of (track.scoreMeasureBoxes||[]).filter(x=>Number(x.page)===scorePdfPage)){
       const box=document.createElement('span');box.className=`score-measure-box${activeMeta&&Number(b.measure)===activeMeta.measure?' active':''}${scoreEditMode==='add'?' addable':''}`;box.dataset.boxKey=scoreBoxKey(b);box.style.left=`${b.x0*100}%`;box.style.top=`${b.y0*100}%`;box.style.width=`${Math.max(.2,(b.x1-b.x0)*100)}%`;box.style.height=`${Math.max(.2,(b.y1-b.y0)*100)}%`;const lab=document.createElement('span');lab.className='score-measure-label';lab.textContent=`M${b.measure}`;box.appendChild(lab);ov.appendChild(box);
-      const meter=trackMeterAtMeasure(Number(b.measure)),beats=scoreBeatsPerMeasure(meter);for(let beat=1;beat<=beats;beat++){const idx=trackIndexForMeasureBeat(Number(b.measure),beat);if(idx<0)continue;const pt=scorePointForBeat(idx);if(!pt||Number(pt.page)!==scorePdfPage||Math.abs(pt.y-b.y)>0.002||pt.x<b.x0-1e-6||pt.x>b.x1+1e-6)continue;const mark=document.createElement('span'),accent=explicitTapAccent(idx,beat===1||isAccent(idx));mark.className=`score-beat-mark${accent?' accent':''}`;mark.style.left=`${pt.x*100}%`;mark.style.top=`${b.y*100}%`;mark.title=`M${b.measure}.${beat}`;ov.appendChild(mark)}
+      const meter=trackMeterAtMeasure(Number(b.measure)),beats=scoreBeatsPerMeasure(meter);for(let beat=1;beat<=beats;beat++){const idx=trackIndexForMeasureBeat(Number(b.measure),beat);if(idx<0)continue;const pt=scorePointForBeat(idx);if(!pt||Number(pt.page)!==scorePdfPage||Math.abs(pt.y-b.y)>0.002||pt.x<b.x0-1e-6||pt.x>b.x1+1e-6)continue;const mark=document.createElement('span'),accent=beatAccent(idx);mark.className=`score-beat-mark${accent?' accent':''}`;mark.style.left=`${pt.x*100}%`;mark.style.top=`${b.y*100}%`;mark.title=`M${b.measure}.${beat}`;ov.appendChild(mark)}
       if(scoreEditMode!=='off'){const right=document.createElement('span');right.className='score-bar-handle';right.style.left=`${b.x1*100}%`;right.style.top=`${b.y0*100}%`;right.style.height=`${(b.y1-b.y0)*100}%`;right.dataset.boxKey=scoreBoxKey(b);right.title=scoreEditMode==='remove'?`Remove the barline after M${b.measure}`:`Drag to move the barline after M${b.measure}`;ov.appendChild(right);
         if(scoreEditMode==='move'){const st=document.createElement('span');st.className='score-start-handle';const cx=Number.isFinite(b.cx0)?b.cx0:b.x0;st.style.left=`${cx*100}%`;st.style.top=`${b.y*100}%`;st.dataset.boxKey=scoreBoxKey(b);st.title=`Drag to set where beat 1 of M${b.measure} sits`;ov.appendChild(st)}}
     }
     for(const a of (track.scoreAnchors||[]).filter(x=>Number(x.page)===scorePdfPage&&x.source!=='auto')){
-      const bi=Number(a.beatIndex)||0,meta=trackBeatMeta(bi),dot=document.createElement('button');dot.type='button';dot.className=`score-anchor${explicitTapAccent(bi,meta.downbeat||isAccent(bi))?' accent':''}${meta.downbeat?' downbeat':''}`;dot.style.left=`${a.x*100}%`;dot.style.top=`${a.y*100}%`;dot.title=`M${meta.measure}.${meta.beat} · beat ${bi+1}`;dot.dataset.scoreBeat=String(bi);ov.appendChild(dot);
+      const bi=Number(a.beatIndex)||0,meta=trackBeatMeta(bi),dot=document.createElement('button');dot.type='button';dot.className=`score-anchor${beatAccent(bi,meta)?' accent':''}${meta.downbeat?' downbeat':''}`;dot.style.left=`${a.x*100}%`;dot.style.top=`${a.y*100}%`;dot.title=`M${meta.measure}.${meta.beat} · beat ${bi+1}`;dot.dataset.scoreBeat=String(bi);ov.appendChild(dot);
       const lab=document.createElement('span');lab.className='score-anchor-label';lab.style.left=`${a.x*100}%`;lab.style.top=`${a.y*100}%`;lab.textContent=`M${meta.measure}.${meta.beat}`;ov.appendChild(lab)
     }
     if(Number.isInteger(activeBeat)){const p=scorePointForBeat(activeBeat);if(p&&Number(p.page)===scorePdfPage){const h=document.createElement('span');h.className='score-playhead';h.id='scorePlayhead';h.style.left=`${p.x*100}%`;h.style.top=`${p.y*100}%`;ov.appendChild(h);setTimeout(()=>h.scrollIntoView?.({block:'center',inline:'center',behavior:'smooth'}),0)}}
@@ -3449,7 +3471,7 @@ html,body{background:var(--ground)!important}
   function scorePracticeEvents(){return expandedTrackClickEvents().map(ev=>({...ev,t:ev.ms/1000,kind:ev.primary?'primary':'subdivision'}))}
   function scorePracticeTick(){
     if(!scorePracticeActive)return;let ms;if(scorePracticeClock){ms=scorePracticeNowMs();if(ms>=track.durationMs){stopScorePractice(false);scorePracticeClock=null;$('scorePracticeStatus').textContent='Practice finished.';return}}else{const a=tapAlongAudio();if(!a||a.paused)return;ms=mediaTimeAt(a)*1000}let i=0;while(i+1<track.taps.length&&track.taps[i+1]<=ms)i++;if(ms<track.taps[0]-40)i=-1;const p=i>=0?scorePointForBeat(i):null;
-    if(i!==scorePracticeLastBeat&&i>=0){scorePracticeLastBeat=i;if(p&&Number(p.page)!==scorePdfPage&&!scorePdfRendering){renderScorePage(Number(p.page)).then(()=>renderScoreOverlay(i))}else renderScoreOverlay(i);const meta=trackBeatMeta(i);$('scorePracticeStatus').textContent=`Following M${meta.measure}.${meta.beat} · beat ${i+1}${explicitTapAccent(i,meta.downbeat||isAccent(i))?' · accent':''}`}
+    if(i!==scorePracticeLastBeat&&i>=0&&!(p&&Number(p.page)!==scorePdfPage&&scorePdfRendering)){scorePracticeLastBeat=i;if(p&&Number(p.page)!==scorePdfPage){renderScorePage(Number(p.page)).then(()=>renderScoreOverlay(scorePracticeLastBeat))}else renderScoreOverlay(i);const meta=trackBeatMeta(i);$('scorePracticeStatus').textContent=`Following M${meta.measure}.${meta.beat} · beat ${i+1}${beatAccent(i,meta)?' · accent':''}`}
     scorePracticeRaf=requestAnimationFrame(scorePracticeTick)
   }
   async function startScorePractice(){
@@ -3693,7 +3715,7 @@ html,body{background:var(--ground)!important}
 
     track.taps.forEach((tapMs,index)=>{
       const start = Math.max(0,Math.round((tapMs/1000)*sampleRate));
-      const meta=trackBeatMeta(index),accent=explicitTapAccent(index,meta.downbeat||isAccent(index));
+      const meta=trackBeatMeta(index),accent=beatAccent(index,meta);
       const frequency = accent ? 1550 : 950;
       const amplitude = accent ? .72 : .48;
       for(let i=0;i<clickSamples && start+i<pcm.length;i++){
@@ -3732,7 +3754,7 @@ html,body{background:var(--ground)!important}
       const meta=trackBeatMeta(i),tick=ticks[i],qLen=scorePulseQuarterLength(meta.meter);
       if(meterChanges.has(i)){const mm=cleanMeter(meterChanges.get(i)).match(/^(\d+)\/(\d+)$/),num=Number(mm[1]),den=Number(mm[2]),pow=Math.round(Math.log2(den));events.push({tick,order:0,bytes:[0xff,0x58,0x04,num,Math.max(0,Math.min(7,pow)),24,8]})}
       if(i<taps.length-1){const gap=Math.max(20,taps[i+1]-taps[i]),quarterMs=gap/qLen;events.push({tick,order:1,bytes:[0xff,0x51,0x03,...midiTempoBytes(quarterMs)]})}
-      const accent=explicitTapAccent(i,meta.downbeat||isAccent(i)),note=accent?76:77,volume=clampClickVolume(track.clickVolume)/100,vel=Math.max(1,Math.min(127,Math.round((accent?122:92)*volume)));if(volume>0){events.push({tick,order:2,bytes:[0x99,note,vel]});events.push({tick:tick+Math.max(18,Math.round(ppq*.08)),order:5,bytes:[0x89,note,0]});}
+      const accent=beatAccent(i,meta),note=accent?76:77,volume=clampClickVolume(track.clickVolume)/100,vel=Math.max(1,Math.min(127,Math.round((accent?122:92)*volume)));if(volume>0){events.push({tick,order:2,bytes:[0x99,note,vel]});events.push({tick:tick+Math.max(18,Math.round(ppq*.08)),order:5,bytes:[0x89,note,0]});}
       if(i<taps.length-1){const factor=trackSubdivisionFactorForMeasure(meta.measure);if(factor>1&&volume>0){const next=ticks[i+1],span=next-tick,subVel=Math.max(1,Math.min(127,Math.round(58*volume)));for(let k=1;k<factor;k++){const st=tick+Math.round(span*k/factor);events.push({tick:st,order:3,bytes:[0x99,75,subVel]});events.push({tick:st+Math.max(12,Math.round(ppq*.05)),order:6,bytes:[0x89,75,0]})}}}
     }
     const lastTick=ticks.at(-1)||0,lastMeta=trackBeatMeta(taps.length-1),endTick=lastTick+Math.max(1,Math.round(ppq*scorePulseQuarterLength(lastMeta.meter)));events.push({tick:endTick,order:9,bytes:[0xff,0x2f,0x00]});events.sort((a,b)=>a.tick-b.tick||a.order-b.order);
@@ -5327,7 +5349,7 @@ html,body{background:var(--ground)!important}
   $('scoreMapMode').addEventListener('change',()=>{scoreMapCursor=0;updateScoreMapReadout()});
   $('scoreStage').addEventListener('pointerdown',e=>{if(!e.target.closest('.score-anchor'))mapScoreClick(e)});
   document.querySelectorAll('[data-score-edit]').forEach(b=>b.addEventListener('click',()=>setScoreEditMode(b.dataset.scoreEdit)));$('scoreEditUndo').addEventListener('click',undoScoreEdit);
-  $('scoreOverlay').addEventListener('pointerdown',scoreEditPointerDown);$('scoreOverlay').addEventListener('pointermove',scoreEditPointerMove);$('scoreOverlay').addEventListener('pointerup',scoreEditPointerUp);$('scoreOverlay').addEventListener('pointercancel',scoreEditPointerUp);
+  $('scoreStage').addEventListener('pointerdown',scoreEditPointerDown,true);$('scoreOverlay').addEventListener('pointermove',scoreEditPointerMove);$('scoreOverlay').addEventListener('pointerup',scoreEditPointerUp);$('scoreOverlay').addEventListener('pointercancel',scoreEditPointerUp);
   $('scoreOverlay').addEventListener('click',e=>{const b=e.target.closest('.score-anchor');if(!b)return;const idx=Number(b.dataset.scoreBeat),targets=scoreMapTargets(),pos=targets.indexOf(idx);if(pos>=0){scoreMapCursor=pos;scoreMappingActive=true;$('scoreStartMappingButton').textContent='Mapping… click the PDF';updateScoreMapReadout()}});
   $('scorePracticeStart').addEventListener('click',startScorePractice);
   $('scorePracticePause').addEventListener('click',pauseScorePractice);
