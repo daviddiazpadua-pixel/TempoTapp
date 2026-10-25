@@ -242,3 +242,10 @@ noteheads and rests, derived from these fonts (no font software is included):
   Leipzig, Gootville (as bundled with Verovio) — SIL Open Font License 1.1
   Emmentaler (LilyPond) — SIL Open Font License 1.1 / GPL (dual)
   DejaVu Serif Bold — Bitstream Vera / DejaVu license
+
+-------------------------------------------------------------------------------
+vendor/lame.min.js — LAME MP3 encoder (lamejs 1.2.1 JavaScript port)
+-------------------------------------------------------------------------------
+LAME — https://lame.sourceforge.net · lamejs — https://github.com/zhuker/lamejs
+Licensed under the GNU Lesser General Public License v3 (LGPL-3.0). Used unmodified as a separate,
+replaceable file, loaded only when the user exports an MP3.

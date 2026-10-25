@@ -1,6 +1,7 @@
 <!doctype html>
 <!--
   TempoTapp — Click Track Creator, Beat Analyzer, and Audio Warp
+  Version 1.7.0 (2026-10-25) — timing engine, tap training that steers the whole piece, exports, on-PDF fixes
   Version 1.6.0 (2026-10-25) — new score reader (vendor/score-omr.js): real barline + time-signature detection
   Version 1.5.2 (2026-10-25) — a PDF works from every upload spot + "From Sheet Music" create option
   Version 1.5.1 (2026-10-25) — sheet-music PDF now creates the click track
@@ -270,6 +271,16 @@ main{padding-top:34px}.recorder-header,.library-header,.warp-header,.help-header
 .score-practice-status{margin-top:8px;color:var(--muted);font-size:.8rem}
 .score-help{color:var(--muted);font-size:.78rem;line-height:1.55}
 .score-file-name{color:var(--soft);font-size:.8rem;font-weight:800;overflow-wrap:anywhere}
+.tt-countdown{font:800 2.4rem/1.1 var(--font-display,serif);text-align:center;padding:8px 0;color:var(--text)}.tt-countdown.go{color:#1f6b3a}
+.tap-chip-list{display:flex;flex-wrap:wrap;gap:4px;max-height:132px;overflow:auto;margin-top:6px}.tap-chip-list span{font:600 .72rem/1 ui-monospace,monospace;padding:4px 6px;border:1px solid var(--line);border-radius:7px;background:var(--surface,#fff)}
+.downbeat-fine{display:grid;gap:6px;margin-top:8px}.downbeat-fine-row{display:flex;flex-wrap:wrap;gap:5px;align-items:center}.downbeat-fine-row .secondary{padding:6px 9px;font-size:.78rem}.downbeat-sec{display:flex;align-items:center;gap:4px;font-size:.8rem}.downbeat-sec input{width:96px;min-height:34px}
+.analysis-timeline-spacer{position:relative;height:300px}.analysis-timeline-spacer .beat-map-canvas{position:sticky;left:0;min-width:0}.analysis-playhead{position:absolute;top:0;height:300px;width:2px;background:#141414;pointer-events:none;z-index:2}.analysis-playhead span{position:absolute;top:2px;left:4px;font:700 10px system-ui;background:#141414;color:#f4f3ee;padding:2px 5px;border-radius:5px;white-space:nowrap}.analysis-play-btn{margin-right:10px;min-width:92px}
+.score-edit-tools{flex-wrap:wrap}.score-edit-label{font-size:.75rem;color:var(--muted)}.score-edit-tools .on{background:var(--bar,#141414)!important;color:var(--bar-text,#f4f3ee)!important;border-color:var(--bar,#141414)!important}
+.score-edit-hint{font-size:.78rem;padding:6px 10px;margin:4px 0;border-radius:8px;background:rgba(31,107,58,.08);color:var(--text)}
+.score-bar-handle{position:absolute;width:14px;transform:translateX(-50%);pointer-events:auto;cursor:ew-resize;z-index:3}.score-bar-handle::after{content:'';position:absolute;left:5px;top:0;bottom:0;width:4px;border-radius:2px;background:rgba(181,18,27,.85)}.score-stage.edit-remove .score-bar-handle{cursor:pointer}.score-stage.edit-remove .score-bar-handle::after{background:rgba(181,18,27,.95);box-shadow:0 0 0 3px rgba(181,18,27,.18)}
+.score-start-handle{position:absolute;width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:11px solid #1f6b3a;transform:translate(-50%,-140%);pointer-events:auto;cursor:ew-resize;z-index:3}
+.score-measure-box.addable{pointer-events:auto;cursor:copy}.score-measure-box.addable:hover{background:rgba(31,107,58,.08)}
+.tap-cal-controls{display:flex;gap:6px;align-items:center}.tap-cal-panel{display:grid;gap:8px;margin:6px 0 10px}.tap-cal-panel .tap{min-height:110px}
 .score-click-card{margin-top:4px;padding:12px;border:1px solid rgba(20,20,20,0.28);border-radius:14px;background:rgba(20,20,20,0.06);display:grid;gap:9px}.score-click-head{display:grid;gap:3px}.score-click-head strong{font-size:.9rem}.score-click-head span{font-size:.75rem;line-height:1.5;color:var(--muted)}.score-click-card input{min-height:38px;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:#e8e8e5;color:var(--text);width:110px;font:inherit}
 .score-auto-card{margin-top:4px;padding:12px;border:1px solid rgba(20,20,20,0.18);border-radius:14px;background:rgba(20,20,20,0.04);display:grid;gap:9px}
 .score-auto-row{display:flex;gap:8px;align-items:end;flex-wrap:wrap}.score-auto-row label{display:grid;gap:5px;color:var(--muted);font-size:.7rem}.score-auto-row select{min-height:38px;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:#e8e8e5;color:var(--text);min-width:170px}.score-analysis-status{font-size:.75rem;line-height:1.5;color:var(--muted)}.score-analysis-status.working{color:#141414}.score-analysis-status.good{color:#1f6b3a}.score-analysis-status.warn{color:#9a6b00}.score-analysis-progress{height:7px;background:#ecebe9;border:1px solid var(--line);border-radius:999px;overflow:hidden}.score-analysis-progress>span{display:block;height:100%;width:0%;background:linear-gradient(90deg,#1f6b3a,#141414);transition:width .18s ease}.score-measure-box{position:absolute;border:1px solid rgba(31,107,58,0.34);background:rgba(31,107,58,0.025);border-radius:4px;pointer-events:none}.score-measure-box.active{border-color:#b5121b;background:rgba(181,18,27,0.07);box-shadow:0 0 0 2px rgba(181,18,27,0.12)}.score-measure-label{position:absolute;left:3px;top:2px;padding:1px 4px;border-radius:4px;background:rgba(242,242,240,0.72);color:#1f6b3a;font-size:.55rem;font-weight:900;line-height:1.2}.score-beat-mark{position:absolute;width:7px;height:7px;border-radius:50%;transform:translate(-50%,-50%);background:rgba(20,20,20,0.82);border:1px solid #fff;pointer-events:none}.score-beat-mark.accent{width:10px;height:10px;background:#b5121b}.score-auto-note{font-size:.7rem;color:var(--muted);line-height:1.45}.score-auto-count{font-weight:900;color:#1f6b3a}
@@ -916,6 +927,7 @@ html,body{background:var(--ground)!important}
         <div class="tap-along-actions">
           <button class="hero-primary" id="tapAlongStartButton" disabled>▶ Play &amp; Tap</button>
           <button class="secondary" id="tapAlongPauseButton" disabled>Ⅱ Pause Tap-Along</button>
+          <button class="secondary" id="tapAlongListenButton" disabled>▶ Listen: Recording + Clicks</button>
           <button class="secondary" id="tapAlongRemoveButton" disabled>Remove Audio</button>
         </div>
         <div class="tap-dual-actions">
@@ -958,6 +970,7 @@ html,body{background:var(--ground)!important}
             <label>Measures<input id="scoreClickMeasures" type="number" inputmode="numeric" min="1" max="2000" step="1" value=""></label>
             <button class="hero-primary compact-primary" id="scoreMakeClickButton" disabled>Make Click Track</button>
           </div>
+          <div class="score-auto-row"><button class="secondary compact-primary" id="scoreClickPlayButton" disabled>▶ Play Click Track</button><button class="secondary compact-primary" id="scoreClickStopButton" disabled>■ Stop</button><span class="score-analysis-status" id="scoreClickPlayStatus"></span></div>
         </div>
       </div>
     </div>
@@ -968,9 +981,19 @@ html,body{background:var(--ground)!important}
           <span class="score-page-label" id="scorePageLabel">Page — / —</span>
           <button class="secondary compact-primary" id="scoreNextPage">Page →</button>
         </div>
+        <div class="score-toolbar-group score-edit-tools" role="group" aria-label="Fix measures">
+          <span class="score-edit-label">Fix measures:</span>
+          <button class="secondary compact-primary" data-score-edit="move" type="button">Move barline</button>
+          <button class="secondary compact-primary" data-score-edit="add" type="button">Add barline</button>
+          <button class="secondary compact-primary" data-score-edit="remove" type="button">Remove barline</button>
+          <button class="secondary compact-primary" id="scoreEditUndo" type="button" disabled>Undo</button>
+        </div>
         <div class="score-toolbar-group">
           <button class="secondary compact-primary" id="scoreRemovePdfButton">Remove PDF</button>
         </div>
+      </div>
+      <div class="score-edit-hint hidden" id="scoreEditHint"></div>
+      <div class="score-toolbar-spacer">
       </div>
       <div class="score-stage-shell" id="scoreStageShell">
         <div class="score-stage" id="scoreStage">
@@ -1028,6 +1051,9 @@ html,body{background:var(--ground)!important}
         <button class="secondary" id="resetButton">Reset</button>
         <button class="secondary save-btn" id="saveButton" disabled>Save Click Track</button>
         <button class="secondary" id="exportButton" disabled>Download MIDI (.mid)</button>
+        <button class="secondary" id="exportMp3Button" disabled>Download MP3</button>
+        <button class="secondary" id="exportWavButton" disabled>Download WAV</button>
+        <button class="secondary hidden" id="exportMixMp3Button" disabled>Recording + Clicks (MP3)</button>
       </div>
     </section>
 
@@ -1180,15 +1206,24 @@ html,body{background:var(--ground)!important}
     <div class="analyze-anchor-grid">
       <div class="anchor-box" id="tapTrainingBox">
         <h3>Tap a few real beats</h3>
-        <p>Play the recording and tap 4–12 beats the way a musician would conduct them. TempoTapp uses them as phase and local-tempo anchors — not as an average BPM.</p>
+        <p>Press Start, wait for the 3-2-1 count-in, then tap the beat (Space or the Tap Beat button) the way you'd conduct it. Tap 8 or more beats, ideally in a couple of different places. The analyzer uses your beat everywhere in the piece: the pulse you tap, where it falls, and the tempo around it.</p>
         <div class="anchor-actions"><button class="secondary" id="startTrainingTapsButton">Start Tap Training</button><button class="hero-primary compact-primary" id="trainingTapButton" disabled>Tap Beat</button><button class="secondary" id="clearTrainingTapsButton">Clear</button></div>
+        <div class="tt-countdown hidden" id="trainingCountdown" aria-live="assertive"></div>
         <div class="anchor-readout" id="trainingTapReadout">No reference taps yet.</div>
+        <div class="tap-chip-list" id="trainingTapList"></div>
       </div>
       <div class="anchor-box">
         <h3>Mark the first downbeat</h3>
-        <p>If you know where bar 1 begins, move the player there and mark it. This makes bar/downbeat labeling much more reliable.</p>
-        <div class="anchor-actions"><button class="secondary" id="setFirstDownbeatButton">Set at playhead</button><button class="secondary" id="clearFirstDownbeatButton">Clear</button></div>
+        <p>Press Tap Downbeat: after a 3-2-1 count-in the recording plays from the start. Press Space (or the button) on beat 1 of the first full bar. Then fine-tune it to the millisecond below and press Check to hear it.</p>
+        <div class="anchor-actions"><button class="hero-primary compact-primary" id="tapDownbeatButton">Tap Downbeat</button><button class="secondary" id="setFirstDownbeatButton">Set at playhead</button><button class="secondary" id="clearFirstDownbeatButton">Clear</button></div>
+        <div class="tt-countdown hidden" id="downbeatCountdown" aria-live="assertive"></div>
         <div class="anchor-readout" id="firstDownbeatReadout">No downbeat anchor set.</div>
+        <div class="downbeat-fine hidden" id="downbeatFine">
+          <div class="downbeat-fine-row"><button class="secondary" data-db-nudge="-0.05">−50 ms</button><button class="secondary" data-db-nudge="-0.01">−10</button><button class="secondary" data-db-nudge="-0.002">−2</button>
+          <label class="downbeat-sec"><input class="text-input" id="downbeatSecInput" type="number" step="0.001" min="0" inputmode="decimal"> s</label>
+          <button class="secondary" data-db-nudge="0.002">+2</button><button class="secondary" data-db-nudge="0.01">+10</button><button class="secondary" data-db-nudge="0.05">+50 ms</button></div>
+          <div class="downbeat-fine-row"><button class="secondary" id="downbeatCheckButton">▶ Check (plays 2 s before, clicks on beat 1)</button></div>
+        </div>
       </div>
     </div>
     <div class="analyze-run-row"><button class="hero-primary" id="runAudioAnalysisButton" disabled>Analyze Beat Map</button>
@@ -1202,13 +1237,13 @@ html,body{background:var(--ground)!important}
     <div class="step-number done">✓</div>
     <div class="section-head"><div><h2>Recording beat map</h2><p>This is TempoTapp’s click track for the imported audio. Review it before you warp.</p></div><span class="match-confidence" id="analysisConfidence"></span></div>
     <div class="beat-map-summary" id="analysisSummary"></div>
-    <div class="analysis-timeline-toolbar"><div><strong>Full recording timeline</strong><div class="analysis-beat-axis-note">The horizontal axis is musical position (measure.beat), not seconds. Scroll to inspect the entire piece.</div></div><label class="zoom-control">Beat spacing <input id="analysisBeatZoom" type="range" min="18" max="72" step="2" value="34"></label></div><div class="analysis-touch-tools" id="analysisTouchTools"><button class="secondary" id="analysisTouchEditToggle" type="button">Edit beats on touch</button><span class="small muted" id="analysisTouchEditHint">Scroll normally. Turn Edit on only when you want to drag beat lines.</span></div>
-    <div class="analysis-timeline-scroll" id="analysisTimelineScroll"><canvas class="beat-map-canvas" id="analysisCanvas" width="1200" height="300" aria-label="Editable full-recording waveform and detected beat map"></canvas></div>
+    <div class="analysis-timeline-toolbar"><button class="hero-primary compact-primary analysis-play-btn" id="analysisPlayButton" type="button">▶ Play</button><div><strong>Full recording timeline</strong><div class="analysis-beat-axis-note">Press Play to hear the recording with the analyzed clicks; the playhead moves across the beat map and the view follows it. Click the waveform to jump there.</div></div><label class="zoom-control">Beat spacing <input id="analysisBeatZoom" type="range" min="18" max="72" step="2" value="34"></label></div><div class="analysis-touch-tools" id="analysisTouchTools"><button class="secondary" id="analysisTouchEditToggle" type="button">Edit beats on touch</button><span class="small muted" id="analysisTouchEditHint">Scroll normally. Turn Edit on only when you want to drag beat lines.</span></div>
+    <div class="analysis-timeline-scroll" id="analysisTimelineScroll"><div class="analysis-timeline-spacer" id="analysisTimelineSpacer"><canvas class="beat-map-canvas" id="analysisCanvas" width="1200" height="300" aria-label="Editable full-recording waveform and detected beat map"></canvas><div class="analysis-playhead hidden" id="analysisPlayhead"><span id="analysisPlayheadLabel"></span></div></div></div>
     <div class="beat-map-instructions"><strong>Edit it directly:</strong> drag a beat line left/right · double-click the waveform to add a beat · Shift-click near a beat to remove it. Thicker green lines are downbeats. Beat labels run across the entire recording.</div>
     <div class="meter-map-panel"><div class="meter-map-head"><div><h3>Detected time-signature map</h3><p>TempoTapp reports changes by <strong>beat number</strong>. You can correct the map in plain language.</p></div></div><div class="meter-map-report" id="meterMapReport"></div><div class="meter-correction-row"><input class="meter-correction-input" id="meterCorrectionInput" type="text" placeholder="Try: ‘It switches to 3/4 at beat 57’ or ‘That change is actually at beat 64’"><button class="secondary" id="applyMeterCorrectionButton">Apply Correction</button></div><div class="meter-correction-response" id="meterCorrectionResponse"></div></div>
     <div class="analysis-subdivision-panel"><h3>Subdivision map for the generated click track</h3><p>Keep the analyzed primary beat map intact, then add extra click subdivisions by <strong>measure</strong>. This can change section by section.</p><div class="analysis-subdivision-row"><label>From measure<input id="analysisSubStart" type="number" min="1" step="1" value="1"></label><label>Through measure<input id="analysisSubEnd" type="number" min="1" step="1" value="4"></label><label>Subdivision<select id="analysisSubType"><option value="2">2 per beat · eighths</option><option value="3" selected>3 per beat · triplets / compound</option><option value="4">4 per beat · sixteenths</option></select></label><button class="secondary" id="addAnalysisSubdivisionButton">+ Add region</button></div><div class="analysis-subdivision-list" id="analysisSubdivisionMapList"></div><div class="map-note">These extra clicks are for the click track and MIDI. They do not replace the analyzed beat anchors used by Warp.</div></div>
     <div class="analysis-source-check"><div class="output-badge source-check-badge">FULL BEAT CHECK</div><h3>Original recording + live analyzed clicks</h3><p>Play anywhere in the recording. TempoTapp overlays clicks for the <strong>entire analyzed beat map</strong>, not just the opening bars.</p><audio id="analysisBeatPreview" class="warp-audio" controls playsinline></audio><div class="click-volume-control" style="margin-top:10px"><div class="click-volume-head"><label class="field-label" for="analysisClickVolumePreview">Detector Click Volume</label><span class="click-volume-value" id="analysisClickVolumePreviewValue">100%</span></div><input id="analysisClickVolumePreview" type="range" min="0" max="150" step="1" value="100" aria-label="Detector preview click volume"><div class="click-volume-scale"><span>Mute</span><span>100%</span><span>150%</span></div></div><div class="full-beat-check-note"><strong>Tip:</strong> seek anywhere, then press play; the clicks resume from that beat.</div></div>
-    <div class="beat-map-actions"><button class="secondary" id="undoAnalysisEditButton">Undo Edit</button><button class="secondary" id="reanalyzeButton">Re-analyze</button><button class="secondary" id="downloadAnalysisMidiButton">Download Beat Map MIDI</button><button class="secondary create-from-analysis" id="createTrackFromAnalysisButton">Create Click Track from Analysis</button><button class="hero-primary" id="useAnalysisForWarpButton">Go to Warp →</button></div>
+    <div class="beat-map-actions"><button class="secondary" id="undoAnalysisEditButton">Undo Edit</button><button class="secondary" id="reanalyzeButton">Re-analyze</button><button class="secondary" id="downloadAnalysisMidiButton">Download Beat Map MIDI</button><button class="secondary" id="downloadAnalysisMixMp3Button">Recording + Clicks (MP3)</button><button class="secondary" id="downloadAnalysisMixWavButton">Recording + Clicks (WAV)</button><button class="secondary" id="downloadAnalysisClicksMp3Button">Clicks Only (MP3)</button><button class="hero-primary" id="useAnalysisForWarpButton">Go to Warp →</button></div>
   </section>
 </main>
 </div>
@@ -1428,6 +1463,9 @@ html,body{background:var(--ground)!important}
       <div class="setting-row"><div><strong>Default warp feel</strong><span>How closely new warps follow your click timing.</span></div><select id="settingWarpStrength" class="text-input"><option value="subtle">Natural</option><option value="balanced">Balanced</option><option value="exact">Exact</option></select></div>
       <div class="setting-row"><div><strong>Default warp mode</strong><span>How new recordings use the click track.</span></div><select id="settingWarpMode" class="text-input"><option value="fit">Fit whole recording</option><option value="beginning">Match beginning</option></select></div>
       <div class="setting-row"><div><strong>Reduce motion</strong><span>Use fewer interface animations.</span></div><label class="switch"><input id="settingReducedMotion" type="checkbox"><span></span></label></div>
+      <div class="setting-row tap-cal-row"><div><strong>Tap timing (this device)</strong><span>Wireless headphones and some speakers play sound late, so taps made along with audio land late too. Calibrate once per device: tap along to 12 clicks and TempoTapp measures your offset. It's applied to tapping along with recordings, tap training and the downbeat tap.</span></div>
+        <div class="tap-cal-controls"><label class="downbeat-sec"><input class="text-input" id="settingTapOffset" type="number" step="1" min="-400" max="400"> ms</label><button class="secondary compact-primary" id="tapCalibrateButton" type="button">Calibrate</button></div></div>
+      <div class="tap-cal-panel hidden" id="tapCalPanel"><div class="tt-countdown" id="tapCalCount"></div><button class="tap" id="tapCalPad" type="button">TAP<small>Space or tap here with each click</small></button><div class="anchor-readout" id="tapCalStatus"></div></div>
       <div class="settings-saved" id="settingsSaved">Settings save automatically on this device.</div>
     </div>
 
@@ -1564,7 +1602,7 @@ html,body{background:var(--ground)!important}
 <script>
 (() => {
   'use strict';
-  const APP_VERSION='1.6.0';
+  const APP_VERSION='1.7.0';
   const $ = id => document.getElementById(id);
   if($('appVersionLabel'))$('appVersionLabel').textContent=`TempoTapp ${APP_VERSION} · All data stays on this device.`;
   // ---------------------------------------------------------------------------
@@ -1672,7 +1710,7 @@ html,body{background:var(--ground)!important}
   const SETTINGS_KEY = 'tempotap-settings-v2';
   const OLD_SETTINGS_KEY = 'tempotap-settings-v1';
   const TUTORIAL_ACCOUNT_PREFIX = 'tempotap-tutorial-hidden-user-';
-  const DEFAULT_SETTINGS = { warpStrength:'balanced', warpMode:'fit', warpRenderer:'studio', microCleanup:true, noiseReduction:'smart', reducedMotion:false, tourOnLaunch:true, analysisEngine:'ai' };
+  const DEFAULT_SETTINGS = { warpStrength:'balanced', warpMode:'fit', warpRenderer:'studio', microCleanup:true, noiseReduction:'smart', reducedMotion:false, tourOnLaunch:true, analysisEngine:'ai', tapOffsetMs:0 };
   let appSettings = {...DEFAULT_SETTINGS};
   let tutorialStep = 0;
   let tutorialActive = false;
@@ -1724,6 +1762,7 @@ html,body{background:var(--ground)!important}
     const pairs=[['settingWarpStrength',appSettings.warpStrength],['settingWarpMode',appSettings.warpMode]];
     for(const [id,value] of pairs){const el=$(id);if(el)el.value=value}
     if($('settingReducedMotion'))$('settingReducedMotion').checked=!!appSettings.reducedMotion;
+    if($('settingTapOffset'))$('settingTapOffset').value=String(Math.round(tapOffsetMs()));
   }
   function applySettingsDefaults(){
     warpStrength=appSettings.warpStrength||'balanced';
@@ -2631,10 +2670,10 @@ html,body{background:var(--ground)!important}
     if(!uploadedAudioBuffer)throw new Error('no recording');
     const samples=await aiResampleMono(uploadedAudioBuffer);
     const info=options.meter&&options.meter!=='auto'?meterInfo(options.meter,options.beatUnit):null;
-    const decodeOpts={beatsPerBar:info&&info.beatsPerBar>=2&&info.beatsPerBar<=4?info.beatsPerBar:0,firstDownbeatSec:Number.isFinite(options.firstDownbeatSec)?options.firstDownbeatSec:null};
+    const decodeOpts={beatsPerBar:info&&info.beatsPerBar>=2&&info.beatsPerBar<=7?info.beatsPerBar:0,firstDownbeatSec:Number.isFinite(options.firstDownbeatSec)?options.firstDownbeatSec:null,taps:Array.isArray(options.trainingTapsSec)?options.trainingTapsSec:[],timingStyle:options.timingStyle||'expressive'};
     const worker=aiWorkerInstance(),requestId=++aiSeq;
     const r=await new Promise((resolve,reject)=>{
-      const timer=setTimeout(()=>{aiPending.delete(requestId);reject(new Error('the AI engine timed out'))},180000);
+      const timer=setTimeout(()=>{aiPending.delete(requestId);reject(new Error('the AI engine timed out'))},Math.round(120000+uploadedAudioBuffer.duration*2500));
       aiPending.set(requestId,{resolve:v=>{clearTimeout(timer);resolve(v)},reject:e=>{clearTimeout(timer);reject(e)},onProgress});
       worker.postMessage({requestId,samples:samples.buffer,options:decodeOpts},[samples.buffer]);
     });
@@ -2653,7 +2692,8 @@ html,body{background:var(--ground)!important}
       nominalBeatSec:r.bpm?60/r.bpm:0,meter:resolvedMeter,
       beatUnit:resolvedUnit,subdivision:options.subdivision==='auto'?'straight':options.subdivision,timingStyle:options.timingStyle,fermatas:!!options.fermatas,pickup:options.pickup,
       beatsPerBar,downbeatPhase:(()=>{const firstKept=r.beats.indexOf(bl[0]);const ph=((Number(r.downbeatPhase)||0)-(firstKept<0?0:firstKept))%beatsPerBar;return (ph+beatsPerBar)%beatsPerBar})(),strengths:bl.map(b=>Math.max(0,Math.min(1,Number(b.strength)||0))),
-      trainingTapCount:0,detectorVersion:'beatnet-crnn-1'
+      barPositions:bl.map(b=>Number(b.position)||0),downbeatProbs:bl.map(b=>Math.max(0,Math.min(1,Number(b.downbeatProb)||0))),
+      trainingTapCount:decodeOpts.taps.length,detectorVersion:'beatnet-crnn-2'
     };
   }
   function syncAiEngineUi(){const el=$('analysisEngine');if(el)el.value=appSettings.analysisEngine==='classic'?'classic':'ai'}
@@ -2951,7 +2991,7 @@ html,body{background:var(--ground)!important}
     const p=$('analysisBeatPreview');if(p&&!p.paused&&beatAnalysis?.rawBeats?.length){startAnalysisPreviewClicks()}
     const wp=$('detectedBeatsAudio');if(wp&&!wp.paused&&beatAnalysis?.rawBeats?.length){startWarpSourcePreviewClicks()}
   }
-  function currentRecordTime(){ if(recording&&tapAlongActive){const a=$('tapAlongAudio');return a?Math.max(0,a.currentTime*1000):frozenViewMs} if(recording) return segmentBaseMs + performance.now()-segmentStartReal; if(playing) return Math.min(track.durationMs,performance.now()-replayStartReal); return frozenViewMs; }
+  function currentRecordTime(ts){ const now=evTime(ts); if(recording&&tapAlongActive){const a=$('tapAlongAudio');return a?Math.max(0,mediaTimeAt(a,now)*1000-tapOffsetMs()):frozenViewMs} if(recording) return segmentBaseMs + now-segmentStartReal; if(listenActive){const a=tapAlongAudio();return a?mediaTimeAt(a,now)*1000:frozenViewMs} if(playing) return Math.max(0,Math.min(track.durationMs,now-replayStartReal)); return frozenViewMs; }
   function recentBpm(){ if(track.taps.length<2)return null; const a=[]; for(let i=Math.max(1,track.taps.length-5);i<track.taps.length;i++)a.push(track.taps[i]-track.taps[i-1]); const avg=a.reduce((x,y)=>x+y,0)/a.length; return avg>0?Math.round(60000/avg):null; }
   function isAccent(i){ if(track.accentMode==='none')return false; if(track.accentMode==='first')return i===0; return i%track.accentEvery===0; }
   // -----------------------------------------------------------------------
@@ -2968,7 +3008,7 @@ html,body{background:var(--ground)!important}
     const Ctx=window.AudioContext||window.webkitAudioContext;
     if(!Ctx)throw new Error('This browser does not support Web Audio.');
     if(isAppleTouchDevice())keepAudioSessionAlive();
-    if(!audioCtx)audioCtx=new Ctx();
+    if(!audioCtx)audioCtx=makeAudioCtx();
     if(audioCtx.state==='suspended'){
       try{await audioCtx.resume()}catch{}
     }
@@ -2981,7 +3021,7 @@ html,body{background:var(--ground)!important}
     return audioCtx;
   }
   function audio(){
-    if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    if(!audioCtx)audioCtx=makeAudioCtx();
     if(audioCtx.state==='suspended')audioCtx.resume().catch(()=>{});
     return audioCtx;
   }
@@ -3000,7 +3040,68 @@ html,body{background:var(--ground)!important}
       if(silentKeepAlive.paused){const pr=silentKeepAlive.play();if(pr&&pr.catch)pr.catch(()=>{})}
     }catch{}
   }
-  function clickSound(accent=false,kind='primary'){ const c=audio(),o=c.createOscillator(),g=c.createGain(),t=c.currentTime,sub=kind==='subdivision',volume=clampClickVolume(track.clickVolume)/100,peak=(accent?.3:(sub?.065:.13))*volume; o.type=accent?'triangle':'sine';o.frequency.setValueAtTime(accent?1550:(sub?680:950),t);g.gain.setValueAtTime(.0001,t);if(peak>0)g.gain.exponentialRampToValueAtTime(Math.max(.0001,peak),t+.004);g.gain.exponentialRampToValueAtTime(.0001,t+(sub?.045:.065));o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+(sub?.055:.075)); }
+  // ===========================================================================
+  // Timing engine (v1.7)
+  //  * Taps are timestamped from the input event itself (event.timeStamp = the moment the key or
+  //    finger went down), not from whenever the page got around to running the handler.
+  //  * Audio position comes from a smoothed clock: HTMLMediaElement.currentTime only updates in
+  //    steps in some browsers, so we track (currentTime − performance.now()) and keep the leading
+  //    edge, which removes that step error.
+  //  * Clicks are scheduled ahead on the Web Audio clock (sample-accurate) and mapped to the moment
+  //    they are *heard* (AudioContext.getOutputTimestamp), instead of firing from setTimeout.
+  //  * Optional per-device tap correction (Settings → Tap timing) for Bluetooth / slow outputs.
+  // ===========================================================================
+  function makeAudioCtx(){const Ctx=window.AudioContext||window.webkitAudioContext;try{return new Ctx({latencyHint:'interactive'})}catch{return new Ctx()}}
+  // A Space press handled on keydown must not also fire the focused button's own click (on key-up).
+  let suppressKeyClickUntil=0;function keyClickSuppressed(){return performance.now()<suppressKeyClickUntil}
+  function evTime(ts){const now=performance.now();return Number.isFinite(ts)&&ts>0&&ts<=now+50&&ts>now-3000?ts:now}
+  function tapOffsetMs(){return Math.max(-400,Math.min(400,Number(appSettings.tapOffsetMs)||0))}
+  const mediaClocks=new Map();let mediaClockTimer=null;
+  function mediaClockState(el){let s=mediaClocks.get(el);if(!s){s={off:null,samples:[]};mediaClocks.set(el,s);const reset=()=>{s.samples=[];s.off=null};for(const ev of ['seeking','seeked','play','playing','pause','ratechange','emptied','loadstart','waiting'])el.addEventListener(ev,reset)}if(!mediaClockTimer)mediaClockTimer=setInterval(()=>{for(const [m] of mediaClocks)if(!m.paused)sampleMediaClock(m)},8);return s}
+  function sampleMediaClock(el,now=performance.now()){const s=mediaClockState(el);if(el.paused||el.seeking){s.samples=[];s.off=null;return}const r=el.playbackRate||1,o=el.currentTime-now/1000*r;s.samples.push([now,o]);while(s.samples.length>2&&now-s.samples[0][0]>1200)s.samples.shift();let m=-Infinity;for(const x of s.samples)if(x[1]>m)m=x[1];s.off=m}
+  function mediaClockReady(el){const s=mediaClockState(el);return !el.paused&&!el.seeking&&s.off!==null&&s.samples.length>=3}
+  function mediaTimeAt(el,ts){if(!el)return 0;if(el.paused||el.seeking)return el.currentTime||0;sampleMediaClock(el);const s=mediaClockState(el),r=el.playbackRate||1,t=Number.isFinite(ts)?ts:performance.now();if(!mediaClockReady(el))return el.currentTime||0;return Math.max(0,s.off+t/1000*r)}
+  function perfForMediaTime(el,t){if(!el||!mediaClockReady(el))return null;const s=mediaClockState(el),r=el.playbackRate||1;return (t-s.off)/r*1000}
+  function outputLatencySec(c){return Math.max(0,(Number(c.outputLatency)||0)+(Number(c.baseLatency)||0))}
+  function ctxTimeForPerf(perfMs){const c=audio();try{const ts=c.getOutputTimestamp&&c.getOutputTimestamp();if(ts&&ts.contextTime>0&&ts.performanceTime>0&&Math.abs(performance.now()-ts.performanceTime)<500)return ts.contextTime+(perfMs-ts.performanceTime)/1000}catch{}return c.currentTime+(perfMs-performance.now())/1000-outputLatencySec(c)}
+  function clickAt(when,accent=false,kind='primary',vol=null,dest=null){const c=audio(),o=c.createOscillator(),g=c.createGain(),sub=kind==='subdivision',volume=(vol===null||vol===undefined?clampClickVolume(track.clickVolume):vol)/100,peak=(accent?.3:(sub?.065:.13))*volume,t=Math.max(Number(when)||0,c.currentTime);o.type=accent?'triangle':'sine';o.frequency.setValueAtTime(accent?1550:(sub?680:950),t);g.gain.setValueAtTime(.0001,t);if(peak>0)g.gain.exponentialRampToValueAtTime(Math.max(.0001,peak),t+.003);g.gain.exponentialRampToValueAtTime(.0001,t+(sub?.045:.065));o.connect(g);g.connect(dest||c.destination);o.start(t);o.stop(t+(sub?.055:.075));return o}
+  // Look-ahead scheduler. events: sorted [{t (seconds on some timeline), accent, kind, ...}];
+  // perfAt(t) → performance.now() time at which that event should be heard (null = clock not ready yet).
+  function startClickScheduler({events,perfAt,onEvent=null,play=null,vol=null,lookaheadMs=200}){
+    const c=audio();let bus=c.createGain();bus.connect(c.destination);
+    const st={i:0,stopped:false,uiTimers:[]};
+    const pump=()=>{if(st.stopped)return;const now=performance.now();
+      while(st.i<events.length){const ev=events[st.i],p=perfAt(ev.t);if(p===null||p===undefined||!Number.isFinite(p))break;if(p>now+lookaheadMs)break;st.i++;if(p<now-30)continue;
+        const when=ctxTimeForPerf(p);if(play)play(when,ev,bus);else clickAt(when,ev.accent,ev.kind||'primary',ev.vol??vol,bus);
+        if(onEvent)st.uiTimers.push(setTimeout(()=>{if(!st.stopped)onEvent(ev)},Math.max(0,p-performance.now())))}
+      if(st.uiTimers.length>256)st.uiTimers=st.uiTimers.slice(-64)};
+    st.timer=setInterval(pump,15);pump();
+    // cut everything already scheduled (disconnecting the bus silences it instantly)
+    const cut=()=>{try{bus.disconnect()}catch{}st.uiTimers.forEach(clearTimeout);st.uiTimers=[]};
+    st.stop=()=>{if(st.stopped)return;st.stopped=true;clearInterval(st.timer);cut()};
+    st.resync=t=>{if(st.stopped)return;cut();bus=audio().createGain();bus.connect(audio().destination);let i=0;while(i<events.length&&events[i].t<t-0.01)i++;st.i=i;pump()};
+    return st;
+  }
+  function clickSound(accent=false,kind='primary'){return clickAt(audio().currentTime,accent,kind)}
+  // ---- Tap-timing calibration: 12 clicks at 100 BPM after a count-in; offset = median(tap − heard click) ----
+  let tapCal=null;
+  async function startTapCalibration(){
+    if(tapCal)return;await unlockAudioForMobile().catch(()=>{});const panel=$('tapCalPanel'),stEl=$('tapCalStatus');panel.classList.remove('hidden');stEl.textContent='Get ready…';
+    await runCountdown($('tapCalCount'),{n:3,ms:600});const N=12,period=600,t0=performance.now()+400,clicks=Array.from({length:N},(_,i)=>t0+i*period);
+    tapCal={clicks,taps:[],sched:startClickScheduler({events:clicks.map((p,i)=>({t:i,accent:i%4===0})),perfAt:i=>clicks[i]})};
+    stEl.textContent='Tap with every click…';$('tapCalPad').focus();
+    setTimeout(finishTapCalibration,(N-1)*period+400+900);
+  }
+  function tapCalTap(ts){if(!tapCal)return;const t=evTime(ts);tapCal.taps.push(t)}
+  function finishTapCalibration(){
+    if(!tapCal)return;const {clicks,taps,sched}=tapCal;sched.stop();tapCal=null;const stEl=$('tapCalStatus');
+    const d=[];for(const tp of taps){let best=null;for(const c of clicks){const x=tp-c;if(Math.abs(x)<300&&(best===null||Math.abs(x)<Math.abs(best)))best=x}if(best!==null)d.push(best)}
+    if(d.length<8){stEl.textContent=`Only ${d.length} taps matched a click. Try again and tap along with all 12.`;return}
+    d.sort((a,b)=>a-b);const med=d[d.length>>1],spread=d[Math.floor(d.length*.8)]-d[Math.floor(d.length*.2)];
+    appSettings.tapOffsetMs=Math.round(Math.max(-250,Math.min(250,med)));saveSettings();syncSettingsUI();
+    stEl.textContent=`Done: your taps land ${Math.abs(Math.round(med))} ms ${med>=0?'after':'before'} what you hear (spread ±${Math.round(spread/2)} ms). TempoTapp will correct by ${appSettings.tapOffsetMs} ms.`;
+    setTimeout(()=>$('tapCalPanel').classList.add('hidden'),6000);
+  }
   function animateConductor(ms=520){ const c=$('conductor'),d=Math.max(260,Math.min(1400,ms)); c.style.setProperty('--beat-duration',`${d}ms`);c.classList.remove('beat');void c.getBoundingClientRect();c.classList.add('beat');clearTimeout(conductorTimer);conductorTimer=setTimeout(()=>c.classList.remove('beat'),d);$('tapButton').classList.add('pulse');setTimeout(()=>$('tapButton').classList.remove('pulse'),130); }
   function nearestGuideDelta(ms){ if(track.targetBpm===0)return null; const interval=60000/track.targetBpm; return ms-Math.round(ms/interval)*interval; }
   function timingFeedback(delta){ const el=$('timingFeedback');el.className='';if(delta===null){el.textContent='No target beat selected.';return}const a=Math.round(Math.abs(delta));if(a<=25){el.textContent=`On time · ${a} ms from the guide`;el.classList.add('on-time')}else if(delta<0){el.textContent=`${a} ms early`;el.classList.add('early')}else{el.textContent=`${a} ms late`;el.classList.add('late')} }
@@ -3037,7 +3138,9 @@ html,body{background:var(--ground)!important}
     const a=tapAlongAudio(),has=!!tapAlongUrl;
     $('tapAlongStartButton').disabled=!has||playing||(recording&&!tapAlongActive);
     $('tapAlongPauseButton').disabled=!(recording&&tapAlongActive);
-    $('tapAlongRemoveButton').disabled=!has||tapAlongActive;if($('tapRegularButton'))$('tapRegularButton').disabled=!(recording&&tapAlongActive);if($('tapAccentButton'))$('tapAccentButton').disabled=!(recording&&tapAlongActive);
+    $('tapAlongRemoveButton').disabled=!has||tapAlongActive||listenActive;
+    if($('tapAlongListenButton')){$('tapAlongListenButton').disabled=!has||!track.taps.length||tapAlongActive;$('tapAlongListenButton').textContent=listenActive?'■ Stop Listening':'▶ Listen: Recording + Clicks'}
+    $('tapAlongStartButton').disabled=$('tapAlongStartButton').disabled||listenActive;if($('tapRegularButton'))$('tapRegularButton').disabled=!(recording&&tapAlongActive);if($('tapAccentButton'))$('tapAccentButton').disabled=!(recording&&tapAlongActive);
     const badge=$('tapAlongBadge');if(badge){badge.classList.toggle('idle',!has);const span=badge.querySelector('span');if(span)span.textContent=tapAlongActive?'Tapping with audio':(has?'Audio ready':'Audio not loaded')}
     if(a)a.style.opacity=has?'1':'.55';
   }
@@ -3172,7 +3275,7 @@ html,body{background:var(--ground)!important}
     let n=0,lastM=null;const boxes=[];for(const b of raw){const m=Number.isFinite(b.measure)?b.measure:null;if(m===null||m!==lastM){n++;lastM=m}if(need&&n>need)break;boxes.push({...b,measure:n})}
     track.scoreMeasureBoxes=boxes;
     const firsts=[];for(const b of boxes)if(!firsts.length||firsts.at(-1).measure!==b.measure)firsts.push(b);
-    const manual=(track.scoreAnchors||[]).filter(a=>a.source!=='auto'),auto=[];for(let i=0;i<Math.min(down.length,firsts.length);i++){const b=firsts[i];auto.push({beatIndex:down[i],page:b.page,x:b.x0+(b.x1-b.x0)*.045,y:b.y,source:'auto'})}track.scoreAnchors=[...auto,...manual].sort((a,b)=>a.beatIndex-b.beatIndex);
+    const manual=(track.scoreAnchors||[]).filter(a=>a.source!=='auto'),auto=[];for(let i=0;i<Math.min(down.length,firsts.length);i++){const b=firsts[i];auto.push({beatIndex:down[i],page:b.page,x:(Number.isFinite(b.cx0)?b.cx0:b.x0)+(b.x1-b.x0)*.02,y:b.y,source:'auto'})}track.scoreAnchors=[...auto,...manual].sort((a,b)=>a.beatIndex-b.beatIndex);
     const found=firsts.length,total=need||found,kind=found===total?'good':'warn';if(!need){setScoreAnalysisStatus(`Score analyzed · ${found} measure${found===1?'':'s'} found.`,'good',100);renderScoreOverlay();updateScoreMapReadout();syncScorePdfUi();return}setScoreAnalysisStatus(found===total?`Score analyzed · ${found} measures matched to your click track.`:`Score analyzed · ${found} likely measures found for ${total} click-track measures. The automatic map is usable; fix any missed barline with Fix / Add Marker.`,kind,100);renderScoreOverlay();updateScoreMapReadout();syncScorePdfUi();
   }
   // ---- v1.5.1: build a click track straight from the sheet-music PDF ----
@@ -3189,6 +3292,7 @@ html,body{background:var(--ground)!important}
     const lower=text.toLowerCase();for(const [word,bpm] of SCORE_TEMPO_WORDS){if(new RegExp(`\\b${word}\\b`).test(lower))return{bpm,label:`"${word[0].toUpperCase()+word.slice(1)}" (typical tempo, adjust if needed)`}}
     return null;
   }
+  function syncScoreClickPlayUi(){const pb=$('scoreClickPlayButton'),sb=$('scoreClickStopButton');if(!pb||!sb)return;const busy=playing||scorePracticeActive;pb.disabled=!track.taps.length||recording||busy;sb.disabled=!busy;const st=$('scoreClickPlayStatus');if(st)st.textContent=playing?'Playing…':scorePracticeActive?'Practicing with the score…':''}
   function scoreMeterOption(meter){const sel=$('scoreClickMeter');if(sel&&![...sel.options].some(o=>o.value===meter)){const o=document.createElement('option');o.value=o.textContent=meter;sel.appendChild(o)}}
   function scoreClickPrefill(measures){
     if($('scoreClickMeasures')&&measures)$('scoreClickMeasures').value=String(measures);
@@ -3212,7 +3316,7 @@ html,body{background:var(--ground)!important}
     $('scoreClickBpm').value=String(bpm);$('scoreClickMeasures').value=String(measures);
     const map=scoreMeterMapForClick().filter(x=>x.startMeasure<=measures),interval=60000/bpm,meterAt=m=>{let mt=map[0].meter;for(const x of map)if(x.startMeasure<=m)mt=x.meter;return mt};
     if(scorePracticeActive)stopScorePractice(true);
-    const taps=[],acc=[];let t=0;for(let m=1;m<=measures;m++){const bpb=scoreBeatsPerMeasure(meterAt(m));for(let k=0;k<bpb;k++){taps.push(Math.round(t));acc.push(k===0?1:null);t+=interval}}
+    const taps=[],acc=[];let t=0;for(let m=1;m<=measures;m++){const bpb=scoreBeatsPerMeasure(meterAt(m));for(let k=0;k<bpb;k++){taps.push(Math.round(t));acc.push(k===0?1:0);t+=interval}}
     const beats=taps.length;track.taps=taps;track.tapAccents=acc;
     track.durationMs=Math.round(beats*interval);track.targetBpm=bpm;track.accentMode='custom';
     track.scoreMap=map.map(x=>({...x}));track.subdivisionMap=[];track.scoreAnchors=(track.scoreAnchors||[]).filter(a=>a.source!=='auto'&&Number(a.beatIndex)<beats);
@@ -3223,7 +3327,7 @@ html,body{background:var(--ground)!important}
     setScoreAnalysisStatus(msg,'good',100);if(auto)setTimeout(()=>{try{$('scoreClickCard')?.scrollIntoView({block:'center',behavior:'smooth'})}catch{}},150);$('status').textContent=auto?`Click track built from ${track.scorePdfName||'the score'}. Check the tempo and time signature in Score Follow.`:msg;
   }
   // Test hook for tests/score_corpus.js (read-only; only present with ?tt-test in the URL).
-  if(/[?&]tt-test\b/.test(location.search))window.__TT_TEST__={scoreBoxes:()=>scoreDetectedRawBoxes.map(b=>({...b})),track:()=>({taps:track.taps.length,scoreMap:JSON.parse(JSON.stringify(track.scoreMap||[])),bpm:track.targetBpm}),tempo:()=>scoreDetectedTempo,meters:()=>scoreDetectedMeters,total:()=>scoreDetectedTotal,busy:()=>scoreAnalysisRunning,renderPage:async p=>{const page=await scorePdfDoc.getPage(p),base=page.getViewport({scale:1}),scale=Math.min(170/72,Math.sqrt(7e6/Math.max(1,base.width*base.height))),vp=page.getViewport({scale}),cv=document.createElement('canvas');cv.width=Math.round(vp.width);cv.height=Math.round(vp.height);const c=cv.getContext('2d');c.fillStyle='#fff';c.fillRect(0,0,cv.width,cv.height);await page.render({canvasContext:c,viewport:vp}).promise;return cv.toDataURL('image/png')}};
+  if(/[?&]tt-test\b/.test(location.search))window.__TT_TEST__={scoreBoxes:()=>scoreDetectedRawBoxes.map(b=>({...b})),track:()=>({taps:track.taps.length,tapMs:[...track.taps],scoreMap:JSON.parse(JSON.stringify(track.scoreMap||[])),bpm:track.targetBpm}),rec:()=>({recording,segmentStartReal,segmentBaseMs,listenActive,playing}),analysis:()=>({taps:[...analysisTrainingTaps],down:analysisFirstDownbeatSec,beats:beatAnalysis?.rawBeats?.length||0,firstBeats:(beatAnalysis?.rawBeats||[]).slice(0,6),pos:(beatAnalysis?.barPositions||[]).slice(0,12)}),tempo:()=>scoreDetectedTempo,meters:()=>scoreDetectedMeters,total:()=>scoreDetectedTotal,busy:()=>scoreAnalysisRunning,renderPage:async p=>{const page=await scorePdfDoc.getPage(p),base=page.getViewport({scale:1}),scale=Math.min(170/72,Math.sqrt(7e6/Math.max(1,base.width*base.height))),vp=page.getViewport({scale}),cv=document.createElement('canvas');cv.width=Math.round(vp.width);cv.height=Math.round(vp.height);const c=cv.getContext('2d');c.fillStyle='#fff';c.fillRect(0,0,cv.width,cv.height);await page.render({canvasContext:c,viewport:vp}).promise;return cv.toDataURL('image/png')}};
   async function analyzeScorePdf(silent=false){
     if(!scorePdfDoc||scoreAnalysisRunning)return;scoreAnalysisRunning=true;scoreDetectedRawBoxes=[];syncScorePdfUi();const button=$('scoreAnalyzeButton');if(button)button.textContent='Analyzing…';
     try{
@@ -3237,8 +3341,8 @@ html,body{background:var(--ground)!important}
         const gray=TempoOMR.toGray(c.getImageData(0,0,canvas.width,canvas.height));results.push(TempoOMR.analyzePage(gray,canvas.width,canvas.height,{layout}));dims.push([canvas.width,canvas.height]);canvas.width=canvas.height=1;await new Promise(r=>setTimeout(r,0));
       }
       const NM=TempoOMR.numberMeasures(results);
-      scoreDetectedRawBoxes=NM.boxes.map(b=>{const [W,H]=dims[b.page-1],sp=b.sp||((b.bottom-b.top)/4)||10;return{page:b.page,x0:b.x0/W,x1:b.x1/W,y0:Math.max(0,b.top-sp*1.45)/H,y1:Math.min(H,b.bottom+sp*1.25)/H,y:Math.max(0,b.top-sp*0.75)/H,system:b.system,measure:b.measure,confidence:.9}});
-      scoreDetectedMeters=NM.meters;scoreDetectedTotal=NM.total;
+      scoreDetectedRawBoxes=NM.boxes.map(b=>{const [W,H]=dims[b.page-1],sp=b.sp||((b.bottom-b.top)/4)||10;return{page:b.page,x0:b.x0/W,x1:b.x1/W,cx0:(Number.isFinite(b.cx0)?b.cx0:b.x0)/W,y0:Math.max(0,b.top-sp*1.45)/H,y1:Math.min(H,b.bottom+sp*1.25)/H,y:Math.max(0,b.top-sp*0.75)/H,system:b.system,measure:b.measure,confidence:.9}});
+      scoreDetectedMeters=NM.meters;scoreDetectedTotal=NM.total;scoreEditHistory=[];if($('scoreEditUndo'))$('scoreEditUndo').disabled=true;ensureScoreContFlags();
       if(!scoreDetectedRawBoxes.length){track.scoreMeasureBoxes=[];setScoreAnalysisStatus('TempoTapp could not find staves and barlines in this PDF. Try Score layout → Piano or Single staff and Analyze Score again, or enter the measure count below.','warn',100);scoreClickPrefill(0);renderScoreOverlay();return}
       scoreClickPrefill(scoreDetectedTotal);
       // v1.5.1: a PDF on its own now produces the click track. Only build automatically when there is
@@ -3280,17 +3384,54 @@ html,body{background:var(--ground)!important}
   }
   function scorePointForBeat(index){
     const anchors=[...(track.scoreAnchors||[])].sort((a,b)=>a.beatIndex-b.beatIndex),exactManual=anchors.find(a=>Number(a.beatIndex)===index&&a.source!=='auto');if(exactManual)return exactManual;
-    const meta=trackBeatMeta(index),parts=(track.scoreMeasureBoxes||[]).filter(b=>Number(b.measure)===Number(meta.measure));if(parts.length){const beats=Math.max(1,meta.beatsPerMeasure||1);let f=(meta.beat-.5)/beats;const tot=parts.reduce((a,b)=>a+(b.x1-b.x0),0)||1;let box=parts[0];for(const b of parts){const share=(b.x1-b.x0)/tot;if(f<=share||b===parts.at(-1)){box=b;f=f/Math.max(share,1e-6);break}f-=share}return{page:box.page,x:box.x0+(box.x1-box.x0)*Math.max(.03,Math.min(.97,f)),y:box.y,beatIndex:index,auto:true}}
+    const meta=trackBeatMeta(index),parts=(track.scoreMeasureBoxes||[]).filter(b=>Number(b.measure)===Number(meta.measure));if(parts.length){const beats=Math.max(1,meta.beatsPerMeasure||1);let f=(meta.beat-1)/beats;const L=b=>Number.isFinite(b.cx0)&&b.cx0>b.x0&&b.cx0<b.x1?b.cx0:b.x0,tot=parts.reduce((a,b)=>a+(b.x1-L(b)),0)||1;let box=parts[0];for(const b of parts){const share=(b.x1-L(b))/tot;if(f<share||b===parts.at(-1)){box=b;f=f/Math.max(share,1e-6);break}f-=share}const x0=L(box),pad=Math.min(.004,(box.x1-x0)*.06);return{page:box.page,x:Math.min(box.x1-pad,x0+pad+(box.x1-x0-pad)*Math.max(0,Math.min(.97,f))),y:box.y,beatIndex:index,auto:true}}
     const exact=anchors.find(a=>Number(a.beatIndex)===index);if(exact)return exact;if(!anchors.length)return null;
     let prev=null,next=null;for(const a of anchors){if(a.beatIndex<index)prev=a;else if(a.beatIndex>index){next=a;break}}
     if(prev&&next&&prev.page===next.page){const f=(index-prev.beatIndex)/Math.max(1,next.beatIndex-prev.beatIndex);return{page:prev.page,x:prev.x+(next.x-prev.x)*f,y:prev.y+(next.y-prev.y)*f,beatIndex:index,interpolated:true}}
     return prev||next||anchors[0]
   }
+  // ---- Fix measures directly on the PDF (#15): move / add / remove barlines, set where beat 1 sits ----
+  // Edits change the measure list itself, so every later measure renumbers and nothing after a fix is offset.
+  let scoreEditMode='off',scoreEditHistory=[],scoreBoxSeq=0,scoreEditDrag=null;
+  function scoreBoxKey(b){if(!b.id)b.id=++scoreBoxSeq;return String(b.id)}
+  function scoreBoxesSorted(){return [...scoreDetectedRawBoxes].sort((a,b)=>a.page-b.page||a.system-b.system||a.x0-b.x0)}
+  function ensureScoreContFlags(){const L=scoreBoxesSorted();L.forEach((b,i)=>{scoreBoxKey(b);if(b.cont===undefined)b.cont=i>0&&Number.isFinite(b.measure)&&b.measure===L[i-1].measure})}
+  function renumberScoreBoxes(){const L=scoreBoxesSorted();let n=0;for(const b of L){if(b.cont&&n>0)b.measure=n;else{n++;b.measure=n}}scoreDetectedTotal=n;return n}
+  function shiftScoreMeters(fromMeasure,delta){for(const m of scoreDetectedMeters)if(m.measure>fromMeasure)m.measure=Math.max(2,m.measure+delta);const seen=new Set();scoreDetectedMeters=scoreDetectedMeters.filter(m=>{if(seen.has(m.measure))return false;seen.add(m.measure);return true})}
+  function scoreEditSnapshot(){scoreEditHistory.push({boxes:scoreDetectedRawBoxes.map(b=>({...b})),meters:scoreDetectedMeters.map(m=>({...m})),total:scoreDetectedTotal});if(scoreEditHistory.length>40)scoreEditHistory.shift();if($('scoreEditUndo'))$('scoreEditUndo').disabled=false}
+  function applyScoreEdits(msg){
+    renumberScoreBoxes();scoreClickPrefill(scoreDetectedTotal);
+    if(track.fromScore||!track.taps.length)makeClickTrackFromScore(false);else autoMapDetectedScore();
+    renderScoreOverlay();if(msg)setScoreAnalysisStatus(`${msg} · ${scoreDetectedTotal} measures now.`,'good',100);
+  }
+  function undoScoreEdit(){const h=scoreEditHistory.pop();if(!h)return;scoreDetectedRawBoxes=h.boxes;scoreDetectedMeters=h.meters;scoreDetectedTotal=h.total;$('scoreEditUndo').disabled=!scoreEditHistory.length;applyScoreEdits('Undone')}
+  function setScoreEditMode(m){scoreEditMode=scoreEditMode===m?'off':m;document.querySelectorAll('[data-score-edit]').forEach(b=>b.classList.toggle('on',b.dataset.scoreEdit===scoreEditMode));$('scoreStage')?.classList.toggle('edit-remove',scoreEditMode==='remove');
+    const hint=$('scoreEditHint');if(hint){hint.classList.toggle('hidden',scoreEditMode==='off');hint.textContent=scoreEditMode==='move'?'Drag a red barline left or right to where the real barline is. Drag a green ▼ to where beat 1 of that measure starts.':scoreEditMode==='add'?'Click inside a measure exactly where a missed barline is. A new measure is created and every later measure renumbers.':scoreEditMode==='remove'?'Click a red barline that isn’t a real barline. The two measures merge and every later measure renumbers.':''}
+    ensureScoreContFlags();renderScoreOverlay()}
+  function scoreStageFrac(e){const r=$('scoreStage').getBoundingClientRect();return{x:Math.max(0,Math.min(1,(e.clientX-r.left)/r.width)),y:Math.max(0,Math.min(1,(e.clientY-r.top)/r.height))}}
+  function scoreBoxById(id){return scoreDetectedRawBoxes.find(b=>String(b.id)===String(id))}
+  function scoreNextInSystem(b){const L=scoreBoxesSorted(),i=L.indexOf(b),n=L[i+1];return n&&n.page===b.page&&n.system===b.system?n:null}
+  function scoreEditPointerDown(e){
+    if(scoreEditMode==='off'||!scoreDetectedRawBoxes.length)return;const h=e.target.closest('.score-bar-handle,.score-start-handle,.score-measure-box.addable');if(!h)return;const b=scoreBoxById(h.dataset.boxKey);if(!b)return;e.preventDefault();e.stopPropagation();
+    if(scoreEditMode==='remove'&&h.classList.contains('score-bar-handle')){scoreEditSnapshot();const n=scoreNextInSystem(b);
+      if(n){b.x1=n.x1;scoreDetectedRawBoxes=scoreDetectedRawBoxes.filter(x=>x!==n);if(!n.cont)shiftScoreMeters(b.measure,-1)}
+      else{const L=scoreBoxesSorted(),nx=L[L.indexOf(b)+1];if(!nx)return;if(!nx.cont){nx.cont=true;shiftScoreMeters(b.measure,-1)}}
+      applyScoreEdits(`Barline after M${b.measure} removed`);return}
+    if(scoreEditMode==='add'&&h.classList.contains('score-measure-box')){const {x}=scoreStageFrac(e);if(x<=b.x0+0.004||x>=b.x1-0.004)return;scoreEditSnapshot();const c={...b,id:++scoreBoxSeq,x0:x,cx0:x,cont:false};b.x1=x;if(Number.isFinite(b.cx0)&&b.cx0>=x)b.cx0=b.x0;scoreDetectedRawBoxes.push(c);shiftScoreMeters(b.measure,+1);applyScoreEdits(`Barline added in M${b.measure}`);return}
+    if(scoreEditMode==='move'){scoreEditSnapshot();scoreEditDrag={b,kind:h.classList.contains('score-start-handle')?'start':'bar',next:h.classList.contains('score-bar-handle')?scoreNextInSystem(b):null,pid:e.pointerId,moved:false};try{h.setPointerCapture(e.pointerId)}catch{}}
+  }
+  function scoreEditPointerMove(e){const d=scoreEditDrag;if(!d)return;const {x}=scoreStageFrac(e);d.moved=true;
+    if(d.kind==='start'){d.b.cx0=Math.max(d.b.x0,Math.min(d.b.x1-0.006,x))}
+    else{const lo=(Number.isFinite(d.b.cx0)?Math.max(d.b.x0,d.b.cx0):d.b.x0)+0.006,hi=d.next?d.next.x1-0.006:1;const nx=Math.max(lo,Math.min(hi,x));d.b.x1=nx;if(d.next){d.next.x0=nx;if(!Number.isFinite(d.next.cx0)||d.next.cx0<nx)d.next.cx0=nx}}
+    for(const cb of track.scoreMeasureBoxes||[]){const src=scoreBoxById(cb.id);if(src){cb.x0=src.x0;cb.x1=src.x1;cb.cx0=src.cx0}}renderScoreOverlay()}
+  function scoreEditPointerUp(){const d=scoreEditDrag;if(!d)return;scoreEditDrag=null;if(!d.moved){scoreEditHistory.pop();$('scoreEditUndo').disabled=!scoreEditHistory.length;return}applyScoreEdits(d.kind==='start'?`Beat 1 of M${d.b.measure} moved`:`Barline after M${d.b.measure} moved`)}
   function renderScoreOverlay(activeBeat=null){
     const ov=$('scoreOverlay');if(!ov)return;ov.innerHTML='';const activeMeta=Number.isInteger(activeBeat)?trackBeatMeta(activeBeat):null;
     for(const b of (track.scoreMeasureBoxes||[]).filter(x=>Number(x.page)===scorePdfPage)){
-      const box=document.createElement('span');box.className=`score-measure-box${activeMeta&&Number(b.measure)===activeMeta.measure?' active':''}`;box.style.left=`${b.x0*100}%`;box.style.top=`${b.y0*100}%`;box.style.width=`${Math.max(.2,(b.x1-b.x0)*100)}%`;box.style.height=`${Math.max(.2,(b.y1-b.y0)*100)}%`;const lab=document.createElement('span');lab.className='score-measure-label';lab.textContent=`M${b.measure}`;box.appendChild(lab);ov.appendChild(box);
-      const meter=trackMeterAtMeasure(Number(b.measure)),beats=scoreBeatsPerMeasure(meter);for(let beat=1;beat<=beats;beat++){const idx=trackIndexForMeasureBeat(Number(b.measure),beat);if(idx<0)continue;const mark=document.createElement('span'),accent=explicitTapAccent(idx,beat===1||isAccent(idx));mark.className=`score-beat-mark${accent?' accent':''}`;mark.style.left=`${(b.x0+(b.x1-b.x0)*((beat-.5)/beats))*100}%`;mark.style.top=`${b.y*100}%`;mark.title=`M${b.measure}.${beat}`;ov.appendChild(mark)}
+      const box=document.createElement('span');box.className=`score-measure-box${activeMeta&&Number(b.measure)===activeMeta.measure?' active':''}${scoreEditMode==='add'?' addable':''}`;box.dataset.boxKey=scoreBoxKey(b);box.style.left=`${b.x0*100}%`;box.style.top=`${b.y0*100}%`;box.style.width=`${Math.max(.2,(b.x1-b.x0)*100)}%`;box.style.height=`${Math.max(.2,(b.y1-b.y0)*100)}%`;const lab=document.createElement('span');lab.className='score-measure-label';lab.textContent=`M${b.measure}`;box.appendChild(lab);ov.appendChild(box);
+      const meter=trackMeterAtMeasure(Number(b.measure)),beats=scoreBeatsPerMeasure(meter);for(let beat=1;beat<=beats;beat++){const idx=trackIndexForMeasureBeat(Number(b.measure),beat);if(idx<0)continue;const pt=scorePointForBeat(idx);if(!pt||Number(pt.page)!==scorePdfPage||Math.abs(pt.y-b.y)>0.002||pt.x<b.x0-1e-6||pt.x>b.x1+1e-6)continue;const mark=document.createElement('span'),accent=explicitTapAccent(idx,beat===1||isAccent(idx));mark.className=`score-beat-mark${accent?' accent':''}`;mark.style.left=`${pt.x*100}%`;mark.style.top=`${b.y*100}%`;mark.title=`M${b.measure}.${beat}`;ov.appendChild(mark)}
+      if(scoreEditMode!=='off'){const right=document.createElement('span');right.className='score-bar-handle';right.style.left=`${b.x1*100}%`;right.style.top=`${b.y0*100}%`;right.style.height=`${(b.y1-b.y0)*100}%`;right.dataset.boxKey=scoreBoxKey(b);right.title=scoreEditMode==='remove'?`Remove the barline after M${b.measure}`:`Drag to move the barline after M${b.measure}`;ov.appendChild(right);
+        if(scoreEditMode==='move'){const st=document.createElement('span');st.className='score-start-handle';const cx=Number.isFinite(b.cx0)?b.cx0:b.x0;st.style.left=`${cx*100}%`;st.style.top=`${b.y*100}%`;st.dataset.boxKey=scoreBoxKey(b);st.title=`Drag to set where beat 1 of M${b.measure} sits`;ov.appendChild(st)}}
     }
     for(const a of (track.scoreAnchors||[]).filter(x=>Number(x.page)===scorePdfPage&&x.source!=='auto')){
       const bi=Number(a.beatIndex)||0,meta=trackBeatMeta(bi),dot=document.createElement('button');dot.type='button';dot.className=`score-anchor${explicitTapAccent(bi,meta.downbeat||isAccent(bi))?' accent':''}${meta.downbeat?' downbeat':''}`;dot.style.left=`${a.x*100}%`;dot.style.top=`${a.y*100}%`;dot.title=`M${meta.measure}.${meta.beat} · beat ${bi+1}`;dot.dataset.scoreBeat=String(bi);ov.appendChild(dot);
@@ -3298,37 +3439,38 @@ html,body{background:var(--ground)!important}
     }
     if(Number.isInteger(activeBeat)){const p=scorePointForBeat(activeBeat);if(p&&Number(p.page)===scorePdfPage){const h=document.createElement('span');h.className='score-playhead';h.id='scorePlayhead';h.style.left=`${p.x*100}%`;h.style.top=`${p.y*100}%`;ov.appendChild(h);setTimeout(()=>h.scrollIntoView?.({block:'center',inline:'center',behavior:'smooth'}),0)}}
   }
-  let scorePracticeClock=null; // v1.5.1: {start,offset} when practicing a score-built track with no recording loaded
-  function scorePracticeNowMs(){if(scorePracticeClock)return scorePracticeClock.offset+(scorePracticeClock.start?performance.now()-scorePracticeClock.start:0);const a=tapAlongAudio();return a?a.currentTime*1000:0}
+  let scorePracticeClock=null,scorePracticeSched=null; // clock: {start,offset} when practicing a score-built track with no recording loaded
+  function scorePracticeNowMs(){if(scorePracticeClock)return scorePracticeClock.offset+(scorePracticeClock.start?Math.max(0,performance.now()-scorePracticeClock.start):0);const a=tapAlongAudio();return a?mediaTimeAt(a)*1000:0}
   function stopScorePractice(reset=false){
     if(scorePracticeClock){scorePracticeClock.offset=reset?0:scorePracticeNowMs();scorePracticeClock.start=0;if(reset)scorePracticeClock=null}
-    scorePracticeTimers.forEach(clearTimeout);scorePracticeTimers=[];if(scorePracticeRaf){cancelAnimationFrame(scorePracticeRaf);scorePracticeRaf=null}scorePracticeActive=false;
-    const a=tapAlongAudio();if(a&&!a.paused)a.pause();if(reset&&a)a.currentTime=0;if(reset)renderScoreOverlay();if($('scorePracticeStatus'))$('scorePracticeStatus').textContent=reset?'Practice stopped.':'Practice paused.'
+    scorePracticeSched?.stop();scorePracticeSched=null;if(scorePracticeRaf){cancelAnimationFrame(scorePracticeRaf);scorePracticeRaf=null}scorePracticeActive=false;
+    const a=tapAlongAudio();if(a&&!a.paused&&!listenActive)a.pause();if(reset&&a)a.currentTime=0;if(reset)renderScoreOverlay();if($('scorePracticeStatus'))$('scorePracticeStatus').textContent=reset?'Practice stopped.':'Practice paused.';syncScoreClickPlayUi()
   }
-  function scheduleScorePracticeClicks(fromMs){
-    scorePracticeTimers.forEach(clearTimeout);scorePracticeTimers=[];for(const ev of expandedTrackClickEvents()){if(ev.ms<fromMs-15)continue;scorePracticeTimers.push(setTimeout(()=>{if(scorePracticeActive)clickSound(ev.accent,ev.primary?'primary':'subdivision')},Math.max(0,ev.ms-fromMs)))}
-  }
+  function scorePracticeEvents(){return expandedTrackClickEvents().map(ev=>({...ev,t:ev.ms/1000,kind:ev.primary?'primary':'subdivision'}))}
   function scorePracticeTick(){
-    if(!scorePracticeActive)return;let ms;if(scorePracticeClock){ms=scorePracticeNowMs();if(ms>=track.durationMs){stopScorePractice(false);scorePracticeClock=null;$('scorePracticeStatus').textContent='Practice finished.';return}}else{const a=tapAlongAudio();if(!a||a.paused)return;ms=a.currentTime*1000}let i=0;while(i+1<track.taps.length&&track.taps[i+1]<=ms)i++;const p=scorePointForBeat(i);
-    if(i!==scorePracticeLastBeat){scorePracticeLastBeat=i;if(p&&Number(p.page)!==scorePdfPage&&!scorePdfRendering){renderScorePage(Number(p.page)).then(()=>renderScoreOverlay(i))}else renderScoreOverlay(i);const meta=trackBeatMeta(i);$('scorePracticeStatus').textContent=`Following M${meta.measure}.${meta.beat} · beat ${i+1}${explicitTapAccent(i,meta.downbeat||isAccent(i))?' · accent':''}`}
+    if(!scorePracticeActive)return;let ms;if(scorePracticeClock){ms=scorePracticeNowMs();if(ms>=track.durationMs){stopScorePractice(false);scorePracticeClock=null;$('scorePracticeStatus').textContent='Practice finished.';return}}else{const a=tapAlongAudio();if(!a||a.paused)return;ms=mediaTimeAt(a)*1000}let i=0;while(i+1<track.taps.length&&track.taps[i+1]<=ms)i++;if(ms<track.taps[0]-40)i=-1;const p=i>=0?scorePointForBeat(i):null;
+    if(i!==scorePracticeLastBeat&&i>=0){scorePracticeLastBeat=i;if(p&&Number(p.page)!==scorePdfPage&&!scorePdfRendering){renderScorePage(Number(p.page)).then(()=>renderScoreOverlay(i))}else renderScoreOverlay(i);const meta=trackBeatMeta(i);$('scorePracticeStatus').textContent=`Following M${meta.measure}.${meta.beat} · beat ${i+1}${explicitTapAccent(i,meta.downbeat||isAccent(i))?' · accent':''}`}
     scorePracticeRaf=requestAnimationFrame(scorePracticeTick)
   }
   async function startScorePractice(){
     // Keep generated score-follow clicks audible on iPhone/iPad.
     await unlockAudioForMobile().catch(()=>{});
     if(!scorePdfDoc||!track.taps.length||(!(track.scoreMeasureBoxes||[]).length&&!(track.scoreAnchors||[]).length)){$('scorePracticeStatus').textContent='Add the PDF and make the click track first.';return}
-    if(!tapAlongUrl){if(recording)endRecording();if(playing)stopReplay(false);if(!scorePracticeClock||scorePracticeClock.offset>=track.durationMs-20)scorePracticeClock={start:0,offset:0};const from=scorePracticeClock.offset;scorePracticeClock.start=performance.now();scorePracticeActive=true;scorePracticeLastBeat=-1;scheduleScorePracticeClicks(from);$('scorePracticeStatus').textContent='Practice running · clicks only, score follows.';scorePracticeTick();return}
-    if(recording)endRecording();if(playing)stopReplay(false);const a=tapAlongAudio();let from=Math.max(0,(a.currentTime||0)*1000);if(a.ended||from>=track.durationMs-20){a.currentTime=0;from=0}
-    scorePracticeActive=true;scorePracticeLastBeat=-1;scheduleScorePracticeClicks(from);try{await a.play()}catch{$('scorePracticeStatus').textContent='Press Practice again to allow audio playback.';scorePracticeActive=false;return}$('scorePracticeStatus').textContent='Practice running — score follows your beat map.';scorePracticeTick()
+    if(recording)endRecording();if(playing)stopReplay(false);if(listenActive)stopListenWithAudio(true);
+    if(!tapAlongUrl){if(!scorePracticeClock||scorePracticeClock.offset>=track.durationMs-20)scorePracticeClock={start:0,offset:0};scorePracticeClock.start=performance.now()+120;scorePracticeActive=true;scorePracticeLastBeat=-1;
+      const clk=scorePracticeClock;scorePracticeSched=startClickScheduler({events:scorePracticeEvents(),perfAt:t=>clk.start+(t*1000-clk.offset)});$('scorePracticeStatus').textContent='Practice running · clicks only, score follows.';scorePracticeTick();syncScoreClickPlayUi();return}
+    const a=tapAlongAudio();if(a.ended||a.currentTime*1000>=track.durationMs-20)a.currentTime=0;
+    scorePracticeActive=true;scorePracticeLastBeat=-1;try{await a.play()}catch{$('scorePracticeStatus').textContent='Press Practice again to allow audio playback.';scorePracticeActive=false;return}
+    scorePracticeSched=startClickScheduler({events:scorePracticeEvents(),perfAt:t=>perfForMediaTime(a,t)});$('scorePracticeStatus').textContent='Practice running — score follows your beat map.';scorePracticeTick();syncScoreClickPlayUi()
   }
   function pauseScorePractice(){if(scorePracticeActive)stopScorePractice(false)}
   function scorePracticeAudioEnded(){if(scorePracticeActive){stopScorePractice(false);$('scorePracticeStatus').textContent='Practice finished.'}}
 
   function renderDetails(){
     const bpm=recentBpm(); $('bpm').textContent=bpm??'—';
-    $('startButton').disabled=recording||playing;$('endButton').disabled=!recording||playing;$('undoTapButton').disabled=!recording||!track.taps.length||playing;$('playButton').disabled=recording||playing||track.durationMs<=0;$('stopButton').disabled=!playing;$('saveButton').disabled=recording||playing||track.durationMs<=0||!track.taps.length;/* Security review: a recording with no taps is not a click track */$('exportButton').disabled=recording||playing||track.durationMs<=0||!track.taps.length;$('cutButton').disabled=recording||playing||track.durationMs<=0;$('undoEditButton').disabled=!editHistory.length;
+    $('startButton').disabled=recording||playing;$('endButton').disabled=!recording||playing;$('undoTapButton').disabled=!recording||!track.taps.length||playing;$('playButton').disabled=recording||playing||track.durationMs<=0;$('stopButton').disabled=!playing;$('saveButton').disabled=recording||playing||track.durationMs<=0||!track.taps.length;/* Security review: a recording with no taps is not a click track */$('exportButton').disabled=recording||playing||track.durationMs<=0||!track.taps.length;for(const id of ['exportMp3Button','exportWavButton','exportMixMp3Button'])if($(id))$(id).disabled=$('exportButton').disabled;if($('exportMixMp3Button'))$('exportMixMp3Button').classList.toggle('hidden',!tapAlongUrl);$('cutButton').disabled=recording||playing||track.durationMs<=0;$('undoEditButton').disabled=!editHistory.length;
     $('startButton').textContent=recording?'● Recording…':'● Start Clicks';
-    syncTapAlongUi();
+    syncTapAlongUi();syncScoreClickPlayUi();
     const measureCount=trackMeasureCount();$('durationPill').textContent=`${track.taps.length} beat${track.taps.length===1?'':'s'} · ${measureCount} measure${measureCount===1?'':'s'}`; $('dashTime').textContent=String(track.taps.length);
     if(recording){$('summary').textContent=`${track.taps.length} tap${track.taps.length===1?'':'s'} recorded${bpm?` · ${bpm} BPM average`:''}.`;$('editorHint').textContent='Finish the recording before editing.';$('dashTrackStatus').textContent='Recording in progress.'}
     else if(track.durationMs>0){$('summary').textContent=`${track.taps.length} beat${track.taps.length===1?'':'s'}${bpm?` · ${bpm} BPM recent pulse`:''}.`;$('editorHint').textContent='Drag clicks to retime them, or remove a section below.';$('dashTrackStatus').textContent='Track ready to replay, edit, or save.'}
@@ -3343,9 +3485,25 @@ html,body{background:var(--ground)!important}
   }
   function startRecording(){ if(recording||playing)return;if(window.innerWidth<=900){setTimeout(()=>{try{document.querySelector('.timeline-card')?.scrollIntoView({block:'start',behavior:'smooth'})}catch{}},60)}tapAlongActive=false;const a=tapAlongAudio();if(a&&!a.paused)a.pause();segmentBaseMs=track.durationMs;segmentStartReal=performance.now();recording=true;frozenViewMs=track.durationMs;$('status').textContent=segmentBaseMs>0?'Recording continued.':'Recording…';$('timingFeedback').textContent=track.targetBpm===0?'No target beat selected.':(segmentBaseMs>0?'Continuing from where you stopped.':'Recording started.');renderDetails();startAnimation(); }
   function endRecording(){ if(!recording)return;const wasTapAlong=tapAlongActive,endMs=currentRecordTime();tapAlongActive=false;if(wasTapAlong){const a=tapAlongAudio();if(a&&!a.paused)a.pause()}track.durationMs=Math.max(endMs,track.taps.length?track.taps.at(-1):0);frozenViewMs=track.durationMs;recording=false;stopAnimation();$('status').textContent=`Recording ended · ${track.taps.length} beat${track.taps.length===1?'':'s'}.`;$('timingFeedback').textContent=wasTapAlong?'Tap-along stopped. Seek and press Play & Tap to continue.':'Press Start Clicks to continue, Replay to review, or Save when ready.';if(wasTapAlong)setTapAlongStatus('Tap-along stopped. Seek if needed, then press Play & Tap to continue.');renderDetails(); }
-  function recordTap(style='auto'){if(recording&&!playing)track.fromScore=false;/* v1.5.1: hand-tapped edits make this the user's own track */ if(!recording||playing){if(!recording)$('status').textContent=tapAlongUrl?'Press Play & Tap or Start Clicks first.':'Press Start Clicks first.';return}if(tapAlongActive&&tapAlongAudio()?.paused){setTapAlongStatus('The recording is paused. Press Play & Tap to continue.','error');return}const now=currentRecordTime(),prev=track.taps.length?track.taps.at(-1):null;if(prev!==null&&now<=prev+12){$('status').textContent='That tap was too close to the previous beat.';return}const i=track.taps.length;track.taps.push(now);track.tapAccents=track.tapAccents||[];track.tapAccents.push(style==='accent'?1:style==='plain'?0:null);const auto=trackBeatMeta(i).downbeat||isAccent(i),accent=explicitTapAccent(i,auto);clickSound(accent);animateConductor(prev===null?520:now-prev);timingFeedback(nearestGuideDelta(now));$('status').textContent=style==='accent'?'Accented beat recorded.':(track.taps.length===1?'First tap recorded.':(tapAlongActive?'Beat locked to the recording.':'Beat recorded.'));renderDetails(); }
-  function replay(){ if(recording||playing||track.durationMs<=0)return;playing=true;replayStartReal=performance.now();replayViewMs=0;frozenViewMs=0;$('status').textContent='Replaying measures + subdivisions…';renderDetails();audio();expandedTrackClickEvents().forEach(ev=>{playbackTimers.push(setTimeout(()=>{if(!playing)return;clickSound(ev.accent,ev.primary?'primary':'subdivision');if(ev.primary){const ms=ev.ms,i=ev.index;animateConductor(i?ms-track.taps[i-1]:520);timingFeedback(nearestGuideDelta(ms))}},Math.max(0,ev.ms)))});playbackTimers.push(setTimeout(()=>{if(!playing)return;playing=false;frozenViewMs=track.durationMs;playbackTimers=[];stopAnimation();$('status').textContent='Replay finished.';renderDetails()},track.durationMs));startAnimation(); }
-  function stopReplay(update=true){playbackTimers.forEach(clearTimeout);playbackTimers=[];if(playing)frozenViewMs=Math.min(track.durationMs,performance.now()-replayStartReal);playing=false;stopAnimation();if(update)$('status').textContent='Replay stopped.';renderDetails();}
+  function recordTap(style='auto',ts){if(recording&&!playing)track.fromScore=false;/* v1.5.1: hand-tapped edits make this the user's own track */ if(!recording||playing){if(!recording)$('status').textContent=tapAlongUrl?'Press Play & Tap or Start Clicks first.':'Press Start Clicks first.';return}if(tapAlongActive&&tapAlongAudio()?.paused){setTapAlongStatus('The recording is paused. Press Play & Tap to continue.','error');return}const now=currentRecordTime(ts),prev=track.taps.length?track.taps.at(-1):null;if(prev!==null&&now<=prev+12){$('status').textContent='That tap was too close to the previous beat.';return}const i=track.taps.length;track.taps.push(now);track.tapAccents=track.tapAccents||[];track.tapAccents.push(style==='accent'?1:style==='plain'?0:null);const auto=trackBeatMeta(i).downbeat||isAccent(i),accent=explicitTapAccent(i,auto);clickSound(accent);animateConductor(prev===null?520:now-prev);timingFeedback(nearestGuideDelta(now));$('status').textContent=style==='accent'?'Accented beat recorded.':(track.taps.length===1?'First tap recorded.':(tapAlongActive?'Beat locked to the recording.':'Beat recorded.'));renderDetails(); }
+  let replaySched=null;
+  function replay(){ if(recording||playing||track.durationMs<=0)return;if(listenActive)stopListenWithAudio(false);if(scorePracticeActive)stopScorePractice(false);playing=true;audio();const lead=140;replayStartReal=performance.now()+lead;replayViewMs=0;frozenViewMs=0;$('status').textContent='Replaying measures + subdivisions…';renderDetails();
+    const evs=expandedTrackClickEvents().map(ev=>({...ev,t:ev.ms/1000,kind:ev.primary?'primary':'subdivision'}));
+    replaySched=startClickScheduler({events:evs,perfAt:t=>replayStartReal+t*1000,onEvent:ev=>{if(!ev.primary)return;const i=ev.index;animateConductor(i?ev.ms-track.taps[i-1]:520);timingFeedback(nearestGuideDelta(ev.ms))}});
+    playbackTimers.push(setTimeout(()=>{if(!playing)return;playing=false;replaySched?.stop();replaySched=null;frozenViewMs=track.durationMs;playbackTimers=[];stopAnimation();$('status').textContent='Replay finished.';renderDetails();syncScoreClickPlayUi()},track.durationMs+lead+200));startAnimation();syncScoreClickPlayUi(); }
+  function stopReplay(update=true){replaySched?.stop();replaySched=null;playbackTimers.forEach(clearTimeout);playbackTimers=[];if(playing)frozenViewMs=Math.max(0,Math.min(track.durationMs,performance.now()-replayStartReal));playing=false;stopAnimation();if(update)$('status').textContent='Replay stopped.';renderDetails();syncScoreClickPlayUi();}
+  // ---- Listen back: the recording with the tapped click track on top (tap-along) ----
+  let listenSched=null,listenActive=false;
+  async function startListenWithAudio(){
+    await unlockAudioForMobile().catch(()=>{});const a=tapAlongAudio();if(!tapAlongUrl||!a||!track.taps.length)return;
+    if(recording)endRecording();if(playing)stopReplay(false);if(scorePracticeActive)stopScorePractice(false);
+    if(a.ended||(Number.isFinite(a.duration)&&a.currentTime>=a.duration-.05))a.currentTime=0;
+    const evs=expandedTrackClickEvents().map(ev=>({...ev,t:ev.ms/1000,kind:ev.primary?'primary':'subdivision'}));
+    listenActive=true;try{await a.play()}catch{listenActive=false;setTapAlongStatus('Your browser blocked playback. Press Listen again.','error');syncTapAlongUi();return}
+    listenSched=startClickScheduler({events:evs,perfAt:t=>perfForMediaTime(a,t),onEvent:ev=>{if(!ev.primary)return;const i=ev.index;animateConductor(i?ev.ms-track.taps[i-1]:520)}});
+    setTapAlongStatus('Listening: the recording with your click track on top. Seek anywhere; the clicks follow.','active');$('status').textContent='Playing the recording with your click track…';syncTapAlongUi();startAnimation();
+  }
+  function stopListenWithAudio(pauseAudio=true){if(!listenActive)return;listenActive=false;listenSched?.stop();listenSched=null;const a=tapAlongAudio();if(pauseAudio&&a&&!a.paused)a.pause();frozenViewMs=a?a.currentTime*1000:frozenViewMs;stopAnimation();setTapAlongStatus('Stopped. Press Listen to hear the recording with your clicks again, or Play & Tap to retap from here.');syncTapAlongUi()}
   function removeSection(){if(recording||playing||track.durationMs<=0||!track.taps.length)return;const startBeat=Math.max(1,Math.round(Number($('cutStart').value))),endBeat=Math.min(track.taps.length,Math.round(Number($('cutEnd').value)));if(!Number.isFinite(startBeat)||!Number.isFinite(endBeat)||endBeat<startBeat){$('status').textContent='Choose an end beat at or after the start beat.';return}const a=track.taps[startBeat-1],b=endBeat<track.taps.length?track.taps[endBeat]:track.durationMs;if(!Number.isFinite(a)||!Number.isFinite(b)||b<=a){$('status').textContent='That beat range cannot be removed.';return}editHistory.push({taps:[...track.taps],tapAccents:[...(track.tapAccents||[])],durationMs:track.durationMs});const cut=b-a,keep=track.taps.map((_,i)=>i<startBeat-1||i>endBeat-1);track.taps=track.taps.filter((_,i)=>keep[i]).map(t=>t>=b?t-cut:t);track.tapAccents=(track.tapAccents||[]).filter((_,i)=>keep[i]);track.durationMs=Math.max(0,track.durationMs-cut);frozenViewMs=track.durationMs;$('cutStart').value='1';$('cutEnd').value=String(Math.min(2,Math.max(1,track.taps.length)));$('status').textContent=`Removed beat${startBeat===endBeat?'':'s'} ${startBeat}${startBeat===endBeat?'':`–${endBeat}`}.`;renderDetails()}
   function undoEdit(){const p=editHistory.pop();if(!p)return;track.taps=[...p.taps];track.tapAccents=Array.isArray(p.tapAccents)?[...p.tapAccents]:track.taps.map(()=>null);track.durationMs=p.durationMs;frozenViewMs=track.durationMs;$('status').textContent='Last edit undone.';renderDetails()}
 
@@ -3403,11 +3561,11 @@ html,body{background:var(--ground)!important}
 
   const canvas=$('timelineCanvas'),ctx=canvas.getContext('2d');
   function resizeCanvas(){const r=canvas.getBoundingClientRect();if(r.width<=0||r.height<=0)return;const d=Math.max(1,devicePixelRatio||1);canvas.width=Math.round(r.width*d);canvas.height=Math.round(r.height*d);ctx.setTransform(d,0,0,d,0,0);drawTimeline()}
-  function viewTime(){if(recording)return currentRecordTime();if(playing)return Math.min(track.durationMs,performance.now()-replayStartReal);return frozenViewMs}
+  function viewTime(){if(recording||listenActive)return currentRecordTime();if(playing)return Math.max(0,Math.min(track.durationMs,performance.now()-replayStartReal));return frozenViewMs}
   function drawTimeline(){if(currentScreen!=='recorder')return;const r=canvas.getBoundingClientRect(),w=r.width,h=r.height;if(w<=0||h<=0)return;ctx.clearRect(0,0,w,h);const now=viewTime(),nowX=w*.72,ppm=w/visibleWindowMs;$('timelineTime').textContent=track.taps.length?(()=>{const m=trackBeatMeta(track.taps.length-1);return `M${m.measure} · beat ${m.beat}`})():'M— · beat —';$('dashTime').textContent=String(track.taps.length);$('nowLine').classList.toggle('idle',!recording&&!playing);ctx.strokeStyle='rgba(20,20,20,0.2)';ctx.beginPath();ctx.moveTo(0,h*.55);ctx.lineTo(w,h*.55);ctx.stroke();if(track.targetBpm>0){const interval=60000/track.targetBpm,earliest=now-nowX/ppm-interval,latest=now+(w-nowX)/ppm+interval;for(let i=Math.floor(earliest/interval);;i++){const t=i*interval;if(t>latest)break;const x=nowX+(t-now)*ppm;if(x<-20||x>w+20)continue;ctx.strokeStyle='rgba(43,95,138,0.9)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,58);ctx.lineTo(x,h-50);ctx.stroke();ctx.fillStyle='#2b5f8a';ctx.beginPath();ctx.arc(x,53,5,0,Math.PI*2);ctx.fill();ctx.fillStyle='rgba(43,95,138,0.95)';ctx.font='700 11px system-ui';ctx.textAlign='center';ctx.fillText(i>=0?(()=>{const m=trackBeatMeta(i);return m.downbeat?`M${m.measure}`:String(m.beat)})():'',x,h-42)}}for(let i=0;i<track.taps.length;i++){const t=track.taps[i],x=nowX+(t-now)*ppm;if(x<-24||x>w+24)continue;ctx.strokeStyle='#b5121b';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(x,80);ctx.lineTo(x,h-67);ctx.stroke();ctx.fillStyle='#b5121b';ctx.beginPath();ctx.arc(x,74,7,0,Math.PI*2);ctx.fill();ctx.font='800 10px system-ui';ctx.textAlign='center';ctx.fillText((()=>{const m=trackBeatMeta(i);return `M${m.measure}.${m.beat}`})(),x,h-54)}drawBeatFooter(now,w,h,nowX,ppm)}
   function drawSeconds(now,w,h,nowX,ppm){const step=250,first=Math.max(0,Math.ceil((now-nowX/ppm)/step)),last=Math.max(first,Math.floor((now+(w-nowX)/ppm)/step));ctx.textAlign='center';ctx.font='600 9px system-ui';for(let i=first;i<=last;i++){const off=i*step,x=nowX+(off-now)*ppm;if(x<0||x>w)continue;const half=off%500===0,whole=off%1000===0;ctx.strokeStyle=half?'rgba(20,20,20,0.5)':'rgba(20,20,20,0.24)';ctx.beginPath();ctx.moveTo(x,h-29);ctx.lineTo(x,h-(half?21:24));ctx.stroke();if(half){ctx.fillStyle=whole?'rgba(20,20,20,0.9)':'rgba(81,80,72,0.7)';ctx.fillText(`${(off/1000).toFixed(1)}s`,x,h-7)}}ctx.strokeStyle='rgba(20,20,20,0.18)';ctx.beginPath();ctx.moveTo(0,h-34);ctx.lineTo(w,h-34);ctx.stroke()}
   function drawBeatFooter(now,w,h,nowX,ppm){ctx.strokeStyle='rgba(20,20,20,0.18)';ctx.beginPath();ctx.moveTo(0,h-34);ctx.lineTo(w,h-34);ctx.stroke();ctx.fillStyle='rgba(81,80,72,0.75)';ctx.font='650 9px system-ui';ctx.textAlign='left';ctx.fillText(track.taps.length?`${track.taps.length} recorded beats`:'Beat numbers appear as you tap',8,h-10)}
-  function tick(){animationFrame=null;if(!recording&&!playing)return;drawTimeline();animationFrame=requestAnimationFrame(tick)}
+  function tick(){animationFrame=null;if(!recording&&!playing&&!listenActive)return;drawTimeline();animationFrame=requestAnimationFrame(tick)}
   function startAnimation(){if(animationFrame===null)animationFrame=requestAnimationFrame(tick)}
   function stopAnimation(){if(animationFrame!==null){cancelAnimationFrame(animationFrame);animationFrame=null}drawTimeline()}
 
@@ -3605,6 +3763,60 @@ html,body{background:var(--ground)!important}
     return 'downloaded';
   }
 
+  // ===========================================================================
+  // Audio export (v1.7): click track as MP3 / WAV, alone or mixed over the recording.
+  // Clicks are synthesised sample-by-sample with exactly the sound used for playback; MP3 uses LAME
+  // (vendor/lame.min.js, LGPL), loaded only when needed and encoded in small slices so the page stays live.
+  // ===========================================================================
+  const CLICK_STYLES={track:{acc:[1550,.3],pri:[950,.13],sub:[680,.065],dec:[.065,.045],len:[.075,.055]},analysis:{acc:[1500,.24],pri:[880,.10],sub:[650,.055],dec:[.055,.040],len:[.065,.050]}};
+  function synthClickInto(chs,sr,startSec,accent,kind,volPct,style='track'){
+    const S=CLICK_STYLES[style]||CLICK_STYLES.track,sub=kind==='subdivision',[f,pk]=accent?S.acc:sub?S.sub:S.pri,peak=pk*(volPct/100);if(!(peak>0))return;
+    const len=Math.round(sr*(sub?S.len[1]:S.len[0])),att=Math.max(1,Math.round(.003*sr)),dec=Math.round(sr*(sub?S.dec[1]:S.dec[0])),i0=Math.round(startSec*sr);
+    for(let k=0;k<len;k++){const i=i0+k;if(i<0||i>=chs[0].length)continue;let env;if(k<att)env=1e-4*Math.pow(peak/1e-4,k/att);else if(k<dec)env=peak*Math.pow(1e-4/peak,(k-att)/Math.max(1,dec-att));else env=1e-4;
+      const ph=2*Math.PI*f*k/sr,w=accent?(2/Math.PI)*Math.asin(Math.sin(ph)):Math.sin(ph),v=w*env;for(const ch of chs)ch[i]+=v}
+  }
+  function renderClickMix({events,durationSec,audioBuffer=null,volPct=100,style='track'}){
+    const sr=audioBuffer?audioBuffer.sampleRate:44100,nch=audioBuffer?Math.min(2,audioBuffer.numberOfChannels):1,dur=Math.max(durationSec,audioBuffer?audioBuffer.duration:0)+0.25;
+    if(dur>32*60)throw new Error('Audio export supports up to 30 minutes.');
+    const n=Math.ceil(dur*sr),chs=[];for(let c=0;c<nch;c++){const ch=new Float32Array(n);if(audioBuffer){const src=audioBuffer.getChannelData(Math.min(c,audioBuffer.numberOfChannels-1));for(let i=0;i<src.length&&i<n;i++)ch[i]=src[i]*0.9}chs.push(ch)}
+    for(const ev of events)synthClickInto(chs,sr,ev.t,ev.accent,ev.kind||'primary',volPct,style);
+    let mx=0;for(const ch of chs)for(let i=0;i<n;i++){const a=Math.abs(ch[i]);if(a>mx)mx=a}if(mx>0.98){const g=0.98/mx;for(const ch of chs)for(let i=0;i<n;i++)ch[i]*=g}
+    return{chs,sr};
+  }
+  function encodeWavBlob({chs,sr}){const nch=chs.length,n=chs[0].length,buf=new ArrayBuffer(44+n*nch*2),v=new DataView(buf),w=(o,t)=>{for(let i=0;i<t.length;i++)v.setUint8(o+i,t.charCodeAt(i))};
+    w(0,'RIFF');v.setUint32(4,36+n*nch*2,true);w(8,'WAVE');w(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,nch,true);v.setUint32(24,sr,true);v.setUint32(28,sr*nch*2,true);v.setUint16(32,nch*2,true);v.setUint16(34,16,true);w(36,'data');v.setUint32(40,n*nch*2,true);
+    const pcm=new Int16Array(buf,44);for(let i=0,j=0;i<n;i++)for(let c=0;c<nch;c++,j++){const x=Math.max(-1,Math.min(1,chs[c][i]));pcm[j]=x<0?x*32768:x*32767}return new Blob([buf],{type:'audio/wav'})}
+  let lameLoading=null;
+  function loadLame(){if(window.lamejs?.Mp3Encoder)return Promise.resolve(window.lamejs);if(lameLoading)return lameLoading;lameLoading=new Promise((res,rej)=>{const sc=document.createElement('script');sc.src=VENDOR_BASE+'lame.min.js';sc.onload=()=>window.lamejs?.Mp3Encoder?res(window.lamejs):rej(new Error('MP3 encoder failed to load'));sc.onerror=()=>{lameLoading=null;rej(new Error('MP3 encoder could not be loaded. Check your connection and try again.'))};document.head.appendChild(sc)});return lameLoading}
+  async function encodeMp3Blob({chs,sr},onProgress){
+    // MP3 decoders play LAME output 1105 samples late (576 encoder + 529 decoder delay) unless they read a gapless tag,
+    // which lamejs doesn't write. Start the input 1105 samples in, so decoded clicks land exactly where they belong.
+    const D=1105;chs=chs.map(ch=>{const o=new Float32Array(ch.length);o.set(ch.subarray(D));return o});
+    const L=await loadLame(),nch=chs.length,kbps=nch>1?192:128,enc=new L.Mp3Encoder(nch,sr,kbps),out=[],n=chs[0].length,block=1152*48,toI16=(a,s,e)=>{const r=new Int16Array(e-s);for(let i=s;i<e;i++){const x=Math.max(-1,Math.min(1,a[i]));r[i-s]=x<0?x*32768:x*32767}return r};
+    for(let s0=0;s0<n;s0+=block){const e=Math.min(n,s0+block),l=toI16(chs[0],s0,e),r=nch>1?toI16(chs[1],s0,e):null,mp=nch>1?enc.encodeBuffer(l,r):enc.encodeBuffer(l);if(mp.length)out.push(new Uint8Array(mp));if((s0/block)%20===0){onProgress?.(s0/n);await new Promise(r=>setTimeout(r,0))}}
+    const f=enc.flush();if(f.length)out.push(new Uint8Array(f));return new Blob(out,{type:'audio/mpeg'})}
+  let tapAlongDecoded=null,tapAlongDecodedUrl=null;
+  async function tapAlongAudioBuffer(){if(!tapAlongUrl)return null;if(tapAlongDecoded&&tapAlongDecodedUrl===tapAlongUrl)return tapAlongDecoded;const bytes=await (await fetch(tapAlongUrl)).arrayBuffer();tapAlongDecoded=await audio().decodeAudioData(bytes);tapAlongDecodedUrl=tapAlongUrl;return tapAlongDecoded}
+  function exportBaseName(){return (track.loadedName||'TempoTapp-click-track').replace(/[^a-z0-9 _-]/gi,'').trim().replace(/\s+/g,'-')||'TempoTapp-click-track'}
+  async function exportTrackAudio(format,{withAudio=false}={}){
+    if(!track.taps.length||track.durationMs<=0)return;const st=$('status');
+    try{st.textContent='Preparing the audio…';await new Promise(r=>setTimeout(r,20));
+      const ab=withAudio?await tapAlongAudioBuffer():null;if(withAudio&&!ab)throw new Error('Add the recording in Tap Along to Audio first.');
+      const mix=renderClickMix({events:expandedTrackClickEvents().map(ev=>({t:ev.ms/1000,accent:ev.accent,kind:ev.primary?'primary':'subdivision'})),durationSec:track.durationMs/1000,audioBuffer:ab,volPct:clampClickVolume(track.clickVolume)});
+      const blob=format==='mp3'?await encodeMp3Blob(mix,p=>{st.textContent=`Encoding MP3… ${Math.round(p*100)}%`}):encodeWavBlob(mix);
+      const name=`${exportBaseName()}${withAudio?'-with-clicks':''}.${format}`,res=await saveBlobToDevice(blob,name);
+      st.textContent=res==='shared'?`${format.toUpperCase()} opened in the Share sheet.`:res==='cancelled'?'Export cancelled.':`${name} downloaded.`;
+    }catch(err){st.textContent=err.message||'Export failed.'}
+  }
+  async function exportAnalysisAudio(format,{withAudio=true}={}){
+    if(!beatAnalysis?.rawBeats?.length||!uploadedAudioBuffer)return;const st=$('analyzeStatus');
+    try{st.textContent='Preparing the audio…';st.className='analyze-status working';await new Promise(r=>setTimeout(r,20));
+      const mix=renderClickMix({events:analysisExpandedClickEvents().map(ev=>({t:ev.time,accent:ev.accent,kind:ev.primary?'primary':'subdivision'})),durationSec:uploadedAudioBuffer.duration,audioBuffer:withAudio?uploadedAudioBuffer:null,volPct:clampClickVolume(analysisClickVolume),style:'analysis'});
+      const blob=format==='mp3'?await encodeMp3Blob(mix,p=>{st.textContent=`Encoding MP3… ${Math.round(p*100)}%`}):encodeWavBlob(mix);
+      const base=(warpSourceFileName||'recording').replace(/\.[^.]+$/,'').replace(/[^a-z0-9 _-]/gi,'').trim().replace(/\s+/g,'-')||'recording',name=`${base}-${withAudio?'with-clicks':'click-track'}.${format}`,res=await saveBlobToDevice(blob,name);
+      st.textContent=res==='cancelled'?'Export cancelled.':`${name} ready.`;st.className='analyze-status good';
+    }catch(err){st.textContent=err.message||'Export failed.';st.className='analyze-status error'}
+  }
   async function exportTrack(){
     if(track.durationMs<=0)return;
     try{
@@ -3775,17 +3987,19 @@ html,body{background:var(--ground)!important}
     }
   }
 
+  let warpLoadError='';
   async function handleWarpAudioFile(file){
+    warpLoadError='';
     if(isPdfFile(file)){openSheetMusicPdf(file);return}
     clearWarpOutput({resetProject:true,resetHistory:true,resetAnalysis:true});
     warpBeatShift=0;syncBeatAlignment();
     if(!file) return false;
-    if(file.size > 180*1024*1024){ setWarpStatus('That file is too large for this version. Try an audio file under 180 MB.','error'); return false; }
+    if(file.size > 400*1024*1024){ warpLoadError='That file is too large (over 400 MB). Export it as an MP3 or AAC and try again.';setWarpStatus(warpLoadError,'error'); return false; }
     setWarpStatus('Loading the audio…','working');
     try{
       const bytes=await file.arrayBuffer();
       const decoded=await audio().decodeAudioData(bytes.slice(0));
-      if(decoded.duration > 15*60) throw new Error('This version supports recordings up to 15 minutes.');
+      if(decoded.duration > 30*60) throw new Error(`That recording is ${Math.round(decoded.duration/60)} minutes long. TempoTapp handles recordings up to 30 minutes; trim it or split it into movements.`);
       uploadedAudioBuffer=decoded;
       warpSourceFileName=file.name;
       if(uploadedAudioUrl) URL.revokeObjectURL(uploadedAudioUrl);
@@ -3801,7 +4015,7 @@ html,body{background:var(--ground)!important}
       updateWarpButtons();
       return true;
     }catch(err){
-      uploadedAudioBuffer=null;
+      uploadedAudioBuffer=null;warpLoadError=err?.message||'';
       setWarpStatus(err.message || 'TempoTapp could not read this audio file.','error');
       updateWarpButtons();
       return false;
@@ -3853,8 +4067,8 @@ html,body{background:var(--ground)!important}
     if(!uploadedAudioBuffer||beats.length<2){panel.classList.add('hidden');return}
     panel.classList.remove('hidden');
     const zoom=Number($('analysisBeatZoom')?.value)||34;
-    const cssW=Math.max(760,Math.ceil((beats.length+2)*zoom));
-    const h=250,dpr=Math.max(1,devicePixelRatio||1);
+    const dpr=Math.max(1,devicePixelRatio||1),cssW=Math.min(Math.floor(30000/dpr),Math.max(760,Math.ceil((beats.length+2)*zoom)));
+    const h=250;
     canvas.style.width=cssW+'px';canvas.width=Math.round(cssW*dpr);canvas.height=Math.round(h*dpr);
     const c=canvas.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,cssW,h);
     const pad=44,right=18,top=34,bottom=202,mid=(top+bottom)/2,amp=(bottom-top)*.43,dur=uploadedAudioBuffer.duration,inner=cssW-pad-right;
@@ -3960,42 +4174,92 @@ html,body{background:var(--ground)!important}
     syncAnalysisAudioUI();
     $('analyzeResult').classList.add('hidden');
     if(!loaded||!uploadedAudioBuffer){
-      $('analyzeStatus').textContent='TempoTapp could not decode that audio file in this browser. Try WAV, MP3, M4A/AAC, FLAC, or OGG.';
+      $('analyzeStatus').textContent=warpLoadError&&!/decode/i.test(warpLoadError)?warpLoadError:'TempoTapp could not decode that audio file in this browser. Try WAV, MP3, M4A/AAC, FLAC, or OGG.';
       $('analyzeStatus').className='analyze-status error';
       return;
     }
     $('analyzeStatus').textContent='Recording loaded. Add any musical context or reference taps, then analyze.';
     $('analyzeStatus').className='analyze-status';
   }
+  let downbeatCaptureActive=false,countdownBusy=false;
   function syncAnalysisAnchorReadouts(){
-    const tapText=analysisTrainingTaps.length?`${analysisTrainingTaps.length} reference beat${analysisTrainingTaps.length===1?'':'s'} captured · ${analysisTrainingTaps.slice(0,6).map(v=>v.toFixed(2)+'s').join(' · ')}${analysisTrainingTaps.length>6?' …':''}`:'No reference taps yet.';
-    $('trainingTapReadout').textContent=tapText;
-    $('firstDownbeatReadout').textContent=Number.isFinite(analysisFirstDownbeatSec)?`First downbeat anchored at ${analysisFirstDownbeatSec.toFixed(3)} s.`:'No downbeat anchor set.';
+    const n=analysisTrainingTaps.length;
+    $('trainingTapReadout').textContent=n?`${n} reference beat${n===1?'':'s'} captured${n<8?' · 8 or more recommended':''}.`:'No reference taps yet.';
+    const list=$('trainingTapList');if(list)list.innerHTML=analysisTrainingTaps.map((v,i)=>`<span title="Tap ${i+1}">${i+1}: ${v.toFixed(2)}s</span>`).join('');
+    const has=Number.isFinite(analysisFirstDownbeatSec);
+    $('firstDownbeatReadout').textContent=downbeatCaptureActive?'Listening… press Space on beat 1.':has?`First downbeat at ${analysisFirstDownbeatSec.toFixed(3)} s.`:'No downbeat anchor set.';
+    if($('downbeatFine'))$('downbeatFine').classList.toggle('hidden',!has);
+    if(has&&$('downbeatSecInput')&&document.activeElement!==$('downbeatSecInput'))$('downbeatSecInput').value=analysisFirstDownbeatSec.toFixed(3);
     $('tapTrainingBox').classList.toggle('tap-training-active',analysisTrainingActive);
     $('startTrainingTapsButton').textContent=analysisTrainingActive?'Stop Tap Training':'Start Tap Training';
     $('trainingTapButton').disabled=!analysisTrainingActive;
+    if($('tapDownbeatButton')){$('tapDownbeatButton').textContent=downbeatCaptureActive?'Tap: Beat 1':'Tap Downbeat';}
   }
-  function toggleAnalysisTapTraining(){
-    analysisTrainingActive=!analysisTrainingActive;
-    if(analysisTrainingActive){
-      const p=$('analysisAudio');if(p&&p.paused)p.play().catch(()=>{});
-      $('analyzeStatus').textContent='Tap the beat as you hear it. Four or more taps give the analyzer a much stronger local timing reference.';
-    }else $('analyzeStatus').textContent=analysisTrainingTaps.length>=4?'Reference taps saved. Run Analyze Beat Map.':'Tap training stopped. Four or more taps are recommended for difficult passages.';
+  // 3-2-1 count-in: big numbers plus a soft click on each count, then "Go".
+  async function runCountdown(el,{n=3,ms=700}={}){
+    countdownBusy=true;await unlockAudioForMobile().catch(()=>{});const c=audio();el.classList.remove('hidden','go');
+    try{for(let k=n;k>=1;k--){el.textContent=String(k);clickAt(c.currentTime+0.01,k===n,'primary',70);await new Promise(r=>setTimeout(r,ms))}el.textContent='Go';el.classList.add('go');setTimeout(()=>{el.classList.add('hidden');el.classList.remove('go')},900)}finally{countdownBusy=false}
+  }
+  async function toggleAnalysisTapTraining(){
+    if(countdownBusy)return;const p=$('analysisAudio');
+    if(!analysisTrainingActive){
+      if(!uploadedAudioBuffer||!p)return;if(downbeatCaptureActive)stopDownbeatCapture();
+      if(!p.paused)p.pause();if(p.ended||(Number.isFinite(p.duration)&&p.currentTime>=p.duration-0.2))p.currentTime=0;
+      $('analyzeStatus').textContent='Get ready…';await runCountdown($('trainingCountdown'));
+      analysisTrainingActive=true;try{await p.play()}catch{analysisTrainingActive=false;$('analyzeStatus').textContent='Your browser blocked playback. Press Start Tap Training again.';syncAnalysisAnchorReadouts();return}
+      $('analyzeStatus').textContent='Tap the beat as you hear it (Space or Tap Beat). Tap 8 or more beats. Pause, move the player and Start again to add taps from another passage.';
+    }else{analysisTrainingActive=false;if(p&&!p.paused)p.pause();$('analyzeStatus').textContent=analysisTrainingTaps.length>=4?`${analysisTrainingTaps.length} reference taps saved. Run Analyze Beat Map (or Re-analyze) to apply them to the whole piece.`:'Tap training stopped. 8 or more taps are recommended.'}
     syncAnalysisAnchorReadouts();
   }
-  function captureAnalysisTrainingTap(){
-    if(!analysisTrainingActive||!uploadedAudioBuffer)return;
-    const t=Math.max(0,Math.min(uploadedAudioBuffer.duration,$('analysisAudio').currentTime||0));
-    if(analysisTrainingTaps.length&&Math.abs(t-analysisTrainingTaps.at(-1))<.08)return;
+  function captureAnalysisTrainingTap(ts){
+    if(!analysisTrainingActive||!uploadedAudioBuffer)return;const pl=$('analysisAudio');if(!pl||pl.paused)return;
+    const t=Math.max(0,Math.min(uploadedAudioBuffer.duration,mediaTimeAt(pl,evTime(ts))-tapOffsetMs()/1000));
+    if(analysisTrainingTaps.some(v=>Math.abs(v-t)<.08))return;
     analysisTrainingTaps.push(t);analysisTrainingTaps.sort((a,b)=>a-b);syncAnalysisAnchorReadouts();
+    const btn=$('trainingTapButton');btn.classList.add('pulse');setTimeout(()=>btn.classList.remove('pulse'),110);
   }
   function clearAnalysisTrainingTaps(){analysisTrainingTaps=[];syncAnalysisAnchorReadouts()}
-  function setAnalysisFirstDownbeat(){
-    if(!uploadedAudioBuffer)return;
-    analysisFirstDownbeatSec=Math.max(0,Math.min(uploadedAudioBuffer.duration,$('analysisAudio').currentTime||0));
+  async function startDownbeatCapture(){
+    if(countdownBusy||!uploadedAudioBuffer)return;const p=$('analysisAudio');if(!p)return;
+    if(downbeatCaptureActive){stopDownbeatCapture();return}
+    if(analysisTrainingActive){analysisTrainingActive=false}if(!p.paused)p.pause();p.currentTime=0;
+    $('analyzeStatus').textContent='Get ready. The recording plays from the start; press Space on beat 1.';await runCountdown($('downbeatCountdown'));
+    downbeatCaptureActive=true;syncAnalysisAnchorReadouts();try{await p.play()}catch{downbeatCaptureActive=false;$('analyzeStatus').textContent='Your browser blocked playback. Press Tap Downbeat again.';syncAnalysisAnchorReadouts();return}
+  }
+  function stopDownbeatCapture(){downbeatCaptureActive=false;const p=$('analysisAudio');if(p&&!p.paused)p.pause();syncAnalysisAnchorReadouts()}
+  function captureFirstDownbeatTap(ts){
+    if(!downbeatCaptureActive||!uploadedAudioBuffer)return;const pl=$('analysisAudio');if(!pl||pl.paused)return;
+    const t=Math.max(0,Math.min(uploadedAudioBuffer.duration,mediaTimeAt(pl,evTime(ts))-tapOffsetMs()/1000));
+    downbeatCaptureActive=false;setTimeout(()=>{if(!pl.paused&&!downbeatCaptureActive)pl.pause()},1200);
+    setFirstDownbeatAt(t,{snap:true});$('analyzeStatus').textContent=`First downbeat set at ${t.toFixed(3)} s. Fine-tune it with the buttons and press Check to hear it.`;
+  }
+  // Set (or move) the first-downbeat anchor. When a beat map exists, the nearest analyzed beat moves to
+  // exactly this time and becomes beat 1, and bar numbering follows from there.
+  function setFirstDownbeatAt(t,{snap=false}={}){
+    if(!uploadedAudioBuffer)return;t=Math.max(0,Math.min(uploadedAudioBuffer.duration,Number(t)||0));
+    if(snap&&beatAnalysis?.rawBeats?.length){// a tap lands up to ~60 ms off; settle on the analyzed beat if one is that close
+      let bi=-1,bd=0.09;beatAnalysis.rawBeats.forEach((v,i)=>{const d=Math.abs(v-t);if(d<bd){bd=d;bi=i}});if(bi>=0)t=beatAnalysis.rawBeats[bi]}
+    analysisFirstDownbeatSec=t;
+    if(beatAnalysis?.rawBeats?.length){const beats=beatAnalysis.rawBeats;let bi=0,bd=Infinity;beats.forEach((v,i)=>{const d=Math.abs(v-t);if(d<bd){bd=d;bi=i}});
+      const ibi=beats.length>1?(beats[Math.min(beats.length-1,bi+1)]-beats[Math.max(0,bi-1)])/Math.max(1,Math.min(beats.length-1,bi+1)-Math.max(0,bi-1)):0.5;
+      if(bd<ibi*0.45){const lo=bi>0?beats[bi-1]+0.03:0,hi=bi<beats.length-1?beats[bi+1]-0.03:uploadedAudioBuffer.duration;beats[bi]=Math.max(lo,Math.min(hi,t))}
+      recomputeAnalysisDownbeatPhase();renderAnalysisResult({scroll:false});syncAnalysisIntoWarp({rebuild:true});}
     syncAnalysisAnchorReadouts();
   }
-  function clearAnalysisFirstDownbeat(){analysisFirstDownbeatSec=null;syncAnalysisAnchorReadouts()}
+  function setAnalysisFirstDownbeat(){
+    if(!uploadedAudioBuffer)return;
+    setFirstDownbeatAt($('analysisAudio').currentTime||0,{snap:true});
+  }
+  function clearAnalysisFirstDownbeat(){analysisFirstDownbeatSec=null;if(beatAnalysis?.rawBeats?.length){recomputeAnalysisDownbeatPhase();renderAnalysisResult({scroll:false})}syncAnalysisAnchorReadouts()}
+  let downbeatCheckSched=null;
+  async function checkFirstDownbeat(){
+    if(!Number.isFinite(analysisFirstDownbeatSec))return;await unlockAudioForMobile().catch(()=>{});const p=$('analysisAudio');if(!p)return;
+    downbeatCheckSched?.stop();const t0=Math.max(0,analysisFirstDownbeatSec-2);p.pause();p.currentTime=t0;
+    const evs=(beatAnalysis?.rawBeats?.length?analysisExpandedClickEvents().filter(ev=>ev.primary&&ev.time>=analysisFirstDownbeatSec-2.05&&ev.time<=analysisFirstDownbeatSec+3).map(ev=>({...ev,t:ev.time})):[{t:analysisFirstDownbeatSec,accent:true}]);
+    try{await p.play()}catch{return}
+    downbeatCheckSched=startClickScheduler({events:evs,perfAt:t=>perfForMediaTime(p,t),play:(when,ev,bus)=>scheduleAnalysisClickAt(when,ev.accent,'primary',bus)});
+    setTimeout(()=>{downbeatCheckSched?.stop();downbeatCheckSched=null;if(!p.paused)p.pause()},(analysisFirstDownbeatSec+3-t0)*1000+400);
+  }
   function makeAnalysisMono(){
     if(!uploadedAudioBuffer)return null;
     const n=uploadedAudioBuffer.length,out=new Float32Array(n),channels=Math.min(2,uploadedAudioBuffer.numberOfChannels);
@@ -4013,7 +4277,10 @@ html,body{background:var(--ground)!important}
       beatsPerBar:Number(result.beatsPerBar)||0,downbeatPhase:Number.isFinite(Number(result.downbeatPhase))?Number(result.downbeatPhase):0,
       beatPositions:Array.isArray(result.beatPositions)?result.beatPositions.map(Number):[],strengths:Array.isArray(result.strengths)?result.strengths.map(Number):[],
       trainingTapCount:Number(result.trainingTapCount)||analysisTrainingTaps.length,firstDownbeatSec:Number.isFinite(analysisFirstDownbeatSec)?analysisFirstDownbeatSec:null,
-      detectorVersion:result.detectorVersion||'',rawBeats
+      detectorVersion:result.detectorVersion||'',rawBeats,
+      barPositions:Array.isArray(result.barPositions)&&result.barPositions.length===rawBeats.length?result.barPositions.map(Number):null,
+      downbeatProbs:Array.isArray(result.downbeatProbs)&&result.downbeatProbs.length===rawBeats.length?result.downbeatProbs.map(Number):null,
+      positionsMeter:Number(result.beatsPerBar)||0
     };
     analysisMeterMap=buildInitialMeterMap();analysisMeterMapAuto=analysisMeterMap.map(x=>({...x}));
     warpMeter=beatAnalysis.meter;warpSubdivision=beatAnalysis.subdivision;warpTempoHint=0;warpExpressive=beatAnalysis.expressive;warpPulseMode='normal';
@@ -4121,15 +4388,22 @@ html,body{background:var(--ground)!important}
   }
   function analysisBeatPosition(index){
     const seg=meterSegmentAtIndex(index),info=meterInfo(seg?.meter,analysisLastOptions?.beatUnit||beatAnalysis?.beatUnit),n=info.beatsPerBar;if(!n)return 0;
+    if(seg&&seg.startBeat===1&&beatAnalysis?.barPositions&&beatAnalysis.positionsMeter===n&&beatAnalysis.barPositions.length===(beatAnalysis.rawBeats?.length||0)&&beatAnalysis.barPositions[index])return beatAnalysis.barPositions[index];
     if((analysisMeterMap?.[0]?.startBeat||1)===seg.startBeat&&seg.startBeat===1){const phase=Number(beatAnalysis?.downbeatPhase)||0;return ((index-phase+n*1000)%n)+1}
     return ((index-(seg.startBeat-1))%n+n)%n+1;
   }
+  // Position-in-bar Viterbi over the beats (same model as the AI decoder): advances one per beat, can
+  // re-synchronise after a skipped/extra beat, driven by the per-beat downbeat probability.
+  function barPositionsFromProbs(dprob,m,forced){const n=dprob.length;if(!n||m<2)return null;const ADV=Math.log(0.97),JUMP=Math.log(0.015);let score=new Float64Array(m);const back=new Int8Array(n*m);const obs=(i,p)=>{const d=Math.min(0.995,Math.max(0.005,dprob[i]));let v=p===0?Math.log(d):Math.log(1-d);if(forced&&forced[i]!==undefined)v+=p===forced[i]?0:-60;return v};for(let p=0;p<m;p++)score[p]=obs(0,p);for(let i=1;i<n;i++){const nx=new Float64Array(m);for(let p=0;p<m;p++){let best=-Infinity,bq=0;for(let q=0;q<m;q++){let tr;if((q+1)%m===p)tr=ADV;else if(m>2&&(q+2)%m===p)tr=JUMP;else if(q===p)tr=JUMP;else continue;const v=score[q]+tr;if(v>best){best=v;bq=q}}nx[p]=best+obs(i,p);back[i*m+p]=bq}score=nx}let p=0;for(let q=1;q<m;q++)if(score[q]>score[p])p=q;const out=new Array(n);for(let i=n-1;i>=0;i--){out[i]=p+1;p=back[i*m+p]}return out}
   function recomputeAnalysisDownbeatPhase(){
-    if(!beatAnalysis?.rawBeats?.length)return;const first=analysisMeterMap?.[0]||buildInitialMeterMap()[0],n=meterInfo(first.meter,analysisLastOptions?.beatUnit||beatAnalysis?.beatUnit).beatsPerBar;if(!n)return;
+    if(!beatAnalysis?.rawBeats?.length)return;analysisMetaCache=null;const first=analysisMeterMap?.[0]||buildInitialMeterMap()[0],n=meterInfo(first.meter,analysisLastOptions?.beatUnit||beatAnalysis?.beatUnit).beatsPerBar;if(!n)return;
+    if(beatAnalysis.downbeatProbs&&beatAnalysis.downbeatProbs.length===beatAnalysis.rawBeats.length){const forced={};if(Number.isFinite(analysisFirstDownbeatSec)){let bi=0,bd=Infinity;beatAnalysis.rawBeats.forEach((t,i)=>{const d=Math.abs(t-analysisFirstDownbeatSec);if(d<bd){bd=d;bi=i}});forced[bi]=0}const pos=barPositionsFromProbs(beatAnalysis.downbeatProbs,n,forced);if(pos){beatAnalysis.barPositions=pos;beatAnalysis.positionsMeter=n;const f=pos.indexOf(1);beatAnalysis.downbeatPhase=f<0?0:f%n;beatAnalysis.beatPositions=beatAnalysis.rawBeats.map((_,i)=>analysisBeatPosition(i));return}}
     if(Number.isFinite(analysisFirstDownbeatSec)){let best=0,dist=Infinity;beatAnalysis.rawBeats.forEach((t,i)=>{const d=Math.abs(t-analysisFirstDownbeatSec);if(d<dist){dist=d;best=i}});beatAnalysis.downbeatPhase=((best%n)+n)%n}
     beatAnalysis.beatPositions=beatAnalysis.rawBeats.map((_,i)=>analysisBeatPosition(i));
   }
-  function analysisBeatMeta(index){let measure=0,lastPos=0;for(let i=0;i<=index;i++){const pos=analysisBeatPosition(i);if(i===0){measure=pos===1?1:0}else if(pos===1)measure++;lastPos=pos}if(measure<1)measure=1;const seg=meterSegmentAtIndex(index);return {measure,beat:lastPos||1,meter:seg?.meter||'4/4',downbeat:lastPos===1}}
+  let analysisMetaCache=null;
+  function analysisAllMetas(){if(analysisMetaCache&&analysisMetaCache.length===(beatAnalysis?.rawBeats?.length||0))return analysisMetaCache;const n=beatAnalysis?.rawBeats?.length||0,out=new Array(n);let measure=0;for(let i=0;i<n;i++){const pos=analysisBeatPosition(i);if(i===0)measure=pos===1?1:0;else if(pos===1)measure++;const seg=meterSegmentAtIndex(i);out[i]={measure:Math.max(1,measure),beat:pos||1,meter:seg?.meter||'4/4',downbeat:pos===1}}analysisMetaCache=out;return out}
+  function analysisBeatMeta(index){const all=analysisAllMetas();if(all[index])return all[index];let measure=0,lastPos=0;for(let i=0;i<=index;i++){const pos=analysisBeatPosition(i);if(i===0){measure=pos===1?1:0}else if(pos===1)measure++;lastPos=pos}if(measure<1)measure=1;const seg=meterSegmentAtIndex(index);return {measure,beat:lastPos||1,meter:seg?.meter||'4/4',downbeat:lastPos===1}}
   function analysisMeasureCount(){if(!beatAnalysis?.rawBeats?.length)return 0;return analysisBeatMeta(beatAnalysis.rawBeats.length-1).measure}
   function analysisBeatIndexForMeasure(measure){const target=Math.max(1,Math.round(Number(measure)||1));for(let i=0;i<(beatAnalysis?.rawBeats?.length||0);i++){const m=analysisBeatMeta(i);if(m.measure>=target&&m.downbeat)return i}return Math.max(0,(beatAnalysis?.rawBeats?.length||1)-1)}
   function normalizeAnalysisSubdivisionMap(){const maxM=Math.max(1,analysisMeasureCount()),out=[];for(const x of analysisSubdivisionMap||[]){const a=Math.max(1,Math.min(maxM,Math.round(Number(x.startMeasure)||1))),b=Math.max(a,Math.min(maxM,Math.round(Number(x.endMeasure)||a))),factor=[2,3,4].includes(Number(x.factor))?Number(x.factor):0;if(factor)out.push({startMeasure:a,endMeasure:b,factor})}out.sort((a,b)=>a.startMeasure-b.startMeasure||a.endMeasure-b.endMeasure);analysisSubdivisionMap=out;return out}
@@ -4137,7 +4411,7 @@ html,body{background:var(--ground)!important}
   function renderAnalysisSubdivisionMap(){const box=$('analysisSubdivisionMapList');if(!box)return;const map=normalizeAnalysisSubdivisionMap();box.innerHTML=map.length?map.map((x,i)=>`<span class="music-map-chip sub">M${x.startMeasure}–${x.endMeasure}: ${escapeHtml(subdivisionName(x.factor))} <button data-remove-analysis-sub="${i}" title="Remove">×</button></span>`).join(''):'<span class="muted small">No extra subdivision clicks. Primary analyzed beats only.</span>'}
   function addAnalysisSubdivision(){if(!beatAnalysis?.rawBeats?.length)return;const a=Math.max(1,Math.round(Number($('analysisSubStart').value)||1)),b=Math.max(a,Math.round(Number($('analysisSubEnd').value)||a)),factor=Number($('analysisSubType').value)||3;analysisSubdivisionMap=[...analysisSubdivisionMap,{startMeasure:a,endMeasure:b,factor}];normalizeAnalysisSubdivisionMap();renderAnalysisSubdivisionMap();syncAnalysisIntoWarp({rebuild:false});$('analyzeStatus').textContent=`${subdivisionName(factor)} added for measures ${a}–${b}.`;$('analyzeStatus').className='analyze-status good'}
   function analysisExpandedClickEvents(beats=beatAnalysis?.rawBeats||[]){const ev=[];for(let i=0;i<beats.length;i++){const meta=analysisBeatMeta(i);ev.push({time:beats[i],primary:true,index:i,accent:meta.downbeat,meta});if(i<beats.length-1){const factor=analysisSubdivisionFactorForIndex(i);if(factor>1){const a=beats[i],b=beats[i+1];for(let k=1;k<factor;k++)ev.push({time:a+(b-a)*k/factor,primary:false,index:i,accent:false,meta,sub:k,factor})}}}return ev.sort((a,b)=>a.time-b.time||Number(b.primary)-Number(a.primary))}
-  function createTrackFromAnalysis(){if(!beatAnalysis?.rawBeats?.length||!uploadedAudioBuffer)return;const meterMap=normalizeMeterMap(),score=[{startMeasure:1,meter:meterMap[0]?.meter||'4/4'}];for(let i=1;i<meterMap.length;i++){const idx=Math.max(0,meterMap[i].startBeat-1),meta=analysisBeatMeta(idx);score.push({startMeasure:Math.max(1,meta.measure),meter:meterMap[i].meter})}stopReplay(false);recording=false;track.taps=beatAnalysis.rawBeats.map(t=>Math.round(t*1000));track.tapAccents=track.taps.map((_,i)=>analysisBeatMeta(i).downbeat?1:null);track.durationMs=Math.round(uploadedAudioBuffer.duration*1000);track.scoreMap=score;track.subdivisionMap=normalizeAnalysisSubdivisionMap().map(x=>({...x}));track.clickVolume=clampClickVolume(analysisClickVolume);track.loadedId=null;track.loadedName=(warpSourceFileName||'Analyzed recording').replace(/\.[^.]+$/,'')+' click track';track.loadedFolderId=null;editHistory=[];frozenViewMs=track.durationMs;segmentBaseMs=track.durationMs;syncControls();setCreateMode('review');showScreen('recorder');renderDetails();$('status').textContent='Created from the analyzed performance. Measures, meter changes, audio/PDF tools, and subdivision regions are ready to edit.'}
+  function createTrackFromAnalysis(){if(!beatAnalysis?.rawBeats?.length||!uploadedAudioBuffer)return;const meterMap=normalizeMeterMap(),score=[{startMeasure:1,meter:meterMap[0]?.meter||'4/4'}];for(let i=1;i<meterMap.length;i++){const idx=Math.max(0,meterMap[i].startBeat-1),meta=analysisBeatMeta(idx);score.push({startMeasure:Math.max(1,meta.measure),meter:meterMap[i].meter})}stopReplay(false);recording=false;track.taps=beatAnalysis.rawBeats.map(t=>Math.round(t*1000));track.tapAccents=track.taps.map((_,i)=>analysisBeatMeta(i).downbeat?1:0);track.durationMs=Math.round(uploadedAudioBuffer.duration*1000);track.scoreMap=score;track.subdivisionMap=normalizeAnalysisSubdivisionMap().map(x=>({...x}));track.clickVolume=clampClickVolume(analysisClickVolume);track.loadedId=null;track.loadedName=(warpSourceFileName||'Analyzed recording').replace(/\.[^.]+$/,'')+' click track';track.loadedFolderId=null;editHistory=[];frozenViewMs=track.durationMs;segmentBaseMs=track.durationMs;syncControls();setCreateMode('review');showScreen('recorder');renderDetails();$('status').textContent='Created from the analyzed performance. Measures, meter changes, audio/PDF tools, and subdivision regions are ready to edit.'}
 
   function renderMeterMapReport(){
     const box=$('meterMapReport');if(!box)return;analysisMeterMap=normalizeMeterMap();
@@ -4151,24 +4425,45 @@ html,body{background:var(--ground)!important}
     if(beatAnalysis.beatUnit)badges.push(`<span class="beat-map-chip">${beatUnitLabel(beatAnalysis.beatUnit)} pulse</span>`);if(beatAnalysis.subdivision&&beatAnalysis.subdivision!=='auto')badges.push(`<span class="beat-map-chip">${subdivisionLabel(beatAnalysis.subdivision)}</span>`);if(downbeats)badges.push(`<span class="beat-map-chip">${downbeats} downbeats</span>`);if(beatAnalysis.trainingTapCount)badges.push(`<span class="beat-map-chip good">${beatAnalysis.trainingTapCount} reference taps used</span>`);
     $('analysisSummary').innerHTML=badges.join('');renderMeterMapReport();renderAnalysisSubdivisionMap();drawAnalysisCanvas();if(scroll)setTimeout(()=>$('analyzeResult').scrollIntoView({behavior:'smooth',block:'start'}),40);
   }
+  // The beat map is drawn only for the visible window (a full-length canvas breaks past ~32k px, i.e. for
+  // recordings over ~8 minutes). The spacer gives the scroll width; the canvas is sticky at the left.
+  function analysisGeom(){const sc=$('analysisTimelineScroll'),zoom=Number($('analysisBeatZoom')?.value)||34,n=beatAnalysis?.rawBeats?.length||0,viewW=Math.max(320,Math.round(sc?.clientWidth||760)),fullW=Math.max(viewW,Math.ceil((n+2)*zoom)),pad=52,right=28;return{sc,zoom,viewW,fullW,pad,right,inner:fullW-pad-right,dur:uploadedAudioBuffer?.duration||1,left:sc?.scrollLeft||0}}
+  function analysisXForTime(t,g=analysisGeom()){return g.pad+(t/g.dur)*g.inner}
   function drawAnalysisCanvas(){
-    const canvas=$('analysisCanvas');if(!canvas||!uploadedAudioBuffer||!beatAnalysis?.rawBeats?.length)return;const zoom=Number($('analysisBeatZoom')?.value)||34,beats=beatAnalysis.rawBeats,cssW=Math.max(760,Math.ceil((beats.length+2)*zoom)),h=300;canvas.style.width=cssW+'px';
-    const dpr=Math.max(1,devicePixelRatio||1),w=cssW;canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);const c=canvas.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,h);
-    const pad=52,right=28,top=34,bottom=250,inner=w-pad-right,mid=(top+bottom)/2,amp=(bottom-top)*.40,dur=uploadedAudioBuffer.duration;c.strokeStyle='rgba(20,20,20,0.12)';c.beginPath();c.moveTo(pad,mid);c.lineTo(w-right,mid);c.stroke();
-    const data=uploadedAudioBuffer.getChannelData(0),cols=Math.max(1,Math.floor(inner));c.strokeStyle='rgba(20,20,20,0.36)';c.lineWidth=1;c.beginPath();for(let x=0;x<cols;x++){const a=Math.floor(x/cols*data.length),b=Math.max(a+1,Math.floor((x+1)/cols*data.length));let mn=1,mx=-1,step=Math.max(1,Math.floor((b-a)/18));for(let i=a;i<b;i+=step){const v=data[i]||0;if(v<mn)mn=v;if(v>mx)mx=v}const px=pad+x;c.moveTo(px,mid-mx*amp);c.lineTo(px,mid-mn*amp)}c.stroke();
-    const mapChangeBeats=new Map((analysisMeterMap||[]).slice(1).map(s=>[s.startBeat,s.meter]));
-    beats.forEach((t,i)=>{const x=pad+(t/dur)*inner,pos=analysisBeatPosition(i),isDown=pos===1,beatNo=i+1,meter=meterSegmentAtIndex(i)?.meter||'';if(mapChangeBeats.has(beatNo)){c.fillStyle='rgba(43,95,138,0.09)';c.fillRect(x-2,top-8,4,bottom-top+18);c.fillStyle='#2b5f8a';c.font='800 10px system-ui';c.textAlign='left';c.fillText(`${meter} begins`,x+5,top-17)}c.strokeStyle=isDown?'rgba(31,107,58,0.95)':'rgba(181,18,27,0.78)';c.lineWidth=isDown?2.5:1.15;c.beginPath();c.moveTo(x,top);c.lineTo(x,bottom);c.stroke();c.fillStyle=isDown?'#1f6b3a':'#b5121b';c.beginPath();c.arc(x,top-5,isDown?4:2.7,0,Math.PI*2);c.fill();const every=Math.max(1,Math.ceil(34/zoom));if(beatNo===1||beatNo%every===0||isDown){c.fillStyle=isDown?'#1f6b3a':'#646359';c.font=isDown?'800 9px system-ui':'650 8px system-ui';c.textAlign='center';c.fillText(`M${analysisBeatMeta(i).measure}.${analysisBeatMeta(i).beat}`,x,276);if(isDown){c.fillStyle='#1f6b3a';c.font='650 8px system-ui';c.fillText(`${meter} · 1`,x,289)}}});
+    const canvas=$('analysisCanvas');if(!canvas||!uploadedAudioBuffer||!beatAnalysis?.rawBeats?.length)return;const g=analysisGeom(),beats=beatAnalysis.rawBeats,h=300,w=g.viewW,L=Math.min(g.left,Math.max(0,g.fullW-w)),zoom=g.zoom;
+    const sp=$('analysisTimelineSpacer');if(sp)sp.style.width=g.fullW+'px';canvas.style.width=w+'px';
+    const dpr=Math.max(1,devicePixelRatio||1);canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);const c=canvas.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,h);
+    const top=34,bottom=250,mid=(top+bottom)/2,amp=(bottom-top)*.40,dur=g.dur;c.strokeStyle='rgba(20,20,20,0.12)';c.beginPath();c.moveTo(Math.max(0,g.pad-L),mid);c.lineTo(Math.min(w,g.fullW-g.right-L),mid);c.stroke();
+    const data=uploadedAudioBuffer.getChannelData(0);c.strokeStyle='rgba(20,20,20,0.36)';c.lineWidth=1;c.beginPath();
+    for(let x=0;x<w;x++){const fx=L+x-g.pad;if(fx<0||fx>=g.inner)continue;const a=Math.floor(fx/g.inner*data.length),b=Math.max(a+1,Math.floor((fx+1)/g.inner*data.length));let mn=1,mx=-1,step=Math.max(1,Math.floor((b-a)/18));for(let i=a;i<b;i+=step){const v=data[i]||0;if(v<mn)mn=v;if(v>mx)mx=v}c.moveTo(x,mid-mx*amp);c.lineTo(x,mid-mn*amp)}c.stroke();
+    const mapChangeBeats=new Map((analysisMeterMap||[]).slice(1).map(s=>[s.startBeat,s.meter])),metas=analysisAllMetas(),every=Math.max(1,Math.ceil(34/zoom));
+    const tA=Math.max(0,(L-g.pad-40)/g.inner*dur),tB=(L+w-g.pad+40)/g.inner*dur;let i0=0;{let lo=0,hi=beats.length;while(lo<hi){const m=(lo+hi)>>1;if(beats[m]<tA)lo=m+1;else hi=m}i0=lo}
+    for(let i=i0;i<beats.length&&beats[i]<=tB;i++){const t=beats[i],x=analysisXForTime(t,g)-L,meta=metas[i]||{measure:1,beat:1},isDown=meta.beat===1,beatNo=i+1,meter=meta.meter||'';
+      if(mapChangeBeats.has(beatNo)){c.fillStyle='rgba(43,95,138,0.09)';c.fillRect(x-2,top-8,4,bottom-top+18);c.fillStyle='#2b5f8a';c.font='800 10px system-ui';c.textAlign='left';c.fillText(`${meter} begins`,x+5,top-17)}
+      c.strokeStyle=isDown?'rgba(31,107,58,0.95)':'rgba(181,18,27,0.78)';c.lineWidth=isDown?2.5:1.15;c.beginPath();c.moveTo(x,top);c.lineTo(x,bottom);c.stroke();c.fillStyle=isDown?'#1f6b3a':'#b5121b';c.beginPath();c.arc(x,top-5,isDown?4:2.7,0,Math.PI*2);c.fill();
+      if(beatNo===1||beatNo%every===0||isDown){c.fillStyle=isDown?'#1f6b3a':'#646359';c.font=isDown?'800 9px system-ui':'650 8px system-ui';c.textAlign='center';c.fillText(`M${meta.measure}.${meta.beat}`,x,276);if(isDown){c.fillStyle='#1f6b3a';c.font='650 8px system-ui';c.fillText(`${meter} · 1`,x,289)}}}
+    if(Number.isFinite(analysisFirstDownbeatSec)){const x=analysisXForTime(analysisFirstDownbeatSec,g)-L;if(x>-10&&x<w+10){c.fillStyle='#1f6b3a';c.font='800 9px system-ui';c.textAlign='center';c.fillText('▼ beat 1 anchor',x,top-17)}}
+    drawAnalysisPlayhead();
   }
-  function analysisCanvasTimeFromEvent(e){const canvas=$('analysisCanvas'),r=canvas.getBoundingClientRect(),pad=52,right=28,inner=Math.max(1,r.width-pad-right);return Math.max(0,Math.min(uploadedAudioBuffer.duration,((e.clientX-r.left-pad)/inner)*uploadedAudioBuffer.duration));}
+  function analysisCanvasTimeFromEvent(e){const canvas=$('analysisCanvas'),r=canvas.getBoundingClientRect(),g=analysisGeom();return Math.max(0,Math.min(uploadedAudioBuffer.duration,((e.clientX-r.left+g.left-g.pad)/g.inner)*uploadedAudioBuffer.duration));}
   function nearestAnalysisBeatIndex(e,maxPx=12){
     if(!beatAnalysis?.rawBeats?.length)return -1;
-    const canvas=$('analysisCanvas'),r=canvas.getBoundingClientRect(),pad=52,right=28,inner=Math.max(1,r.width-pad-right),dur=uploadedAudioBuffer.duration;
-    let best=-1,dist=maxPx+1;beatAnalysis.rawBeats.forEach((t,i)=>{const x=r.left+pad+(t/dur)*inner,d=Math.abs(e.clientX-x);if(d<dist){dist=d;best=i}});return best;
+    const canvas=$('analysisCanvas'),r=canvas.getBoundingClientRect(),g=analysisGeom();
+    let best=-1,dist=maxPx+1;beatAnalysis.rawBeats.forEach((t,i)=>{const x=r.left+analysisXForTime(t,g)-g.left,d=Math.abs(e.clientX-x);if(d<dist){dist=d;best=i}});return best;
   }
-  function pushAnalysisHistory(){if(!beatAnalysis)return;analysisEditHistory.push([...beatAnalysis.rawBeats]);if(analysisEditHistory.length>30)analysisEditHistory.shift()}
+  // ---- moving playhead over the beat map (#7) ----
+  let analysisPlayheadRaf=null,analysisFollow=true;
+  function drawAnalysisPlayhead(){const ph=$('analysisPlayhead'),p=$('analysisBeatPreview');if(!ph||!p||!beatAnalysis?.rawBeats?.length||!uploadedAudioBuffer)return;const t=p.paused?(p.currentTime||0):mediaTimeAt(p),g=analysisGeom(),x=analysisXForTime(t,g);
+    ph.classList.toggle('hidden',p.paused&&!(p.currentTime>0));ph.style.left=Math.round(x)+'px';
+    const beats=beatAnalysis.rawBeats;let lo=0,hi=beats.length;while(lo<hi){const m=(lo+hi)>>1;if(beats[m]<=t+0.01)lo=m+1;else hi=m}const i=lo-1,meta=i>=0?analysisAllMetas()[i]:null;$('analysisPlayheadLabel').textContent=meta?`M${meta.measure}.${meta.beat}`:formatTime(t);
+    if(!p.paused&&analysisFollow&&g.sc){const vx=x-g.left;if(vx>g.viewW*0.72||vx<0)g.sc.scrollLeft=Math.max(0,x-g.viewW*0.28)}
+    const btn=$('analysisPlayButton');if(btn)btn.textContent=p.paused?'▶ Play':'Ⅱ Pause'}
+  function startAnalysisPlayhead(){if(analysisPlayheadRaf)return;const step=()=>{analysisPlayheadRaf=null;drawAnalysisPlayhead();const p=$('analysisBeatPreview');if(p&&!p.paused)analysisPlayheadRaf=requestAnimationFrame(step)};analysisPlayheadRaf=requestAnimationFrame(step)}
+  async function toggleAnalysisPlayback(){const p=$('analysisBeatPreview');if(!p||!uploadedAudioUrl)return;await unlockAudioForMobile().catch(()=>{});if(!p.src)syncFullAnalysisPreview();if(p.paused){if(p.ended)p.currentTime=0;analysisFollow=true;try{await p.play()}catch{}}else p.pause();drawAnalysisPlayhead()}
+  function pushAnalysisHistory(){if(!beatAnalysis)return;analysisEditHistory.push({b:[...beatAnalysis.rawBeats],d:beatAnalysis.downbeatProbs?[...beatAnalysis.downbeatProbs]:null});if(analysisEditHistory.length>30)analysisEditHistory.shift()}
   function beginAnalysisBeatDrag(e){
-    if(e.shiftKey){const idx=nearestAnalysisBeatIndex(e,14);if(idx>=0&&beatAnalysis.rawBeats.length>2){pushAnalysisHistory();beatAnalysis.rawBeats.splice(idx,1);recomputeAnalysisDownbeatPhase();renderAnalysisResult({scroll:false});buildSourceBeatPreview(beatAnalysis.rawBeats,'analysisBeatPreview').catch(()=>{});syncAnalysisIntoWarp({rebuild:true});}return}
-    const idx=nearestAnalysisBeatIndex(e,11);if(idx<0)return;pushAnalysisHistory();analysisDrag={idx,pointerId:e.pointerId};$('analysisCanvas').setPointerCapture?.(e.pointerId);e.preventDefault();
+    if(e.shiftKey){const idx=nearestAnalysisBeatIndex(e,14);if(idx>=0&&beatAnalysis.rawBeats.length>2){pushAnalysisHistory();beatAnalysis.rawBeats.splice(idx,1);if(beatAnalysis.downbeatProbs)beatAnalysis.downbeatProbs.splice(idx,1);recomputeAnalysisDownbeatPhase();renderAnalysisResult({scroll:false});buildSourceBeatPreview(beatAnalysis.rawBeats,'analysisBeatPreview').catch(()=>{});syncAnalysisIntoWarp({rebuild:true});}return}
+    const idx=nearestAnalysisBeatIndex(e,11);if(idx<0){const p=$('analysisBeatPreview');if(p&&uploadedAudioBuffer&&e.button===0&&!e.shiftKey){p.currentTime=analysisCanvasTimeFromEvent(e);drawAnalysisPlayhead()}return}pushAnalysisHistory();analysisDrag={idx,pointerId:e.pointerId};$('analysisCanvas').setPointerCapture?.(e.pointerId);e.preventDefault();
   }
   function moveAnalysisBeatDrag(e){
     if(!analysisDrag||!beatAnalysis)return;const i=analysisDrag.idx,t=analysisCanvasTimeFromEvent(e),prev=i>0?beatAnalysis.rawBeats[i-1]+.035:.005,next=i<beatAnalysis.rawBeats.length-1?beatAnalysis.rawBeats[i+1]-.035:uploadedAudioBuffer.duration-.005;beatAnalysis.rawBeats[i]=Math.max(prev,Math.min(next,t));recomputeAnalysisDownbeatPhase();drawAnalysisCanvas();
@@ -4177,10 +4472,10 @@ html,body{background:var(--ground)!important}
     if(!analysisDrag)return;analysisDrag=null;renderAnalysisResult({scroll:false});buildSourceBeatPreview(beatAnalysis.rawBeats,'analysisBeatPreview').catch(()=>{});syncAnalysisIntoWarp({rebuild:true});
   }
   function addAnalysisBeat(e){
-    if(!beatAnalysis?.rawBeats?.length)return;const t=analysisCanvasTimeFromEvent(e);if(beatAnalysis.rawBeats.some(v=>Math.abs(v-t)<.05))return;pushAnalysisHistory();beatAnalysis.rawBeats.push(t);beatAnalysis.rawBeats.sort((a,b)=>a-b);recomputeAnalysisDownbeatPhase();renderAnalysisResult({scroll:false});buildSourceBeatPreview(beatAnalysis.rawBeats,'analysisBeatPreview').catch(()=>{});syncAnalysisIntoWarp({rebuild:true});
+    if(!beatAnalysis?.rawBeats?.length)return;const t=analysisCanvasTimeFromEvent(e);if(beatAnalysis.rawBeats.some(v=>Math.abs(v-t)<.05))return;pushAnalysisHistory();{const at=beatAnalysis.rawBeats.findIndex(v=>v>t);const k=at<0?beatAnalysis.rawBeats.length:at;beatAnalysis.rawBeats.splice(k,0,t);if(beatAnalysis.downbeatProbs)beatAnalysis.downbeatProbs.splice(k,0,0.05)}recomputeAnalysisDownbeatPhase();renderAnalysisResult({scroll:false});buildSourceBeatPreview(beatAnalysis.rawBeats,'analysisBeatPreview').catch(()=>{});syncAnalysisIntoWarp({rebuild:true});
   }
   function undoAnalysisEdit(){
-    const prior=analysisEditHistory.pop();if(!prior||!beatAnalysis)return;beatAnalysis.rawBeats=prior;recomputeAnalysisDownbeatPhase();renderAnalysisResult({scroll:false});buildSourceBeatPreview(beatAnalysis.rawBeats,'analysisBeatPreview').catch(()=>{});syncAnalysisIntoWarp({rebuild:true});
+    const prior=analysisEditHistory.pop();if(!prior||!beatAnalysis)return;if(Array.isArray(prior))beatAnalysis.rawBeats=prior;else{beatAnalysis.rawBeats=prior.b;beatAnalysis.downbeatProbs=prior.d}recomputeAnalysisDownbeatPhase();renderAnalysisResult({scroll:false});buildSourceBeatPreview(beatAnalysis.rawBeats,'analysisBeatPreview').catch(()=>{});syncAnalysisIntoWarp({rebuild:true});
   }
   function applyMeterCorrection(){
     if(!beatAnalysis?.rawBeats?.length)return;const input=$('meterCorrectionInput'),response=$('meterCorrectionResponse'),raw=String(input.value||'').trim();if(!raw){response.textContent='Type a correction first.';response.className='meter-correction-response error';return}
@@ -4194,15 +4489,19 @@ html,body{background:var(--ground)!important}
     else {response.textContent='I did not understand that correction. Try “3/4 starts at beat 57”, “that change is actually at beat 64”, or “remove the change at beat 57”.';response.className='meter-correction-response error';return}
     analysisMeterMap=normalizeMeterMap(map);recomputeAnalysisDownbeatPhase();renderAnalysisResult({scroll:false});syncAnalysisIntoWarp({rebuild:true});response.textContent=message;response.className='meter-correction-response';input.value='';
   }
-  function scheduleAnalysisClickAt(ctxTime,accent=false,kind='primary'){const c=audio(),o=c.createOscillator(),g=c.createGain(),sub=kind==='subdivision',volume=clampClickVolume(analysisClickVolume)/100,peak=(accent?.24:(sub?.055:.10))*volume;o.type=accent?'triangle':'sine';o.frequency.setValueAtTime(accent?1500:(sub?650:880),ctxTime);g.gain.setValueAtTime(.0001,ctxTime);if(peak>0)g.gain.exponentialRampToValueAtTime(Math.max(.0001,peak),ctxTime+.004);g.gain.exponentialRampToValueAtTime(.0001,ctxTime+(sub?.040:.055));o.connect(g);g.connect(c.destination);o.start(ctxTime);o.stop(ctxTime+(sub?.050:.065))}
-  function stopAnalysisPreviewClicks(){if(analysisPreviewTimer){clearInterval(analysisPreviewTimer);analysisPreviewTimer=null}analysisPreviewScheduledThrough=0}
-  function pumpAnalysisPreviewClicks(){const p=$('analysisBeatPreview');if(!p||p.paused||!beatAnalysis?.rawBeats?.length)return;const c=audio(),from=p.currentTime,to=Math.min(p.duration||uploadedAudioBuffer?.duration||Infinity,from+1.4),base=c.currentTime;for(const ev of analysisExpandedClickEvents()){const t=ev.time;if(t<Math.max(from,analysisPreviewScheduledThrough)-.02||t>to)continue;scheduleAnalysisClickAt(base+(t-from),ev.accent,ev.primary?'primary':'subdivision')}analysisPreviewScheduledThrough=to}
-  function startAnalysisPreviewClicks(){stopAnalysisPreviewClicks();analysisPreviewScheduledThrough=$('analysisBeatPreview')?.currentTime||0;pumpAnalysisPreviewClicks();analysisPreviewTimer=setInterval(pumpAnalysisPreviewClicks,450)}
+  function scheduleAnalysisClickAt(ctxTime,accent=false,kind='primary',dest=null){const c=audio(),o=c.createOscillator(),g=c.createGain(),sub=kind==='subdivision',volume=clampClickVolume(analysisClickVolume)/100,peak=(accent?.24:(sub?.055:.10))*volume;o.type=accent?'triangle':'sine';o.frequency.setValueAtTime(accent?1500:(sub?650:880),ctxTime);g.gain.setValueAtTime(.0001,ctxTime);if(peak>0)g.gain.exponentialRampToValueAtTime(Math.max(.0001,peak),ctxTime+.004);g.gain.exponentialRampToValueAtTime(.0001,ctxTime+(sub?.040:.055));o.connect(g);g.connect(dest||c.destination);o.start(Math.max(ctxTime,c.currentTime));o.stop(Math.max(ctxTime,c.currentTime)+(sub?.050:.065))}
+  let analysisPreviewSched=null;
+  function stopAnalysisPreviewClicks(){analysisPreviewSched?.stop();analysisPreviewSched=null;analysisPreviewScheduledThrough=0}
+  function pumpAnalysisPreviewClicks(){}
+  function startAnalysisPreviewClicks(){stopAnalysisPreviewClicks();const p=$('analysisBeatPreview');if(!p||!beatAnalysis?.rawBeats?.length)return;const evs=analysisExpandedClickEvents().map(ev=>({...ev,t:ev.time}));
+    analysisPreviewSched=startClickScheduler({events:evs,perfAt:t=>perfForMediaTime(p,t),play:(when,ev,bus)=>scheduleAnalysisClickAt(when,ev.accent,ev.primary?'primary':'subdivision',bus)});analysisPreviewSched.resync(p.currentTime||0);startAnalysisPlayhead()}
   function syncFullAnalysisPreview(){const p=$('analysisBeatPreview');if(!p||!uploadedAudioUrl)return;const was=p.src;p.src=uploadedAudioUrl;if(was!==p.src)p.load();stopAnalysisPreviewClicks()}
   let warpSourcePreviewTimer=null,warpSourcePreviewScheduledThrough=0;
-  function stopWarpSourcePreviewClicks(){if(warpSourcePreviewTimer){clearInterval(warpSourcePreviewTimer);warpSourcePreviewTimer=null}warpSourcePreviewScheduledThrough=0}
-  function pumpWarpSourcePreviewClicks(){const p=$('detectedBeatsAudio');if(!p||p.paused||!beatAnalysis?.rawBeats?.length)return;const beats=alignedSourceBeats(beatAnalysis.rawBeats),c=audio(),from=p.currentTime,to=Math.min(p.duration||uploadedAudioBuffer?.duration||Infinity,from+1.4),base=c.currentTime;for(let i=0;i<beats.length;i++){const t=beats[i];if(t<Math.max(from,warpSourcePreviewScheduledThrough)-.02||t>to)continue;scheduleAnalysisClickAt(base+(t-from),analysisBeatPosition(i)===1)}warpSourcePreviewScheduledThrough=to}
-  function startWarpSourcePreviewClicks(){stopWarpSourcePreviewClicks();warpSourcePreviewScheduledThrough=$('detectedBeatsAudio')?.currentTime||0;pumpWarpSourcePreviewClicks();warpSourcePreviewTimer=setInterval(pumpWarpSourcePreviewClicks,450)}
+  let warpSourcePreviewSched=null;
+  function stopWarpSourcePreviewClicks(){warpSourcePreviewSched?.stop();warpSourcePreviewSched=null;warpSourcePreviewScheduledThrough=0}
+  function pumpWarpSourcePreviewClicks(){}
+  function startWarpSourcePreviewClicks(){stopWarpSourcePreviewClicks();const p=$('detectedBeatsAudio');if(!p||!beatAnalysis?.rawBeats?.length)return;const beats=alignedSourceBeats(beatAnalysis.rawBeats),evs=beats.map((t,i)=>({t,accent:analysisBeatPosition(i)===1}));
+    warpSourcePreviewSched=startClickScheduler({events:evs,perfAt:t=>perfForMediaTime(p,t),play:(when,ev,bus)=>scheduleAnalysisClickAt(when,ev.accent,'primary',bus)});warpSourcePreviewSched.resync(p.currentTime||0)}
   function analysisPulseQuarterLength(){
     const unit=beatAnalysis?.beatUnit||'quarter';return ({eighth:.5,quarter:1,half:2,dottedQuarter:1.5})[unit]||1;
   }
@@ -4623,7 +4922,7 @@ html,body{background:var(--ground)!important}
     const bytes=await blob.arrayBuffer();
     const Ctx=window.AudioContext||window.webkitAudioContext;
     if(!Ctx)throw new Error('This browser cannot decode the warped audio for cleanup.');
-    if(!audioCtx)audioCtx=new Ctx();
+    if(!audioCtx)audioCtx=makeAudioCtx();
     return await audioCtx.decodeAudioData(bytes.slice(0));
   }
   async function applyPostWarpCleanup(){
@@ -4860,15 +5159,22 @@ html,body{background:var(--ground)!important}
     drop.addEventListener('drop',e=>{e.preventDefault();e.stopPropagation();drop.classList.remove('dragover');const f=fileFromDrop(e);if(f)handleAnalysisAudioFile(f)});
   }
   $('startTrainingTapsButton').addEventListener('click',toggleAnalysisTapTraining);
-  $('trainingTapButton').addEventListener('click',captureAnalysisTrainingTap);
+  $('trainingTapButton').addEventListener('pointerdown',e=>{if(e.button!==undefined&&e.button!==0)return;e.preventDefault();e.currentTarget.dataset.pd='1';captureAnalysisTrainingTap(e.timeStamp)});$('trainingTapButton').addEventListener('click',e=>{if(e.currentTarget.dataset.pd){delete e.currentTarget.dataset.pd;return}if(keyClickSuppressed())return;captureAnalysisTrainingTap(e.timeStamp)});
   $('clearTrainingTapsButton').addEventListener('click',clearAnalysisTrainingTaps);
   $('setFirstDownbeatButton').addEventListener('click',setAnalysisFirstDownbeat);
+  $('tapDownbeatButton').addEventListener('pointerdown',e=>{if(!downbeatCaptureActive)return;if(e.button!==undefined&&e.button!==0)return;e.preventDefault();e.currentTarget.dataset.pd='1';captureFirstDownbeatTap(e.timeStamp)});$('tapDownbeatButton').addEventListener('click',e=>{if(e.currentTarget.dataset.pd){delete e.currentTarget.dataset.pd;return}if(keyClickSuppressed())return;if(downbeatCaptureActive)captureFirstDownbeatTap(e.timeStamp);else startDownbeatCapture()});
+  document.querySelectorAll('[data-db-nudge]').forEach(b=>b.addEventListener('click',()=>{if(Number.isFinite(analysisFirstDownbeatSec))setFirstDownbeatAt(analysisFirstDownbeatSec+Number(b.dataset.dbNudge))}));
+  $('downbeatSecInput').addEventListener('change',()=>{const v=Number($('downbeatSecInput').value);if(Number.isFinite(v))setFirstDownbeatAt(v)});
+  $('downbeatCheckButton').addEventListener('click',checkFirstDownbeat);
+  $('analysisAudio').addEventListener('ended',()=>{if(downbeatCaptureActive)stopDownbeatCapture();if(analysisTrainingActive){analysisTrainingActive=false;syncAnalysisAnchorReadouts()}});
   $('clearFirstDownbeatButton').addEventListener('click',clearAnalysisFirstDownbeat);
   $('runAudioAnalysisButton').addEventListener('click',runAudioAnalysis);
   $('reanalyzeButton').addEventListener('click',runAudioAnalysis);
   $('undoAnalysisEditButton').addEventListener('click',undoAnalysisEdit);
   $('downloadAnalysisMidiButton').addEventListener('click',downloadAnalysisMidi);
-  $('createTrackFromAnalysisButton').addEventListener('click',createTrackFromAnalysis);
+  $('downloadAnalysisMixMp3Button').addEventListener('click',()=>exportAnalysisAudio('mp3',{withAudio:true}));$('downloadAnalysisMixWavButton').addEventListener('click',()=>exportAnalysisAudio('wav',{withAudio:true}));$('downloadAnalysisClicksMp3Button').addEventListener('click',()=>exportAnalysisAudio('mp3',{withAudio:false}));
+  $('exportMp3Button').addEventListener('click',()=>exportTrackAudio('mp3'));$('exportWavButton').addEventListener('click',()=>exportTrackAudio('wav'));$('exportMixMp3Button').addEventListener('click',()=>exportTrackAudio('mp3',{withAudio:true}));
+
   $('addAnalysisSubdivisionButton').addEventListener('click',addAnalysisSubdivision);
   $('analysisSubdivisionMapList').addEventListener('click',e=>{const b=e.target.closest('[data-remove-analysis-sub]');if(!b)return;analysisSubdivisionMap.splice(Number(b.dataset.removeAnalysisSub),1);renderAnalysisSubdivisionMap()});
   $('useAnalysisForWarpButton').addEventListener('click',useAnalysisForWarp);
@@ -4889,6 +5195,13 @@ html,body{background:var(--ground)!important}
   });
   $('analysisCanvas').addEventListener('dblclick',addAnalysisBeat);
   $('analysisBeatZoom').addEventListener('input',()=>{drawAnalysisCanvas();drawWarpSourceMap()});
+  {let raf=null;$('analysisTimelineScroll').addEventListener('scroll',()=>{if(raf)return;raf=requestAnimationFrame(()=>{raf=null;drawAnalysisCanvas()})},{passive:true});$('analysisTimelineScroll').addEventListener('wheel',()=>{analysisFollow=false},{passive:true});$('analysisTimelineScroll').addEventListener('pointerdown',()=>{analysisFollow=false},{passive:true});window.addEventListener('resize',()=>{if(currentScreen==='analyze')drawAnalysisCanvas()})}
+  $('analysisPlayButton').addEventListener('click',toggleAnalysisPlayback);
+  $('tapCalibrateButton').addEventListener('click',startTapCalibration);
+  $('tapCalPad').addEventListener('pointerdown',e=>{e.preventDefault();tapCalTap(e.timeStamp)});
+  document.addEventListener('keydown',e=>{if(!tapCal||!(e.code==='Space'||e.key===' '))return;e.preventDefault();e.stopPropagation();if(!e.repeat)tapCalTap(e.timeStamp)},true);
+  $('settingTapOffset').addEventListener('change',()=>{const v=Number($('settingTapOffset').value);if(Number.isFinite(v)){appSettings.tapOffsetMs=Math.round(Math.max(-400,Math.min(400,v)));saveSettings()}syncSettingsUI()});
+  $('analysisBeatPreview').addEventListener('play',()=>{analysisFollow=true;startAnalysisPlayhead()});$('analysisBeatPreview').addEventListener('pause',drawAnalysisPlayhead);
   $('applyMeterCorrectionButton').addEventListener('click',applyMeterCorrection);
   $('meterCorrectionInput').addEventListener('keydown',e=>{if(e.key==='Enter')applyMeterCorrection()});
   $('analysisMeterChanges').addEventListener('change',()=>{$('analysisMeterCandidates').disabled=!$('analysisMeterChanges').checked});
@@ -4899,13 +5212,13 @@ html,body{background:var(--ground)!important}
   $('analysisBeatPreview').addEventListener('play',startAnalysisPreviewClicks);
   $('analysisBeatPreview').addEventListener('pause',stopAnalysisPreviewClicks);
   $('analysisBeatPreview').addEventListener('ended',stopAnalysisPreviewClicks);
-  $('analysisBeatPreview').addEventListener('seeking',()=>{analysisPreviewScheduledThrough=$('analysisBeatPreview').currentTime||0});
+  $('analysisBeatPreview').addEventListener('seeked',()=>{const p=$('analysisBeatPreview');if(analysisPreviewSched)analysisPreviewSched.resync(p.currentTime||0);drawAnalysisPlayhead()});
   $('detectedBeatsAudio').addEventListener('play',startWarpSourcePreviewClicks);
   $('detectedBeatsAudio').addEventListener('pause',stopWarpSourcePreviewClicks);
   $('detectedBeatsAudio').addEventListener('ended',stopWarpSourcePreviewClicks);
-  $('detectedBeatsAudio').addEventListener('seeking',()=>{warpSourcePreviewScheduledThrough=$('detectedBeatsAudio').currentTime||0});
+  $('detectedBeatsAudio').addEventListener('seeked',()=>{const p=$('detectedBeatsAudio');if(warpSourcePreviewSched)warpSourcePreviewSched.resync(p.currentTime||0)});
   $('editSourceAnalysisButton').addEventListener('click',()=>showScreen('analyze'));
-  document.addEventListener('keydown',e=>{if(e.code==='Space'&&currentScreen==='analyze'&&analysisTrainingActive&&!['INPUT','BUTTON','SELECT','TEXTAREA'].includes(document.activeElement.tagName)){e.preventDefault();captureAnalysisTrainingTap()}});
+  document.addEventListener('keydown',e=>{if(!(e.code==='Space'||e.key===' ')||currentScreen!=='analyze'||!(analysisTrainingActive||downbeatCaptureActive))return;const tag=document.activeElement?.tagName||'';if(['INPUT','SELECT','TEXTAREA'].includes(tag))return;e.preventDefault();if(tag==='BUTTON')suppressKeyClickUntil=performance.now()+2000;if(e.repeat)return;if(downbeatCaptureActive)captureFirstDownbeatTap(e.timeStamp);else captureAnalysisTrainingTap(e.timeStamp)},true);document.addEventListener('keyup',e=>{if((e.code==='Space'||e.key===' ')&&currentScreen==='analyze'&&(analysisTrainingActive||downbeatCaptureActive||keyClickSuppressed())&&document.activeElement?.tagName==='BUTTON'){e.preventDefault();suppressKeyClickUntil=performance.now()+60}},true);
   window.addEventListener('resize',()=>{if(beatAnalysis?.rawBeats?.length){if(currentScreen==='analyze')drawAnalysisCanvas();if(currentScreen==='warp')drawWarpSourceMap()}});
 
 
@@ -4981,9 +5294,13 @@ html,body{background:var(--ground)!important}
   });
 
   $('tapAlongStartButton').addEventListener('click',startTapAlong);
-  $('tapRegularButton').addEventListener('pointerdown',e=>{if(e.button!==undefined&&e.button!==0)return;e.currentTarget.dataset.pd='1';audio();if(isAppleTouchDevice())keepAudioSessionAlive();recordTap('plain');e.preventDefault()});$('tapRegularButton').addEventListener('click',e=>{if(e.currentTarget.dataset.pd){delete e.currentTarget.dataset.pd;return}recordTap('plain')});
-  $('tapAccentButton').addEventListener('pointerdown',e=>{if(e.button!==undefined&&e.button!==0)return;e.currentTarget.dataset.pd='1';audio();if(isAppleTouchDevice())keepAudioSessionAlive();recordTap('accent');e.preventDefault()});$('tapAccentButton').addEventListener('click',e=>{if(e.currentTarget.dataset.pd){delete e.currentTarget.dataset.pd;return}recordTap('accent')});
+  $('tapRegularButton').addEventListener('pointerdown',e=>{if(e.button!==undefined&&e.button!==0)return;e.currentTarget.dataset.pd='1';audio();if(isAppleTouchDevice())keepAudioSessionAlive();recordTap('plain',e.timeStamp);e.preventDefault()});$('tapRegularButton').addEventListener('click',e=>{if(e.currentTarget.dataset.pd){delete e.currentTarget.dataset.pd;return}if(keyClickSuppressed())return;recordTap('plain',e.timeStamp)});
+  $('tapAccentButton').addEventListener('pointerdown',e=>{if(e.button!==undefined&&e.button!==0)return;e.currentTarget.dataset.pd='1';audio();if(isAppleTouchDevice())keepAudioSessionAlive();recordTap('accent',e.timeStamp);e.preventDefault()});$('tapAccentButton').addEventListener('click',e=>{if(e.currentTarget.dataset.pd){delete e.currentTarget.dataset.pd;return}if(keyClickSuppressed())return;recordTap('accent',e.timeStamp)});
   $('tapAlongPauseButton').addEventListener('click',()=>pauseTapAlong());
+  $('tapAlongListenButton').addEventListener('click',()=>{if(listenActive)stopListenWithAudio(true);else startListenWithAudio()});
+  $('tapAlongAudio').addEventListener('seeked',()=>{const a=tapAlongAudio();if(listenActive&&listenSched)listenSched.resync(a.currentTime);if(scorePracticeActive&&scorePracticeSched&&!scorePracticeClock)scorePracticeSched.resync(a.currentTime)});
+  $('tapAlongAudio').addEventListener('pause',()=>{if(listenActive&&!tapAlongAudio().seeking)stopListenWithAudio(false)});
+  $('tapAlongAudio').addEventListener('ended',()=>{if(listenActive)stopListenWithAudio(false)});
   $('tapAlongRemoveButton').addEventListener('click',clearTapAlongAudio);
   $('tapAlongAudio').addEventListener('loadedmetadata',()=>{const a=tapAlongAudio(),dur=Number.isFinite(a.duration)?` · ${formatTime(a.duration)}`:'';$('tapAlongFileInfo').textContent=`${tapAlongFileName||'Imported audio'}${dur}`;syncTapAlongUi()});
   $('tapAlongAudio').addEventListener('ended',finishTapAlong);
@@ -4996,6 +5313,8 @@ html,body{background:var(--ground)!important}
   $('scorePdfDrop').addEventListener('drop',e=>loadScorePdf(e.dataTransfer?.files?.[0]||null));
   $('scoreAnalyzeButton').addEventListener('click',()=>analyzeScorePdf(false));
   $('scoreMakeClickButton').addEventListener('click',()=>makeClickTrackFromScore(false));
+  $('scoreClickPlayButton').addEventListener('click',async()=>{await unlockAudioForMobile().catch(()=>{});if(scorePdfDoc&&(track.scoreMeasureBoxes||[]).length)startScorePractice();else replay()});
+  $('scoreClickStopButton').addEventListener('click',()=>{if(scorePracticeActive)stopScorePractice(true);if(playing)stopReplay(true);syncScoreClickPlayUi()});
   for(const id of ['scoreClickBpm','scoreClickMeter','scoreClickMeasures'])$(id).addEventListener('change',()=>{if(track.fromScore&&scoreDetectedRawBoxes.length)makeClickTrackFromScore(false)});
   $('scoreLayoutMode').addEventListener('change',()=>{if(scorePdfDoc)analyzeScorePdf(false)});
   $('scorePrevPage').addEventListener('click',()=>renderScorePage(scorePdfPage-1));
@@ -5007,6 +5326,8 @@ html,body{background:var(--ground)!important}
   $('scoreClearMappingButton').addEventListener('click',async()=>{if(await uiConfirm('All score markers for this click track will be removed.',{title:'Clear score markers?',okLabel:'Clear'}))clearScoreMapping()});
   $('scoreMapMode').addEventListener('change',()=>{scoreMapCursor=0;updateScoreMapReadout()});
   $('scoreStage').addEventListener('pointerdown',e=>{if(!e.target.closest('.score-anchor'))mapScoreClick(e)});
+  document.querySelectorAll('[data-score-edit]').forEach(b=>b.addEventListener('click',()=>setScoreEditMode(b.dataset.scoreEdit)));$('scoreEditUndo').addEventListener('click',undoScoreEdit);
+  $('scoreOverlay').addEventListener('pointerdown',scoreEditPointerDown);$('scoreOverlay').addEventListener('pointermove',scoreEditPointerMove);$('scoreOverlay').addEventListener('pointerup',scoreEditPointerUp);$('scoreOverlay').addEventListener('pointercancel',scoreEditPointerUp);
   $('scoreOverlay').addEventListener('click',e=>{const b=e.target.closest('.score-anchor');if(!b)return;const idx=Number(b.dataset.scoreBeat),targets=scoreMapTargets(),pos=targets.indexOf(idx);if(pos>=0){scoreMapCursor=pos;scoreMappingActive=true;$('scoreStartMappingButton').textContent='Mapping… click the PDF';updateScoreMapReadout()}});
   $('scorePracticeStart').addEventListener('click',startScorePractice);
   $('scorePracticePause').addEventListener('click',pauseScorePractice);
@@ -5016,7 +5337,7 @@ html,body{background:var(--ground)!important}
   $('addTrackMeterButton').addEventListener('click',addTrackMeterChange);
   $('addTrackSubdivisionButton').addEventListener('click',addTrackSubdivision);
   $('trackMeterMapList').addEventListener('click',e=>{const b=e.target.closest('[data-remove-track-meter]');if(!b)return;const m=Number(b.dataset.removeTrackMeter);track.scoreMap=track.scoreMap.filter(x=>Number(x.startMeasure)!==m);renderDetails()});
-  $('trackSubdivisionMapList').addEventListener('click',e=>{const b=e.target.closest('[data-remove-track-sub]');if(!b)return;track.subdivisionMap.splice(Number(b.dataset.removeTrackSub),1);renderDetails()});$('endButton').addEventListener('click',endRecording);$('tapButton').addEventListener('pointerdown',e=>{if(e.button!==undefined&&e.button!==0)return;tapPointerHandled=true;audio();if(isAppleTouchDevice())keepAudioSessionAlive();recordTap(tapAlongActive?'plain':'auto');e.preventDefault()});$('tapButton').addEventListener('click',e=>{if(tapPointerHandled){tapPointerHandled=false;return}recordTap(tapAlongActive?'plain':'auto')});$('playButton').addEventListener('click',replay);$('stopButton').addEventListener('click',()=>stopReplay(true));$('resetButton').addEventListener('click',()=>resetTrack('Ready.'));$('saveButton').addEventListener('click',openSave);$('exportButton').addEventListener('click',exportTrack);$('cutButton').addEventListener('click',removeSection);$('undoEditButton').addEventListener('click',undoEdit);$('dragEditor').addEventListener('pointerdown',beginDragClick);$('dragEditor').addEventListener('pointermove',moveDragClick);$('dragEditor').addEventListener('pointerup',endDragClick);$('dragEditor').addEventListener('pointercancel',endDragClick);$('undoTapButton').addEventListener('click',()=>{if(recording&&track.taps.length){track.taps.pop();track.tapAccents?.pop();$('status').textContent='Last tap removed.';renderDetails()}});$('timeline').addEventListener('pointerdown',e=>{if(!e.target.closest('.target-inline'))recordTap(tapAlongActive?'plain':'auto')});document.addEventListener('keydown',e=>{if(currentScreen!=='recorder'||['INPUT','BUTTON','SELECT','TEXTAREA'].includes(document.activeElement.tagName))return;if(e.code==='Space'){e.preventDefault();recordTap(tapAlongActive?'plain':'auto')}else if((e.key||'').toLowerCase()==='a'){e.preventDefault();recordTap('accent')}});
+  $('trackSubdivisionMapList').addEventListener('click',e=>{const b=e.target.closest('[data-remove-track-sub]');if(!b)return;track.subdivisionMap.splice(Number(b.dataset.removeTrackSub),1);renderDetails()});$('endButton').addEventListener('click',endRecording);$('tapButton').addEventListener('pointerdown',e=>{if(e.button!==undefined&&e.button!==0)return;tapPointerHandled=true;audio();if(isAppleTouchDevice())keepAudioSessionAlive();recordTap(tapAlongActive?'plain':'auto',e.timeStamp);e.preventDefault()});$('tapButton').addEventListener('click',e=>{if(tapPointerHandled){tapPointerHandled=false;return}if(keyClickSuppressed())return;recordTap(tapAlongActive?'plain':'auto',e.timeStamp)});$('playButton').addEventListener('click',replay);$('stopButton').addEventListener('click',()=>stopReplay(true));$('resetButton').addEventListener('click',()=>resetTrack('Ready.'));$('saveButton').addEventListener('click',openSave);$('exportButton').addEventListener('click',exportTrack);$('cutButton').addEventListener('click',removeSection);$('undoEditButton').addEventListener('click',undoEdit);$('dragEditor').addEventListener('pointerdown',beginDragClick);$('dragEditor').addEventListener('pointermove',moveDragClick);$('dragEditor').addEventListener('pointerup',endDragClick);$('dragEditor').addEventListener('pointercancel',endDragClick);$('undoTapButton').addEventListener('click',()=>{if(recording&&track.taps.length){track.taps.pop();track.tapAccents?.pop();$('status').textContent='Last tap removed.';renderDetails()}});$('timeline').addEventListener('pointerdown',e=>{if(!e.target.closest('.target-inline'))recordTap(tapAlongActive?'plain':'auto')});document.addEventListener('keydown',e=>{if(currentScreen!=='recorder'||e.metaKey||e.ctrlKey||e.altKey)return;const el=document.activeElement,tag=el?.tagName||'';if(['INPUT','SELECT','TEXTAREA'].includes(tag)||el?.isContentEditable)return;if(document.querySelector('.modal-backdrop.open'))return;const space=e.code==='Space'||e.key===' ',acc=(e.key||'').toLowerCase()==='a';if(!space&&!acc)return;if(tag==='BUTTON'&&!recording)return;e.preventDefault();if(tag==='BUTTON')suppressKeyClickUntil=performance.now()+2000;if(e.repeat)return;if(space)recordTap(tapAlongActive?'plain':'auto',e.timeStamp);else recordTap('accent',e.timeStamp)},true);document.addEventListener('keyup',e=>{if(currentScreen==='recorder'&&(e.code==='Space'||e.key===' ')&&(recording||keyClickSuppressed())&&document.activeElement?.tagName==='BUTTON'){e.preventDefault();suppressKeyClickUntil=performance.now()+60}},true);
   for(const id of ['targetBpm','targetBpmInline','dashTargetBpm'])$(id).addEventListener('input',e=>{if(e.target.value!=='')setTarget(e.target.value)});$('minusBpm').addEventListener('click',()=>setTarget(track.targetBpm-1));$('plusBpm').addEventListener('click',()=>setTarget(track.targetBpm+1));$('accentMode').addEventListener('change',e=>setAccentMode(e.target.value));$('dashAccentMode').addEventListener('change',e=>setAccentMode(e.target.value));$('accentEvery').addEventListener('change',e=>setAccentEvery(e.target.value));$('dashAccentEvery').addEventListener('change',e=>setAccentEvery(e.target.value));$('clickVolume').addEventListener('input',e=>setClickVolume(e.target.value));$('dashClickVolume').addEventListener('input',e=>setClickVolume(e.target.value));
 
   // save/library

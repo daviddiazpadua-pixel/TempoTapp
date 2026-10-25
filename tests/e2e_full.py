@@ -185,9 +185,8 @@ async def main():
                 st = await wait_text("#analyzeStatus", r"(ready|Full beat map)", timeout=90)
                 summary = (await pg.inner_text("#analysisSummary")).replace("\n", " · ")
                 beats = int(re.search(r"(\d+) performed beats", summary).group(1)) if re.search(r"(\d+) performed beats", summary) else 0
-                await js("createTrackFromAnalysisButton"); await pg.wait_for_timeout(1000)
-                created = await visible("recorderPage") and beats == int((await pg.evaluate("() => document.querySelectorAll('#intervals .chip').length")) or 0) + 0 or True
-                report("analyze 8 s / 120 BPM file → 16 beats → create click track", beats == 16 and "ready" in st.lower(), f"beats={beats} status={st[:80]!r}")
+                gone = not await pg.evaluate("() => !!document.getElementById('createTrackFromAnalysisButton')")
+                report("analyze 8 s / 120 BPM file → 16 beats (create-from-analysis button removed)", beats == 16 and "ready" in st.lower() and gone, f"beats={beats} status={st[:80]!r}")
             except Exception as e: report("analyze", False, repr(e))
 
             # ---------- 8. Warp: standard renderer end to end ----------

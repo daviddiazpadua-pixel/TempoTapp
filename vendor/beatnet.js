@@ -135,90 +135,99 @@ const BeatNet = (() => {
   }
 
   // ---------- Decoder: dynamic Bayesian network beat tracker ----------
-  // Port of madmom's DBNBeatTrackingProcessor (Krebs, Böck & Widmer, ISMIR 2015), the decoder
-  // BeatNet was designed to run with. States = (tempo interval L, position p within the beat),
-  // L = 14..55 frames at 50 fps (215..55 BPM). Within a beat the position advances by one frame;
-  // at the beat boundary the tempo may change with probability ∝ exp(-λ·|L'/L − 1|), λ = 100.
-  // Observation: states in the first 1/16 of the beat emit the beat activation, the rest emit
-  // (1 − activation)/15. Viterbi finds the best path; each beat is placed on the activation peak
-  // inside its "beat range". Validated against madmom on identical network output.
-  function buildBeatHmm(fps = 50, minBpm = 55, maxBpm = 215, transitionLambda = 100, observationLambda = 16) {
-    const minL = Math.round(60 * fps / maxBpm), maxL = Math.round(60 * fps / minBpm);
+  // Port of madmom's DBNBeatTrackingProcessor (Krebs, Böck & Widmer, ISMIR 2015), extended for TempoTapp:
+  //  * states = (beat interval L frames, position p in the beat); at a beat boundary the tempo may change
+  //    with probability ∝ exp(−λ·|L'/L − 1|). λ comes from the "timing style": steady 100, expressive 60,
+  //    very free 30 (and 30 whenever the user tapped a few beats, because the taps then hold the tempo).
+  //  * memory: only interval *starts* need back-pointers (inside a beat the move is forced), so the
+  //    trellis is T×K instead of T×N — long recordings fit easily.
+  //  * user taps ("tap training"): the tapped beats are pinned (the path must pass through them, one
+  //    beat per tap interval), the tempo range is set around the tapped pulse, and a tempo prior keeps the
+  //    whole piece at the user's pulse level — so a few taps steer the entire recording.
+  //  * bar positions: a second small Viterbi over the beats (position-in-bar advances by one; rare
+  //    skipped/extra beats allowed) driven by the downbeat activation, so accents re-synchronise after a
+  //    big ritardando instead of drifting for the rest of the piece. A pinned first downbeat is honoured.
+  function buildBeatHmm(fps, minBpm, maxBpm, lambda, obsLambda = 16) {
+    const minL = Math.max(4, Math.round(60 * fps / maxBpm)), maxL = Math.max(minL + 1, Math.round(60 * fps / minBpm));
     const intervals = []; for (let L = minL; L <= maxL; L++) intervals.push(L);
-    const offset = [], first = [], last = []; let N = 0;
-    for (const L of intervals) { offset.push(N); first.push(N); last.push(N + L - 1); N += L; }
-    const stateL = new Int32Array(N), stateP = new Int32Array(N), isBeat = new Uint8Array(N);
-    intervals.forEach((L, i) => { for (let p = 0; p < L; p++) { const s = offset[i] + p; stateL[s] = L; stateP[s] = p; isBeat[s] = (p / L < 1 / observationLambda) ? 1 : 0; } });
-    // tempo-change log-probabilities, normalized per source interval
-    const K = intervals.length, logTrans = new Float64Array(K * K);
-    for (let i = 0; i < K; i++) {
-      let sum = 0; const row = new Float64Array(K);
-      for (let j = 0; j < K; j++) { row[j] = Math.exp(-transitionLambda * Math.abs(intervals[j] / intervals[i] - 1)); sum += row[j]; }
-      for (let j = 0; j < K; j++) logTrans[i * K + j] = Math.log(row[j] / sum);
-    }
-    return { fps, intervals, offset, first, last, stateL, stateP, isBeat, logTrans, N, K, observationLambda };
+    const K = intervals.length, offset = new Int32Array(K), last = new Int32Array(K); let N = 0;
+    intervals.forEach((L, i) => { offset[i] = N; last[i] = N + L - 1; N += L; });
+    const isBeat = new Uint8Array(N); intervals.forEach((L, i) => { for (let p = 0; p < L; p++) isBeat[offset[i] + p] = (p / L < 1 / obsLambda) ? 1 : 0; });
+    const logTrans = new Float64Array(K * K);
+    for (let i = 0; i < K; i++) { let sum = 0; const row = new Float64Array(K); for (let j = 0; j < K; j++) { row[j] = Math.exp(-lambda * Math.abs(intervals[j] / intervals[i] - 1)); sum += row[j]; } for (let j = 0; j < K; j++) logTrans[i * K + j] = Math.log(row[j] / sum); }
+    return { fps, intervals, offset, last, isBeat, logTrans, N, K, obsLambda };
   }
-  let beatHmmCache = null;
-  function viterbiBeats(act, T, hmm) {                    // act: Float64Array(T) beat activation in (0,1)
-    const { intervals, first, last, isBeat, logTrans, N, K, observationLambda, stateL, stateP } = hmm;
-    const EPS = 1e-9, logNo = new Float64Array(T), logYes = new Float64Array(T);
-    for (let t = 0; t < T; t++) { const a = Math.min(1 - EPS, Math.max(EPS, act[t])); logYes[t] = Math.log(a); logNo[t] = Math.log((1 - a) / (observationLambda - 1)); }
-    let prev = new Float64Array(N), cur = new Float64Array(N);
-    const back = new Uint16Array(T * N);                    // N = 1449 < 65536
-    const init = -Math.log(N);
-    for (let s = 0; s < N; s++) prev[s] = init + (isBeat[s] ? logYes[0] : logNo[0]);
+  function viterbiBeats(act, T, hmm, prior) {
+    const { intervals, offset, last, isBeat, logTrans, N, K, obsLambda } = hmm, EPS = 1e-9;
+    let prev = new Float64Array(N), cur = new Float64Array(N); const back = new Int32Array(T * K);
+    const lg = t => { const a = Math.min(1 - EPS, Math.max(EPS, act[t])); return [Math.log(a), Math.log((1 - a) / (obsLambda - 1))]; };
+    { const [ly, ln] = lg(0), init = -Math.log(N); for (let s = 0; s < N; s++) prev[s] = init + (isBeat[s] ? ly : ln); }
     for (let t = 1; t < T; t++) {
-      const bo = t * N, ly = logYes[t], ln = logNo[t];
-      for (let s = 0; s < N; s++) {
-        if (stateP[s] !== 0) { cur[s] = prev[s - 1] + (isBeat[s] ? ly : ln); back[bo + s] = s - 1; continue; }
-        // first state of interval j: best over all last states i
-        const j = s === 0 ? 0 : hmm.offset.indexOf(s);
-        let best = -Infinity, bs = 0;
-        for (let i = 0; i < K; i++) { const v = prev[last[i]] + logTrans[i * K + j]; if (v > best) { best = v; bs = last[i]; } }
-        cur[s] = best + (isBeat[s] ? ly : ln); back[bo + s] = bs;
+      const [ly, ln] = lg(t);
+      for (let j = 0; j < K; j++) {
+        let best = -Infinity, bi = 0; for (let i = 0; i < K; i++) { const v = prev[last[i]] + logTrans[i * K + j]; if (v > best) { best = v; bi = i; } }
+        const s0 = offset[j], L = intervals[j]; cur[s0] = best + (prior ? prior[j] : 0) + (isBeat[s0] ? ly : ln); back[t * K + j] = bi;
+        for (let p = 1; p < L; p++) { const s = s0 + p; cur[s] = prev[s - 1] + (isBeat[s] ? ly : ln); }
       }
       const tmp = prev; prev = cur; cur = tmp;
     }
     let s = 0; for (let k = 1; k < N; k++) if (prev[k] > prev[s]) s = k;
-    const path = new Int32Array(T);
-    for (let t = T - 1; t >= 0; t--) { path[t] = s; s = back[t * N + s]; }
-    // beats = activation peak within each contiguous run of beat-range states
+    let j = 0; for (let i = 0; i < K; i++) if (offset[i] <= s) j = i; let p = s - offset[j];
+    const inBeat = new Uint8Array(T);
+    for (let t = T - 1; t >= 0; t--) { inBeat[t] = isBeat[offset[j] + p]; if (t === 0) break; if (p > 0) p--; else { j = back[t * K + j]; p = intervals[j] - 1; } }
     const beats = []; let t = 0;
-    while (t < T) {
-      if (!isBeat[path[t]]) { t++; continue; }
-      let end = t; while (end < T && isBeat[path[end]]) end++;
-      let peak = t; for (let k = t + 1; k < end; k++) if (act[k] > act[peak]) peak = k;
-      beats.push(peak); t = end;
-    }
+    while (t < T) { if (!inBeat[t]) { t++; continue; } let e = t; while (e < T && inBeat[e]) e++; let pk = t; for (let k = t + 1; k < e; k++) if (act[k] > act[pk]) pk = k; beats.push(pk); t = e; }
     return beats;
   }
+  function barPositions(dprob, m, forced) {
+    const n = dprob.length; if (!n) return [];
+    const ADV = Math.log(0.97), JUMP = Math.log(0.015);
+    let score = new Float64Array(m); const back = new Int8Array(n * m);
+    const obs = (i, p) => { const d = Math.min(0.995, Math.max(0.005, dprob[i])); let v = p === 0 ? Math.log(d) : Math.log(1 - d); if (forced && forced[i] !== undefined) v += (p === forced[i] ? 0 : -60); return v; };
+    for (let p = 0; p < m; p++) score[p] = obs(0, p);
+    for (let i = 1; i < n; i++) {
+      const next = new Float64Array(m);
+      for (let p = 0; p < m; p++) { let best = -Infinity, bq = 0; for (let q = 0; q < m; q++) { let tr; if ((q + 1) % m === p) tr = ADV; else if (m > 2 && (q + 2) % m === p) tr = JUMP; else if (q === p) tr = JUMP; else continue; const v = score[q] + tr; if (v > best) { best = v; bq = q; } } next[p] = best + obs(i, p); back[i * m + p] = bq; }
+      score = next;
+    }
+    let p = 0; for (let q = 1; q < m; q++) if (score[q] > score[p]) p = q;
+    const out = new Array(n); for (let i = n - 1; i >= 0; i--) { out[i] = p; p = back[i * m + p]; } return out;
+  }
   function decode(probs, T, opts = {}) {
-    const fps = 50;
-    const hmm = beatHmmCache || (beatHmmCache = buildBeatHmm(fps));
-    const beatAct = new Float64Array(T), down = new Float64Array(T);
+    const fps = 50, beatAct = new Float64Array(T), down = new Float64Array(T);
     for (let t = 0; t < T; t++) { beatAct[t] = probs[t * 3] + probs[t * 3 + 1]; down[t] = probs[t * 3 + 1]; }
-    const beats = viterbiBeats(beatAct, T, hmm);
-    // meter + downbeat phase: beats-per-bar ∈ candidates (or fixed by the user), phase maximizing
-    // mean downbeat probability on downbeats minus on the other beats
+    const taps = (opts.taps || []).map(Number).filter(Number.isFinite).sort((a, b) => a - b);
+    let minBpm = 35, maxBpm = 215, prior = null, tapBpm = 0;
+    if (taps.length >= 3) {
+      const ibi = taps.slice(1).map((v, i) => v - taps[i]).filter(v => v > 0.15 && v < 3).sort((a, b) => a - b);
+      if (ibi.length >= 2) { tapBpm = 60 / ibi[ibi.length >> 1]; minBpm = Math.max(18, tapBpm / 2.6); maxBpm = Math.min(320, tapBpm * 1.3); }
+    }
+    const act = beatAct.slice();
+    if (taps.length) {
+      const win = Math.round(0.06 * fps), pins = [];
+      for (const tp of taps) { const c = Math.round(tp * fps); let pk = Math.min(T - 1, Math.max(0, c)), best = -1; for (let k = Math.max(0, c - win); k <= Math.min(T - 1, c + win); k++) if (act[k] > best) { best = act[k]; pk = k; } if (best < 0.15) pk = Math.min(T - 1, Math.max(0, c)); pins.push(pk); }
+      const gaps = pins.slice(1).map((v, i) => v - pins[i]).sort((a, b) => a - b), med = gaps.length ? gaps[gaps.length >> 1] : 0;
+      for (let k = 0; k < pins.length; k++) { const pk = pins[k]; for (let d = -1; d <= 1; d++) if (pk + d >= 0 && pk + d < T) act[pk + d] = d === 0 ? 0.995 : Math.max(act[pk + d], 0.3);
+        if (k + 1 < pins.length && med && pins[k + 1] - pk < med * 1.6) for (let q = pk + 3; q <= pins[k + 1] - 3; q++) act[q] *= 0.03; }
+    }
+    const style = opts.timingStyle || 'expressive';
+    const lambda = tapBpm ? 30 : style === 'steady' ? 100 : style === 'rubato' ? 30 : 60;
+    const hmm = buildBeatHmm(fps, minBpm, maxBpm, lambda);
+    if (tapBpm) { const Lu = 60 * fps / tapBpm; prior = new Float64Array(hmm.K); hmm.intervals.forEach((L, j) => { prior[j] = -4 * Math.abs(Math.log(L / Lu)); }); }
+    const beats = viterbiBeats(act, T, hmm, prior);
+    const dprob = beats.map(t => { let v = 0, bv = 0; for (let k = Math.max(0, t - 2); k <= Math.min(T - 1, t + 2); k++) { v = Math.max(v, down[k]); bv = Math.max(bv, beatAct[k]); } return bv > 0 ? Math.min(1, v / bv) : 0; });
+    const forced = {}; if (Number.isFinite(opts.firstDownbeatSec)) { let bi = 0, dd = Infinity; beats.forEach((t, i) => { const d = Math.abs(t / fps - opts.firstDownbeatSec); if (d < dd) { dd = d; bi = i; } }); forced[bi] = 0; }
     const candidates = opts.beatsPerBar ? [opts.beatsPerBar] : [2, 3, 4];
-    let bestMeter = candidates[0], bestPhase = 0, bestScore = -Infinity;
-    for (const m of candidates) for (let ph = 0; ph < m; ph++) {
-      let on = 0, off = 0, nOn = 0, nOff = 0;
-      beats.forEach((t, i) => { const v = down[t]; if (i % m === ph) { on += v; nOn++; } else { off += v; nOff++; } });
-      const s = (nOn ? on / nOn : 0) - (nOff ? off / nOff : 0);
-      if (s > bestScore) { bestScore = s; bestMeter = m; bestPhase = ph; }
-    }
-    if (Number.isFinite(opts.firstDownbeatSec)) {           // user pinned the first downbeat
-      let bi = 0, d = Infinity; beats.forEach((t, i) => { const dd = Math.abs(t / fps - opts.firstDownbeatSec); if (dd < d) { d = dd; bi = i; } });
-      bestPhase = bi % bestMeter;
-    }
+    let bestMeter = candidates[0], pos = null, bestScore = -Infinity;
+    for (const m of candidates) { const ps = barPositions(dprob, m, forced); let on = 0, off = 0, nOn = 0, nOff = 0; ps.forEach((p, i) => { if (p === 0) { on += dprob[i]; nOn++; } else { off += dprob[i]; nOff++; } }); const sc = (nOn ? on / nOn : 0) - (nOff ? off / nOff : 0); if (sc > bestScore) { bestScore = sc; bestMeter = m; pos = ps; } }
     const ibi = beats.slice(1).map((b, i) => (b - beats[i]) / fps).sort((a, b) => a - b);
     const bpm = ibi.length ? 60 / ibi[ibi.length >> 1] : 0;
     const strengths = beats.map(t => beatAct[t]);
     const confidence = strengths.length ? strengths.reduce((a, b) => a + b, 0) / strengths.length : 0;
-    return { beats: beats.map((t, i) => ({ time: t / fps, downbeat: i % bestMeter === bestPhase, strength: beatAct[t], downbeatProb: down[t] })), meter: bestMeter, downbeatPhase: bestPhase, bpm, confidence };
+    const firstDown = pos.indexOf(0);
+    return { beats: beats.map((t, i) => ({ time: t / fps, downbeat: pos[i] === 0, position: pos[i] + 1, strength: beatAct[t], downbeatProb: dprob[i] })), meter: bestMeter, downbeatPhase: firstDown < 0 ? 0 : firstDown % bestMeter, bpm, confidence, tapBpm };
   }
 
-  return { computeFeatures, loadWeights, forward, decode, makeBluestein };
+  return { computeFeatures, loadWeights, forward, decode, barPositions, makeBluestein };
 })();
 if (typeof module !== 'undefined') module.exports = BeatNet;

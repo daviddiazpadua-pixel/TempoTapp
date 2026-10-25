@@ -1,4 +1,4 @@
-# TempoTapp 1.6.0
+# TempoTapp 1.7.0
 
 Click-track creator, beat analyzer, and audio warp tool. Single-page web app. Runs in two modes:
 **device-only** (no backend, everything stays on the device) or **cloud accounts** (Firebase; the
@@ -132,6 +132,23 @@ gradients, glows or shadows. Light-only by choice (sheet-music apps are light be
 screen is a white PDF). To change a color, edit the tokens at the top of `#engraved-theme`.
 
 ## Changelog
+
+### 1.7.0 — timing, analysis, exports, PDF fixes
+- Timing engine: taps are stamped from the key/finger-down event (Space on a focused button used to
+  register on key-up, ~100+ ms late); media time from a smoothed clock; every playback path (replay,
+  listen, score practice, analysis preview) schedules clicks on the Web Audio clock instead of timers.
+  Optional per-device tap calibration (Settings → Tap timing).
+- Tap-along: "Listen: Recording + Clicks" plays the recording with your click track.
+- Analyze / AI tracker: tap training now steers the whole piece (tempo range + prior from your pulse,
+  tapped beats pinned); tempo flexibility follows the timing style; bar positions come from a
+  downbeat Viterbi, so accents re-sync after a ritardando; memory-light decoder; recordings up to
+  30 min; the beat map is drawn virtually (no canvas limit) with a Play button and moving playhead.
+- 3-2-1 count-in for tap training and a new "Tap Downbeat" capture with ±2/10/50 ms fine-tuning,
+  typed value, and a Check preview. Every training tap is listed. "Create Click Track from Analysis" removed.
+- Downloads: MIDI, MP3, WAV, clicks only or recording + clicks (MP3 delay-compensated; vendor/lame.min.js).
+- PDF: Play/Stop in the score card; beat 1 placed at the first note (after clef/key/time signature);
+  Move / Add / Remove barline and "beat 1" handles directly on the PDF with renumbering and Undo;
+  score-built and analysis-built tracks no longer get stray "every 4 beats" accents in 3/4 etc.
 
 ### 1.6.0 — a real score reader
 - New `vendor/score-omr.js` (source in `tools/score-omr/`): finds staves, groups them into systems,

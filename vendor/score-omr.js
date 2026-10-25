@@ -227,8 +227,9 @@ function readTimeSig(c,w,h,s,xa,xb,lt=1){
   return null;
 }
 // Does [xa,xb] on this system contain notes or rests (vs. only clef/key/time signature)?
-function hasContent(c,Ic,w,h,g,xa,xb,skip,lt=1){
-  xa=Math.round(xa);xb=Math.round(xb);if(xb-xa<3)return false;
+function contentXs(c,Ic,w,h,g,xa,xb,skip,lt=1,firstOnly=false){
+  const xs=[];
+  xa=Math.round(xa);xb=Math.round(xb);if(xb-xa<3)return xs;
   for(const s of g){const sp=s.sp,e=Math.max(3,Math.round(sp*0.58)),y0=Math.max(0,Math.round(s.top-sp*2)),y1=Math.min(h-1,Math.round(s.bottom+sp*2));
     for(const k of components(c,w,h,xa,y0,xb,y1)){
       const kw=(k.x1-k.x0+1)/sp,kh=(k.y1-k.y0+1)/sp;if(kh<0.35&&kw<0.6)continue;
@@ -236,16 +237,18 @@ function hasContent(c,Ic,w,h,g,xa,xb,skip,lt=1){
       if(kh>=2.4&&kw>=1.2&&kw<=3.6&&k.x0<=xa+sp*1.5)continue;            // clef at the line start
       const r=classify(k);
       if(r&&r.other<0.33&&r.other<=r.d&&(!r.nr||r.other<r.nr.d-0.03))continue;  // clef / accidental
-      if(r&&r.nr&&r.nr.d<0.28&&r.nr.d<=r.d)return true;                    // notehead or rest glyph
+      if(r&&r.nr&&r.nr.d<0.28&&r.nr.d<=r.d){xs.push(k.x0);if(firstOnly)return xs;continue}                    // notehead or rest glyph
       let blob=false;for(let y=k.y0;y+e-1<=k.y1&&!blob;y++)for(let x=k.x0;x+e-1<=k.x1;x++)if(boxSum(Ic,w,x,y,x+e-1,y+e-1)===e*e){blob=true;break}
-      if(blob&&kw>=0.8)return true;                                         // filled notehead (with stem/beam)
+      if(blob&&kw>=0.8){xs.push(k.x0);if(firstOnly)return xs;continue}                                         // filled notehead (with stem/beam)
       let stem=false;const m=new Uint8Array((k.x1-k.x0+1)*(k.y1-k.y0+1)),W=k.x1-k.x0+1;for(let i=0;i<k.pts.length;i+=2)m[(k.pts[i+1]-k.y0)*W+(k.pts[i]-k.x0)]=1;
       for(let x=0;x<W&&!stem;x++){let run=0;for(let y=0;y<=k.y1-k.y0;y++){if(m[y*W+x]){if(++run>=sp*3.2){stem=true;break}}else run=0}}
-      if(stem&&kw>=0.9)return true;                                         // stemmed note (hollow head)
+      if(stem&&kw>=0.9){xs.push(k.x0);if(firstOnly)return xs}                                         // stemmed note (hollow head)
     }
   }
-  return false;
+  return xs;
 }
+function hasContent(c,Ic,w,h,g,xa,xb,skip,lt=1){return contentXs(c,Ic,w,h,g,xa,xb,skip,lt,true).length>0}
+function firstContentX(c,Ic,w,h,g,xa,xb,skip,lt=1){const xs=contentXs(c,Ic,w,h,g,xa,xb,skip,lt,false);return xs.length?Math.min(...xs):null}
 function hasRepeatDots(c,w,h,s,x,dir){
   // two dots in the 2nd and 3rd spaces within ~1.3 sp on side dir
   const sp=s.sp,xa=dir>0?x:x-Math.round(sp*1.3),xb=dir>0?x+Math.round(sp*1.3):x;
@@ -310,9 +313,9 @@ function analyzePage(gray,w,h,opts={}){
     if(bars.length>1&&bars[0].repeatStart&&!bars[0].repeatEnd&&widths[0]<Math.max(sp*9,medW*0.45))bars[0].headerRepeat=true;
     const boundaries=bars.filter(k=>!k.headerRepeat);
     // time signatures: at system start and right after each boundary
-    const sigs=[];
+    const sigs=[],allSigSpans=[];
     // a time signature is written on every staff of the system; mid-line changes must agree on (nearly) all of them
-    const sigAt=(xa,xb,where)=>{const votes={},conf={};for(const s of g){const r=readTimeSig(clean,w,h,s,xa,xb,lt);if(r){votes[r.meter]=(votes[r.meter]||0)+1;conf[r.meter]=Math.max(conf[r.meter]||0,r.conf)}}const best=Object.entries(votes).sort((a,c)=>c[1]-a[1])[0];
+    const sigAt=(xa,xb,where)=>{const votes={},conf={};for(const s of g){const r=readTimeSig(clean,w,h,s,xa,xb,lt);if(r){votes[r.meter]=(votes[r.meter]||0)+1;conf[r.meter]=Math.max(conf[r.meter]||0,r.conf);allSigSpans.push([r.x0-2,r.x1+2])}}const best=Object.entries(votes).sort((a,c)=>c[1]-a[1])[0];
       const need=where==='start'?Math.max(1,Math.ceil(n*0.5)):(n<=2?n:Math.ceil(n*0.75));if(best&&best[1]>=need&&(where==='start'||conf[best[0]]>=0.72))sigs.push({meter:best[0],where,votes:best[1],of:n,conf:conf[best[0]]})};
     const firstB=boundaries[0]?boundaries[0].x0:right;
     sigAt(left+2,Math.min(firstB-sp*0.3,left+sp*14),'start');
@@ -326,6 +329,8 @@ function analyzePage(gray,w,h,opts={}){
     for(let i=boundaries.length-1;i>=0;i--)if(boundaries[i].empty){sigs.forEach(sg=>{if(typeof sg.where==='number'&&sg.where>i)sg.where--;else if(sg.where===i)sg.where=i?i:'start'});boundaries.splice(i,1)}
     const top=Math.min(...g.map(s=>s.top)),bottom=Math.max(...g.map(s=>s.bottom));
     const measures=boundaries.map((k,i)=>({x0:i?boundaries[i-1].x1:left,x1:k.x0,repeatStart:i?!!boundaries[i-1].repeatStart:!!(bars[0].headerRepeat||false),repeatEnd:!!k.repeatEnd,open:!!k.implicit}));
+    // where the notes start in each measure (after clef / key / time signature): beat 1 goes there, not on the key signature
+    const skipSpans=[...sigSpans,...allSigSpans];for(const m of measures){const cx=firstContentX(clean,Ic,w,h,g,m.x0+2,m.x1-2,skipSpans,lt);m.cx0=cx!==null&&cx<m.x1-sp?Math.max(m.x0,cx-sp*0.25):m.x0}
     systems.push({staves:g.length,top,bottom,left,right,sp,measures,sigs,...(opts.debug?{bars,cands:g.map(s=>({top:s.top,bottom:s.bottom,cands:s.cands.map(c=>({x:c.x0,w:c.width,bar:isBarlike(c,s.sp,n===1),eu:+c.extUp.toFixed(2),ed:+c.extDn.toFixed(2),ra:c.reachAbove,rb:c.reachBelow,il:+c.isoL.toFixed(2),ir:+c.isoR.toFixed(2),wg:+(c.wiggle||0).toFixed(2)}))}))}:{})});
   }
   return{skew,lt,sp:sp0,staves:staves.map(s=>({top:s.top,bottom:s.bottom,left:s.left,right:s.right,sp:s.sp})),systems};
