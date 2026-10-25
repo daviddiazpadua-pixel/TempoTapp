@@ -231,3 +231,14 @@ Fonts (vendor/fonts/)
 Libre Caslon Text — Copyright 2012 Impallari Type (www.impallari.com). SIL Open Font License 1.1.
 Source Sans 3 — Copyright 2010–2020 Adobe (http://www.adobe.com/). SIL Open Font License 1.1.
 License texts: vendor/fonts/LICENSE-LibreCaslonText-OFL.txt, vendor/fonts/LICENSE-SourceSans3-OFL.txt
+
+
+-------------------------------------------------------------------------------
+vendor/score-omr.js — glyph templates
+-------------------------------------------------------------------------------
+The score reader embeds tiny 10x14 shape summaries of time-signature digits, clefs, accidentals,
+noteheads and rests, derived from these fonts (no font software is included):
+  Bravura, Leland, Petaluma (Steinberg / MuseScore) — SIL Open Font License 1.1
+  Leipzig, Gootville (as bundled with Verovio) — SIL Open Font License 1.1
+  Emmentaler (LilyPond) — SIL Open Font License 1.1 / GPL (dual)
+  DejaVu Serif Bold — Bitstream Vera / DejaVu license

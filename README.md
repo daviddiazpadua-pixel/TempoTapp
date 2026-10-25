@@ -1,4 +1,4 @@
-# TempoTapp 1.5.2
+# TempoTapp 1.6.0
 
 Click-track creator, beat analyzer, and audio warp tool. Single-page web app. Runs in two modes:
 **device-only** (no backend, everything stays on the device) or **cloud accounts** (Firebase; the
@@ -132,6 +132,15 @@ gradients, glows or shadows. Light-only by choice (sheet-music apps are light be
 screen is a white PDF). To change a color, edit the tokens at the top of `#engraved-theme`.
 
 ## Changelog
+
+### 1.6.0 — a real score reader
+- New `vendor/score-omr.js` (source in `tools/score-omr/`): finds staves, groups them into systems,
+  tells barlines from note stems (both sides clear, straight, spans the staff, agrees across staves),
+  handles repeats, double bars, 2nd endings, key changes, courtesy signatures, measures broken across
+  lines, and scanned pages (deskew, broken lines). Reads time signatures (digits, C, cut-C) by glyph
+  matching against open SMuFL fonts + LilyPond's Emmentaler, including mid-piece changes.
+- The click track follows the detected meter map (e.g. 4/4 → 3/4 at m.13).
+- Accuracy corpus + harness in `tests/score-corpus/` and `tests/score_corpus.js`.
 
 ### 1.5.2 — a PDF works wherever you drop it
 - New first option on Create: **From Sheet Music** — choose a PDF and the click track is built automatically.
