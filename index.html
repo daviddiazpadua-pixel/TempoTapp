@@ -1,6 +1,7 @@
 <!doctype html>
 <!--
   TempoTapp — Click Track Creator, Beat Analyzer, and Audio Warp
+  Version 1.5.2 (2026-10-25) — a PDF works from every upload spot + "From Sheet Music" create option
   Version 1.5.1 (2026-10-25) — sheet-music PDF now creates the click track
   Version 1.5.0 (2026-10-20) — cloud accounts (optional), "Engraved" visual system
 
@@ -350,7 +351,7 @@ button{-webkit-user-select:none;user-select:none}
 .create-choice-header{max-width:760px;margin:0 auto 28px;text-align:center}
 .create-choice-header h1{font-size:clamp(2.7rem,7vw,4.7rem);line-height:.98;letter-spacing:-.06em;margin:10px 0 15px}
 .create-choice-header p{color:var(--soft);font-size:1.02rem;line-height:1.65;margin:0 auto;max-width:650px}
-.create-choice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;max-width:960px;margin:0 auto}
+.create-choice-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;max-width:1180px;margin:0 auto}label.create-choice-card{cursor:pointer;position:relative}label.create-choice-card input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}.create-choice-card.sheet{border-color:var(--ink,#141414);border-width:2px}
 .create-choice-card{border:1px solid var(--line);border-radius:24px;background:linear-gradient(180deg,#e7e7e4,#e7e7e4);padding:25px;text-align:left;color:var(--text);min-height:255px;display:flex;flex-direction:column;align-items:flex-start;gap:11px;transition:border-color .18s ease,transform .18s ease,background .18s ease}
 .create-choice-card:hover{border-color:rgba(20,20,20,0.36);transform:translateY(-2px)}
 .create-choice-card.media{background:linear-gradient(180deg,rgba(231,231,228,0.34),#e7e7e4)}
@@ -849,6 +850,14 @@ html,body{background:var(--ground)!important}
       <p>Choose the workflow that matches what you have. Both paths end in the same precise measure, subdivision, editing, MIDI, save, Analyze, and Warp tools.</p>
     </header>
     <section class="create-choice-grid">
+      <label class="create-choice-card sheet" id="createSheetMusicCard" for="createSheetPdfFile">
+        <input id="createSheetPdfFile" type="file" accept="application/pdf,.pdf">
+        <span class="create-choice-icon">𝄞</span>
+        <h2>From Sheet Music</h2>
+        <p>Upload the PDF. TempoTapp counts the measures, reads the tempo marking, and makes the click track for you.</p>
+        <div class="create-choice-points"><span>Automatic, no tapping</span><span>Adjust tempo and time signature</span><span>Practice with moving score follow</span></div>
+        <b>Choose a PDF →</b>
+      </label>
       <button class="create-choice-card" id="createScratchButton" type="button">
         <span class="create-choice-icon">●</span>
         <h2>From Scratch</h2>
@@ -1122,9 +1131,9 @@ html,body{background:var(--ground)!important}
       <div class="step-number">1</div>
       <div class="section-head"><div><h2>Add recording</h2><p>Choose the performance you want TempoTapp to understand.</p></div></div>
       <label class="audio-drop" id="analysisAudioDrop">
-        <input id="analyzeAudioFile" type="file" accept="audio/*,.wav,.mp3,.m4a,.aac,.flac,.ogg,.opus">
+        <input id="analyzeAudioFile" type="file" accept="audio/*,.wav,.mp3,.m4a,.aac,.flac,.ogg,.opus,application/pdf,.pdf">
         <span class="audio-drop-icon">♪</span>
-        <strong id="analysisAudioDropTitle">Drop audio here or click to choose</strong>
+        <strong id="analysisAudioDropTitle">Drop audio or a sheet-music PDF here, or click to choose</strong>
         <span id="analysisAudioDropSub">Solo piano works best when you also give the musical context.</span>
       </label>
       <div class="analysis-file-info hidden" id="analysisFileInfo"></div>
@@ -1553,7 +1562,7 @@ html,body{background:var(--ground)!important}
 <script>
 (() => {
   'use strict';
-  const APP_VERSION='1.5.1';
+  const APP_VERSION='1.5.2';
   const $ = id => document.getElementById(id);
   if($('appVersionLabel'))$('appVersionLabel').textContent=`TempoTapp ${APP_VERSION} · All data stays on this device.`;
   // ---------------------------------------------------------------------------
@@ -2696,6 +2705,18 @@ html,body{background:var(--ground)!important}
     if($('recorderTitle'))$('recorderTitle').textContent=config.heading;
     if($('recorderDescription'))$('recorderDescription').textContent=config.copy;
   }
+  // v1.5.2: a sheet-music PDF dropped or chosen anywhere goes to the score workflow, which builds the click track.
+  function isPdfFile(f){return !!f&&(f.type==='application/pdf'||/\.pdf$/i.test(String(f.name||'')))}
+  async function openSheetMusicPdf(file){
+    if(!file)return;
+    const inCreate=currentScreen==='recorder'&&(createMode==='media'||createMode==='review');
+    if(!inCreate){
+      if(track.taps.length&&!track.loadedId&&!track.fromScore&&!(await uiConfirm('Your unsaved taps will be cleared.',{title:'Make a click track from this PDF?',okLabel:'Continue'})))return;
+      resetTrack('Reading the sheet music…');setCreateMode('media');showScreen('recorder');
+    }
+    setTimeout(()=>{try{document.querySelector('.score-follow-panel')?.scrollIntoView({block:'start',behavior:'smooth'})}catch{}},120);
+    await loadScorePdf(file);
+  }
   async function startCreateMode(mode){
     // Starting a new path clears an existing unsaved track only after warning.
     if(track.taps.length&&!track.loadedId&&!(await uiConfirm('Your unsaved taps will be cleared.',{title:'Start a new click track?',okLabel:'Start new'})))return;
@@ -3020,6 +3041,7 @@ html,body{background:var(--ground)!important}
   }
   function loadTapAlongFile(file){
     if(!file)return;
+    if(isPdfFile(file)){loadScorePdf(file);setTimeout(()=>{try{document.querySelector('.score-follow-panel')?.scrollIntoView({block:'start',behavior:'smooth'})}catch{}},120);return}
     const ok=(file.type||'').startsWith('audio/')||/\.(wav|mp3|m4a|aac|flac|ogg|opus)$/i.test(file.name||'');
     if(!ok){setTapAlongStatus('Choose an audio file such as WAV, MP3, M4A, FLAC, OGG, or Opus.','error');return}
     if(tapAlongActive)endRecording();
@@ -3254,7 +3276,7 @@ html,body{background:var(--ground)!important}
     editHistory=[];frozenViewMs=track.durationMs;segmentBaseMs=track.durationMs;
     syncControls();setCreateMode('review');renderDetails();autoMapDetectedScore();
     const msg=`Click track ready · ${measures} measures of ${meter} at ${bpm} BPM (${Math.round(track.durationMs/1000)} s). Press Play to hear it, or Practice to follow the score.`;
-    setScoreAnalysisStatus(msg,'good',100);$('status').textContent=auto?`Click track built from ${track.scorePdfName||'the score'}. Check the tempo and time signature in Score Follow.`:msg;
+    setScoreAnalysisStatus(msg,'good',100);if(auto)setTimeout(()=>{try{$('scoreClickCard')?.scrollIntoView({block:'center',behavior:'smooth'})}catch{}},150);$('status').textContent=auto?`Click track built from ${track.scorePdfName||'the score'}. Check the tempo and time signature in Score Follow.`:msg;
   }
   async function analyzeScorePdf(silent=false){
     if(!scorePdfDoc||scoreAnalysisRunning)return;scoreAnalysisRunning=true;scoreDetectedRawBoxes=[];syncScorePdfUi();const button=$('scoreAnalyzeButton');if(button)button.textContent='Analyzing…';
@@ -3802,6 +3824,7 @@ html,body{background:var(--ground)!important}
   }
 
   async function handleWarpAudioFile(file){
+    if(isPdfFile(file)){openSheetMusicPdf(file);return}
     clearWarpOutput({resetProject:true,resetHistory:true,resetAnalysis:true});
     warpBeatShift=0;syncBeatAlignment();
     if(!file) return false;
@@ -3971,6 +3994,7 @@ html,body{background:var(--ground)!important}
   }
   async function handleAnalysisAudioFile(file){
     if(!file)return;
+    if(isPdfFile(file)){$('analyzeAudioFile').value='';openSheetMusicPdf(file);return}
     const ext=(String(file.name||'').toLowerCase().match(/\.([a-z0-9]+)$/)||[])[1]||'';
     const knownAudio=new Set(['wav','mp3','m4a','aac','flac','ogg','opus','webm','mp4']);
     if(!(String(file.type||'').startsWith('audio/')||knownAudio.has(ext))){
@@ -4835,6 +4859,8 @@ html,body{background:var(--ground)!important}
   $('homeAnalyzeButton').addEventListener('click',()=>showScreen('analyze'));
   $('createHubHomeButton').addEventListener('click',()=>showScreen('home'));
   $('createScratchButton').addEventListener('click',()=>startCreateMode('scratch'));
+  $('createSheetMusicCard').addEventListener('click',e=>{if(e.target===$('createSheetPdfFile'))return;e.preventDefault();$('createSheetPdfFile').click()});/* iOS webviews can ignore label activation */
+  $('createSheetPdfFile').addEventListener('change',e=>{const f=e.target.files?.[0];e.target.value='';openSheetMusicPdf(f)});
   $('createMediaButton').addEventListener('click',()=>startCreateMode('media'));
   $('createHubAnalyzeButton').addEventListener('click',()=>showScreen('analyze'));
   $('changeCreateModeButton').addEventListener('click',()=>showScreen('createHub'));
