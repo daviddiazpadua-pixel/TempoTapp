@@ -84,7 +84,7 @@ async def main():
                 await js("createScratchButton"); await pg.wait_for_timeout(400)
                 mode = await txt("#createModePill")
                 media_hidden = not await visible("tapAlongDrop")
-                await js("startButton"); await pg.wait_for_timeout(200)
+                await js("startButton"); await pg.wait_for_timeout(2600)
                 for i in range(8):
                     await js("tapButton"); await pg.wait_for_timeout(450)
                 await js("endButton"); await pg.wait_for_timeout(300)
@@ -112,7 +112,7 @@ async def main():
                 media_visible = await visible("tapAlongDrop")
                 await pg.set_input_files("#tapAlongFile", f"{TD}/clicks120.wav"); await pg.wait_for_timeout(1500)
                 info = await txt("#tapAlongFileInfo")
-                await js("tapAlongStartButton"); await pg.wait_for_timeout(600)
+                await js("tapAlongStartButton"); await pg.wait_for_timeout(2300)
                 for i in range(40):
                     await js("tapAccentButton" if i % 4 == 0 else "tapRegularButton"); await pg.wait_for_timeout(190)
                 await pg.wait_for_timeout(300)

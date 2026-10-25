@@ -1,4 +1,4 @@
-# TempoTapp 1.7.0
+# TempoTapp 1.7.2
 
 Click-track creator, beat analyzer, and audio warp tool. Single-page web app. Runs in two modes:
 **device-only** (no backend, everything stays on the device) or **cloud accounts** (Firebase; the
@@ -132,6 +132,15 @@ gradients, glows or shadows. Light-only by choice (sheet-music apps are light be
 screen is a white PDF). To change a color, edit the tokens at the top of `#engraved-theme`.
 
 ## Changelog
+
+### 1.7.2 — listening and count-ins
+- Listen: Recording + Clicks is audible over a full-level recording: the recording plays at 55%
+  while listening (restored after) and each click gets a short bright attack layer.
+- Count-in before every tapping pass: 4 beats at the target tempo for Start Clicks, 3 for Play & Tap.
+- Listening jumps to the Edit Click Track panel, shows a green playhead that the editor follows,
+  and lights the click that is sounding. Clicks can be dragged while it plays; the schedule is
+  rebuilt immediately so you hear the new timing.
+- tests/v172_listen.js (desktop + phone).
 
 ### 1.7.0 — timing, analysis, exports, PDF fixes
 - Timing engine: taps are stamped from the key/finger-down event (Space on a focused button used to

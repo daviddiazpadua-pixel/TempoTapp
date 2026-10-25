@@ -272,6 +272,9 @@ main{padding-top:34px}.recorder-header,.library-header,.warp-header,.help-header
 .score-help{color:var(--muted);font-size:.78rem;line-height:1.55}
 .score-file-name{color:var(--soft);font-size:.8rem;font-weight:800;overflow-wrap:anywhere}
 .tt-countdown{font:800 2.4rem/1.1 var(--font-display,serif);text-align:center;padding:8px 0;color:var(--text)}.tt-countdown.go{color:#1f6b3a}
+.tt-countdown.floating{position:fixed;left:50%;top:38%;transform:translate(-50%,-50%);z-index:9999;min-width:160px;padding:22px 34px;font-size:4.4rem;background:var(--paper,#fff);border:2px solid var(--ink,#141414);box-shadow:0 10px 40px rgba(0,0,0,.18);pointer-events:none}
+.drag-editor-playhead{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:#1f6b3a;z-index:4;pointer-events:none}.drag-editor-playhead.hidden{display:none}
+.drag-click-marker.hit:after{background:#1f6b3a!important;border-color:#1f6b3a!important}.drag-click-marker.hit:before{background:#1f6b3a!important}
 .tap-chip-list{display:flex;flex-wrap:wrap;gap:4px;max-height:132px;overflow:auto;margin-top:6px}.tap-chip-list span{font:600 .72rem/1 ui-monospace,monospace;padding:4px 6px;border:1px solid var(--line);border-radius:7px;background:var(--surface,#fff)}
 .downbeat-fine{display:grid;gap:6px;margin-top:8px}.downbeat-fine-row{display:flex;flex-wrap:wrap;gap:5px;align-items:center}.downbeat-fine-row .secondary{padding:6px 9px;font-size:.78rem}.downbeat-sec{display:flex;align-items:center;gap:4px;font-size:.8rem}.downbeat-sec input{width:96px;min-height:34px}
 .analysis-timeline-spacer{position:relative;height:300px}.analysis-timeline-spacer .beat-map-canvas{position:sticky;left:0;min-width:0}.analysis-playhead{position:absolute;top:0;height:300px;width:2px;background:#141414;pointer-events:none;z-index:2}.analysis-playhead span{position:absolute;top:2px;left:4px;font:700 10px system-ui;background:#141414;color:#f4f3ee;padding:2px 5px;border-radius:5px;white-space:nowrap}.analysis-play-btn{margin-right:10px;min-width:92px}
@@ -1099,8 +1102,8 @@ html,body{background:var(--ground)!important}
     <div class="section-head"><div><h2>Edit Click Track</h2><p id="editorHint">Finish a recording to remove a section.</p></div><div class="duration-pill" id="durationPill">0.00 s</div></div>
     <div class="drag-edit-block">
       <div class="drag-edit-head"><div><div class="drag-edit-title">Drag clicks to adjust timing</div><span class="drag-edit-sub">Grab any pink click and move it left or right.</span></div><div class="drag-edit-readout" id="dragEditReadout">—</div></div>
-      <div class="drag-editor-scroll" id="dragEditorScroll"><div class="drag-editor disabled" id="dragEditor"><div class="drag-editor-baseline"></div><div id="dragEditorTicks"></div><div id="dragEditorMarkers"></div><div class="drag-editor-empty" id="dragEditorEmpty">Finish a click track to edit its clicks.</div></div></div>
-      <div class="drag-editor-help"><strong>Tip:</strong> drag slowly for precise timing. Clicks stay in order and cannot cross each other.</div>
+      <div class="drag-editor-scroll" id="dragEditorScroll"><div class="drag-editor disabled" id="dragEditor"><div class="drag-editor-baseline"></div><div id="dragEditorTicks"></div><div id="dragEditorMarkers"></div><div class="drag-editor-playhead hidden" id="dragEditorPlayhead"></div><div class="drag-editor-empty" id="dragEditorEmpty">Finish a click track to edit its clicks.</div></div></div>
+      <div class="drag-editor-help"><strong>Tip:</strong> drag slowly for precise timing. Clicks stay in order and cannot cross each other. You can drag while <em>Listen: Recording + Clicks</em> plays; the clicks you hear update right away.</div><div class="tt-countdown floating hidden" id="recCountdown" aria-live="assertive"></div>
     </div>
     <div class="cut-row"><div><label class="field-label" for="cutStart">Start beat</label><div class="number-wrap"><input id="cutStart" type="number" min="1" step="1" value="1"><span>beat</span></div></div><div><label class="field-label" for="cutEnd">End beat</label><div class="number-wrap"><input id="cutEnd" type="number" min="1" step="1" value="2"><span>beat</span></div></div><button class="secondary remove-btn" id="cutButton" disabled>Remove Beats</button><button class="secondary" id="undoEditButton" disabled>Undo Edit</button></div>
     <div class="microcopy">Example: remove beats 9 through 16. Everything after those beats shifts earlier automatically.</div>
@@ -1602,7 +1605,7 @@ html,body{background:var(--ground)!important}
 <script>
 (() => {
   'use strict';
-  const APP_VERSION='1.7.1';
+  const APP_VERSION='1.7.2';
   const $ = id => document.getElementById(id);
   if($('appVersionLabel'))$('appVersionLabel').textContent=`TempoTapp ${APP_VERSION} · All data stays on this device.`;
   // ---------------------------------------------------------------------------
@@ -3173,6 +3176,7 @@ html,body{background:var(--ground)!important}
     if(recording&&!tapAlongActive)endRecording();
     if(a.ended||(Number.isFinite(a.duration)&&a.currentTime>=a.duration-.03))a.currentTime=0;
     const startMs=Math.max(0,a.currentTime*1000);
+    if(countdownBusy)return;setTapAlongStatus('Get ready… the recording starts after the count-in.','active');await runCountdown($('recCountdown'),{n:3,ms:countInMs()});if(recording||listenActive)return;
     if(track.taps.length&&track.taps.at(-1)>=startMs+20){
       editHistory.push({taps:[...track.taps],tapAccents:[...(track.tapAccents||[])],durationMs:track.durationMs});
       const before=track.taps.length,keep=track.taps.map(t=>t<startMs-20);track.taps=track.taps.filter((_,i)=>keep[i]);track.tapAccents=(track.tapAccents||[]).filter((_,i)=>keep[i]);
@@ -3505,7 +3509,9 @@ html,body{background:var(--ground)!important}
   function resetTrack(message='Ready.'){
     stopReplay(false);if(tapAlongActive){tapAlongActive=false;const a=tapAlongAudio();if(a&&!a.paused)a.pause()}recording=false;track.taps=[];track.tapAccents=[];track.durationMs=0;track.fromScore=false;track.loadedId=null;track.loadedName=null;track.loadedFolderId=null;track.scoreMap=[{startMeasure:1,meter:'4/4'}];track.subdivisionMap=[];track.scoreAnchors=[];track.scoreMeasureBoxes=[];track.scorePdfName='';scoreDetectedRawBoxes=[];scoreMappingActive=false;scoreMapCursor=0;editHistory=[];frozenViewMs=0;segmentBaseMs=0;$('cutStart').value='1';$('cutEnd').value='2';$('timingFeedback').className='';$('timingFeedback').textContent='Press Start Clicks to begin.';$('status').textContent=message;renderDetails();
   }
-  function startRecording(){ if(recording||playing)return;if(window.innerWidth<=900){setTimeout(()=>{try{document.querySelector('.timeline-card')?.scrollIntoView({block:'start',behavior:'smooth'})}catch{}},60)}tapAlongActive=false;const a=tapAlongAudio();if(a&&!a.paused)a.pause();segmentBaseMs=track.durationMs;segmentStartReal=performance.now();recording=true;frozenViewMs=track.durationMs;$('status').textContent=segmentBaseMs>0?'Recording continued.':'Recording…';$('timingFeedback').textContent=track.targetBpm===0?'No target beat selected.':(segmentBaseMs>0?'Continuing from where you stopped.':'Recording started.');renderDetails();startAnimation(); }
+  function countInMs(){const b=Number(track.targetBpm)||0;return b>0?Math.max(300,Math.min(1200,60000/b)):700}
+  async function startRecording(){ if(recording||playing||countdownBusy)return;if(window.innerWidth<=900){try{document.querySelector('.timeline-card')?.scrollIntoView({block:'start',behavior:'smooth'})}catch{}}$('status').textContent='Get ready…';await runCountdown($('recCountdown'),{n:4,ms:countInMs()});startRecordingNow()}
+  function startRecordingNow(){ if(recording||playing)return;if(window.innerWidth<=900){setTimeout(()=>{try{document.querySelector('.timeline-card')?.scrollIntoView({block:'start',behavior:'smooth'})}catch{}},60)}tapAlongActive=false;const a=tapAlongAudio();if(a&&!a.paused)a.pause();segmentBaseMs=track.durationMs;segmentStartReal=performance.now();recording=true;frozenViewMs=track.durationMs;$('status').textContent=segmentBaseMs>0?'Recording continued.':'Recording…';$('timingFeedback').textContent=track.targetBpm===0?'No target beat selected.':(segmentBaseMs>0?'Continuing from where you stopped.':'Recording started.');renderDetails();startAnimation(); }
   function endRecording(){ if(!recording)return;const wasTapAlong=tapAlongActive,endMs=currentRecordTime();tapAlongActive=false;if(wasTapAlong){const a=tapAlongAudio();if(a&&!a.paused)a.pause()}track.durationMs=Math.max(endMs,track.taps.length?track.taps.at(-1):0);frozenViewMs=track.durationMs;recording=false;stopAnimation();$('status').textContent=`Recording ended · ${track.taps.length} beat${track.taps.length===1?'':'s'}.`;$('timingFeedback').textContent=wasTapAlong?'Tap-along stopped. Seek and press Play & Tap to continue.':'Press Start Clicks to continue, Replay to review, or Save when ready.';if(wasTapAlong)setTapAlongStatus('Tap-along stopped. Seek if needed, then press Play & Tap to continue.');renderDetails(); }
   function recordTap(style='auto',ts){if(recording&&!playing)track.fromScore=false;/* v1.5.1: hand-tapped edits make this the user's own track */ if(!recording||playing){if(!recording)$('status').textContent=tapAlongUrl?'Press Play & Tap or Start Clicks first.':'Press Start Clicks first.';return}if(tapAlongActive&&tapAlongAudio()?.paused){setTapAlongStatus('The recording is paused. Press Play & Tap to continue.','error');return}const now=currentRecordTime(ts),prev=track.taps.length?track.taps.at(-1):null;if(prev!==null&&now<=prev+12){$('status').textContent='That tap was too close to the previous beat.';return}const i=track.taps.length;track.taps.push(now);track.tapAccents=track.tapAccents||[];track.tapAccents.push(style==='accent'?1:style==='plain'?0:null);const auto=trackBeatMeta(i).downbeat||isAccent(i),accent=explicitTapAccent(i,auto);clickSound(accent);animateConductor(prev===null?520:now-prev);timingFeedback(nearestGuideDelta(now));$('status').textContent=style==='accent'?'Accented beat recorded.':(track.taps.length===1?'First tap recorded.':(tapAlongActive?'Beat locked to the recording.':'Beat recorded.'));renderDetails(); }
   let replaySched=null;
@@ -3516,16 +3522,30 @@ html,body{background:var(--ground)!important}
   function stopReplay(update=true){replaySched?.stop();replaySched=null;playbackTimers.forEach(clearTimeout);playbackTimers=[];if(playing)frozenViewMs=Math.max(0,Math.min(track.durationMs,performance.now()-replayStartReal));playing=false;stopAnimation();if(update)$('status').textContent='Replay stopped.';renderDetails();syncScoreClickPlayUi();}
   // ---- Listen back: the recording with the tapped click track on top (tap-along) ----
   let listenSched=null,listenActive=false;
+  // Listening clicks have to cut through a full-level recording: the recording is turned down while
+  // listening (restored afterwards) and each click gets a bright attack layer on top of the tone.
+  let listenPrevVolume=null,listenUserScrollAt=0,listenRefreshTimer=null,listenLastHit=null;
+  function listenClick(when,ev,bus){const c=audio(),vol=clampClickVolume(track.clickVolume)/100*2.2,sub=ev.kind==='subdivision';clickAt(when,ev.accent,ev.kind||'primary',clampClickVolume(track.clickVolume)*2.2,bus);if(vol<=0)return;const o=c.createOscillator(),g=c.createGain(),t=Math.max(when,c.currentTime),pk=(ev.accent?.22:(sub?.06:.14))*vol;o.type='square';o.frequency.setValueAtTime(ev.accent?3100:(sub?1800:2400),t);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(Math.max(.0001,pk),t+.0015);g.gain.exponentialRampToValueAtTime(.0001,t+.018);o.connect(g);g.connect(bus);o.start(t);o.stop(t+.025)}
+  function makeListenScheduler(a){const evs=expandedTrackClickEvents().map(ev=>({...ev,t:ev.ms/1000,kind:ev.primary?'primary':'subdivision'}));
+    return startClickScheduler({events:evs,perfAt:t=>perfForMediaTime(a,t),play:listenClick,onEvent:ev=>{if(!ev.primary)return;const i=ev.index;animateConductor(i?ev.ms-track.taps[i-1]:520);markListenHit(i)}})}
+  function markListenHit(i){listenLastHit?.classList.remove('hit');const m=document.querySelector(`#dragEditorMarkers .drag-click-marker[data-tap-index="${i}"]`);if(m){m.classList.add('hit');listenLastHit=m}}
+  // After a click is dragged while listening, rebuild the schedule from the current position.
+  function refreshListenClicks(){if(!listenActive)return;const a=tapAlongAudio();listenSched?.stop();listenSched=makeListenScheduler(a);listenSched.resync(mediaTimeAt(a))}
+  function queueListenRefresh(){if(!listenActive||listenRefreshTimer)return;listenRefreshTimer=setTimeout(()=>{listenRefreshTimer=null;refreshListenClicks()},120)}
+  function updateDragPlayhead(){const ph=$('dragEditorPlayhead'),sc=$('dragEditorScroll'),ed=$('dragEditor');if(!ph||!ed)return;const show=(listenActive||playing)&&track.durationMs>0;if(!show){ph.classList.add('hidden');return}
+    const ms=viewTime(),f=ms/track.durationMs;if(f<0||f>1.02){ph.classList.add('hidden');return}ph.classList.remove('hidden');ph.style.left=(Math.min(1,f)*100)+'%';
+    if(sc&&!dragClickState&&performance.now()-listenUserScrollAt>2500){const x=f*ed.offsetWidth,vw=sc.clientWidth;if(x<sc.scrollLeft+vw*.15||x>sc.scrollLeft+vw*.7)sc.scrollLeft=Math.max(0,x-vw*.35)}}
   async function startListenWithAudio(){
     await unlockAudioForMobile().catch(()=>{});const a=tapAlongAudio();if(!tapAlongUrl||!a||!track.taps.length)return;
     if(recording)endRecording();if(playing)stopReplay(false);if(scorePracticeActive)stopScorePractice(false);
     if(a.ended||(Number.isFinite(a.duration)&&a.currentTime>=a.duration-.05))a.currentTime=0;
-    const evs=expandedTrackClickEvents().map(ev=>({...ev,t:ev.ms/1000,kind:ev.primary?'primary':'subdivision'}));
-    listenActive=true;try{await a.play()}catch{listenActive=false;setTapAlongStatus('Your browser blocked playback. Press Listen again.','error');syncTapAlongUi();return}
-    listenSched=startClickScheduler({events:evs,perfAt:t=>perfForMediaTime(a,t),onEvent:ev=>{if(!ev.primary)return;const i=ev.index;animateConductor(i?ev.ms-track.taps[i-1]:520)}});
-    setTapAlongStatus('Listening: the recording with your click track on top. Seek anywhere; the clicks follow.','active');$('status').textContent='Playing the recording with your click track…';syncTapAlongUi();startAnimation();
+    listenPrevVolume=a.volume;a.volume=Math.min(a.volume,0.55);
+    listenActive=true;try{await a.play()}catch{listenActive=false;a.volume=listenPrevVolume??1;setTapAlongStatus('Your browser blocked playback. Press Listen again.','error');syncTapAlongUi();return}
+    listenSched=makeListenScheduler(a);listenUserScrollAt=0;
+    try{document.querySelector('.panel.editor')?.scrollIntoView({block:'center',behavior:'smooth'})}catch{}
+    setTapAlongStatus('Listening: the recording with your click track on top. Drag any click below to fix it while it plays.','active');$('status').textContent='Playing the recording with your click track…';syncTapAlongUi();startAnimation();
   }
-  function stopListenWithAudio(pauseAudio=true){if(!listenActive)return;listenActive=false;listenSched?.stop();listenSched=null;const a=tapAlongAudio();if(pauseAudio&&a&&!a.paused)a.pause();frozenViewMs=a?a.currentTime*1000:frozenViewMs;stopAnimation();setTapAlongStatus('Stopped. Press Listen to hear the recording with your clicks again, or Play & Tap to retap from here.');syncTapAlongUi()}
+  function stopListenWithAudio(pauseAudio=true){if(!listenActive)return;listenActive=false;listenSched?.stop();listenSched=null;clearTimeout(listenRefreshTimer);listenRefreshTimer=null;listenLastHit?.classList.remove('hit');listenLastHit=null;const a=tapAlongAudio();if(pauseAudio&&a&&!a.paused)a.pause();if(a&&listenPrevVolume!==null){a.volume=listenPrevVolume;listenPrevVolume=null}frozenViewMs=a?a.currentTime*1000:frozenViewMs;stopAnimation();updateDragPlayhead();setTapAlongStatus('Stopped. Press Listen to hear the recording with your clicks again, or Play & Tap to retap from here.');syncTapAlongUi()}
   function removeSection(){if(recording||playing||track.durationMs<=0||!track.taps.length)return;const startBeat=Math.max(1,Math.round(Number($('cutStart').value))),endBeat=Math.min(track.taps.length,Math.round(Number($('cutEnd').value)));if(!Number.isFinite(startBeat)||!Number.isFinite(endBeat)||endBeat<startBeat){$('status').textContent='Choose an end beat at or after the start beat.';return}const a=track.taps[startBeat-1],b=endBeat<track.taps.length?track.taps[endBeat]:track.durationMs;if(!Number.isFinite(a)||!Number.isFinite(b)||b<=a){$('status').textContent='That beat range cannot be removed.';return}editHistory.push({taps:[...track.taps],tapAccents:[...(track.tapAccents||[])],durationMs:track.durationMs});const cut=b-a,keep=track.taps.map((_,i)=>i<startBeat-1||i>endBeat-1);track.taps=track.taps.filter((_,i)=>keep[i]).map(t=>t>=b?t-cut:t);track.tapAccents=(track.tapAccents||[]).filter((_,i)=>keep[i]);track.durationMs=Math.max(0,track.durationMs-cut);frozenViewMs=track.durationMs;$('cutStart').value='1';$('cutEnd').value=String(Math.min(2,Math.max(1,track.taps.length)));$('status').textContent=`Removed beat${startBeat===endBeat?'':'s'} ${startBeat}${startBeat===endBeat?'':`–${endBeat}`}.`;renderDetails()}
   function undoEdit(){const p=editHistory.pop();if(!p)return;track.taps=[...p.taps];track.tapAccents=Array.isArray(p.tapAccents)?[...p.tapAccents]:track.taps.map(()=>null);track.durationMs=p.durationMs;frozenViewMs=track.durationMs;$('status').textContent='Last edit undone.';renderDetails()}
 
@@ -3568,13 +3588,13 @@ html,body{background:var(--ground)!important}
     if(!s.moved){editHistory.push({taps:[...s.originalTaps],tapAccents:[...(track.tapAccents||[])],durationMs:s.durationMs});s.moved=true}
     track.taps[s.index]=ms;s.marker.style.left=((ms/track.durationMs)*100)+'%';s.marker.setAttribute('aria-valuenow',(ms/1000).toFixed(3));
     const meta=trackBeatMeta(s.index),time=s.marker.querySelector('.drag-click-time');if(time)time.textContent=meta.meter;
-    $('dragEditReadout').textContent=`M${meta.measure} · beat ${meta.beat} · ${meta.meter}`;
+    $('dragEditReadout').textContent=`M${meta.measure} · beat ${meta.beat} · ${meta.meter}`;queueListenRefresh();
   }
   function endDragClick(e){
     const s=dragClickState;if(!s||e.pointerId!==s.pointerId)return;
     s.marker.classList.remove('dragging');try{s.marker.releasePointerCapture?.(e.pointerId)}catch{}
     dragClickState=null;
-    if(s.moved){const meta=trackBeatMeta(s.index);$('status').textContent=`M${meta.measure} beat ${meta.beat} retimed.`;frozenViewMs=track.durationMs;renderDetails()}else{$('dragEditReadout').textContent=`${track.taps.length} primary beats`}
+    if(s.moved){const meta=trackBeatMeta(s.index);$('status').textContent=`M${meta.measure} beat ${meta.beat} retimed.`;if(!listenActive)frozenViewMs=track.durationMs;renderDetails();refreshListenClicks()}else{$('dragEditReadout').textContent=`${track.taps.length} primary beats`}
   }
   function setTarget(v){track.targetBpm=clampBpm(v);syncControls();drawTimeline()}
   function setAccentMode(v){track.accentMode=['none','first','custom'].includes(v)?v:'none';syncControls()}
@@ -3587,7 +3607,7 @@ html,body{background:var(--ground)!important}
   function drawTimeline(){if(currentScreen!=='recorder')return;const r=canvas.getBoundingClientRect(),w=r.width,h=r.height;if(w<=0||h<=0)return;ctx.clearRect(0,0,w,h);const now=viewTime(),nowX=w*.72,ppm=w/visibleWindowMs;$('timelineTime').textContent=track.taps.length?(()=>{const m=trackBeatMeta(track.taps.length-1);return `M${m.measure} · beat ${m.beat}`})():'M— · beat —';$('dashTime').textContent=String(track.taps.length);$('nowLine').classList.toggle('idle',!recording&&!playing);ctx.strokeStyle='rgba(20,20,20,0.2)';ctx.beginPath();ctx.moveTo(0,h*.55);ctx.lineTo(w,h*.55);ctx.stroke();if(track.targetBpm>0){const interval=60000/track.targetBpm,earliest=now-nowX/ppm-interval,latest=now+(w-nowX)/ppm+interval;for(let i=Math.floor(earliest/interval);;i++){const t=i*interval;if(t>latest)break;const x=nowX+(t-now)*ppm;if(x<-20||x>w+20)continue;ctx.strokeStyle='rgba(43,95,138,0.9)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,58);ctx.lineTo(x,h-50);ctx.stroke();ctx.fillStyle='#2b5f8a';ctx.beginPath();ctx.arc(x,53,5,0,Math.PI*2);ctx.fill();ctx.fillStyle='rgba(43,95,138,0.95)';ctx.font='700 11px system-ui';ctx.textAlign='center';ctx.fillText(i>=0?(()=>{const m=trackBeatMeta(i);return m.downbeat?`M${m.measure}`:String(m.beat)})():'',x,h-42)}}for(let i=0;i<track.taps.length;i++){const t=track.taps[i],x=nowX+(t-now)*ppm;if(x<-24||x>w+24)continue;ctx.strokeStyle='#b5121b';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(x,80);ctx.lineTo(x,h-67);ctx.stroke();ctx.fillStyle='#b5121b';ctx.beginPath();ctx.arc(x,74,7,0,Math.PI*2);ctx.fill();ctx.font='800 10px system-ui';ctx.textAlign='center';ctx.fillText((()=>{const m=trackBeatMeta(i);return `M${m.measure}.${m.beat}`})(),x,h-54)}drawBeatFooter(now,w,h,nowX,ppm)}
   function drawSeconds(now,w,h,nowX,ppm){const step=250,first=Math.max(0,Math.ceil((now-nowX/ppm)/step)),last=Math.max(first,Math.floor((now+(w-nowX)/ppm)/step));ctx.textAlign='center';ctx.font='600 9px system-ui';for(let i=first;i<=last;i++){const off=i*step,x=nowX+(off-now)*ppm;if(x<0||x>w)continue;const half=off%500===0,whole=off%1000===0;ctx.strokeStyle=half?'rgba(20,20,20,0.5)':'rgba(20,20,20,0.24)';ctx.beginPath();ctx.moveTo(x,h-29);ctx.lineTo(x,h-(half?21:24));ctx.stroke();if(half){ctx.fillStyle=whole?'rgba(20,20,20,0.9)':'rgba(81,80,72,0.7)';ctx.fillText(`${(off/1000).toFixed(1)}s`,x,h-7)}}ctx.strokeStyle='rgba(20,20,20,0.18)';ctx.beginPath();ctx.moveTo(0,h-34);ctx.lineTo(w,h-34);ctx.stroke()}
   function drawBeatFooter(now,w,h,nowX,ppm){ctx.strokeStyle='rgba(20,20,20,0.18)';ctx.beginPath();ctx.moveTo(0,h-34);ctx.lineTo(w,h-34);ctx.stroke();ctx.fillStyle='rgba(81,80,72,0.75)';ctx.font='650 9px system-ui';ctx.textAlign='left';ctx.fillText(track.taps.length?`${track.taps.length} recorded beats`:'Beat numbers appear as you tap',8,h-10)}
-  function tick(){animationFrame=null;if(!recording&&!playing&&!listenActive)return;drawTimeline();animationFrame=requestAnimationFrame(tick)}
+  function tick(){animationFrame=null;if(!recording&&!playing&&!listenActive){updateDragPlayhead();return}drawTimeline();updateDragPlayhead();animationFrame=requestAnimationFrame(tick)}
   function startAnimation(){if(animationFrame===null)animationFrame=requestAnimationFrame(tick)}
   function stopAnimation(){if(animationFrame!==null){cancelAnimationFrame(animationFrame);animationFrame=null}drawTimeline()}
 
@@ -5400,6 +5420,7 @@ html,body{background:var(--ground)!important}
     bindTouchDrag($('dragEditor'),beginDragClick,moveDragClick,endDragClick);
   }
 
+  for(const ev of ['wheel','touchstart','pointerdown'])$('dragEditorScroll').addEventListener(ev,()=>{if(listenActive)listenUserScrollAt=performance.now()},{passive:true});
   // Unlock Web Audio from the first real touch/click on mobile Safari.
   const firstAudioGesture=()=>{unlockAudioForMobile().catch(()=>{})};
   if(('ontouchstart' in window)||navigator.maxTouchPoints>0){const tapSmall=document.querySelector('#tapButton small');if(tapSmall)tapSmall.textContent='Tap anywhere on this pad';}

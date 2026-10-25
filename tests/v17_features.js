@@ -6,7 +6,7 @@ await pg.goto('http://localhost:8765/index.html?tt-test=1');await pg.waitForTime
 const H=()=>pg.evaluate(()=>window.__TT_TEST__);
 // ---- 1. Space while the TAP button has focus: tap is stamped at key-DOWN, not key-up; exactly one tap ----
 await pg.evaluate(()=>{document.getElementById('homeCreateButton').click()});await pg.waitForTimeout(200);await pg.evaluate(()=>document.getElementById('createScratchButton').click());await pg.waitForTimeout(300);
-await pg.click('#startButton');await pg.waitForTimeout(150);await pg.focus('#tapButton');
+await pg.click('#startButton');await pg.waitForTimeout(2600);await pg.focus('#tapButton');
 await pg.evaluate(()=>{window.__kd=[];document.addEventListener('keydown',e=>{if(e.code==='Space')window.__kd.push(e.timeStamp)},true)});
 for(let i=0;i<4;i++){await pg.keyboard.down('Space');await pg.waitForTimeout(160);await pg.keyboard.up('Space');await pg.waitForTimeout(260)}
 const r1=await pg.evaluate(()=>({taps:window.__TT_TEST__.track().tapMs,rec:window.__TT_TEST__.rec(),kd:window.__kd}));
@@ -17,7 +17,7 @@ await pg.click('#endButton');
 await pg.evaluate(()=>{document.getElementById('changeCreateModeButton')?.click()});await pg.waitForTimeout(200);await pg.evaluate(()=>document.getElementById('createMediaButton').click());await pg.waitForTimeout(400);
 await pg.evaluate(()=>{const ok=[...document.querySelectorAll('#uiDialog button, .modal-backdrop.open button')].find(b=>/start new|ok|continue/i.test(b.textContent));ok?.click()});await pg.waitForTimeout(300);
 await pg.setInputFiles('#tapAlongFile',path.join(TD,'clicks120.wav'));await pg.waitForTimeout(1200);
-await pg.click('#tapAlongStartButton');await pg.waitForTimeout(300);for(let i=0;i<6;i++){await pg.click('#tapRegularButton');await pg.waitForTimeout(480)}
+await pg.click('#tapAlongStartButton');await pg.waitForTimeout(2200);for(let i=0;i<6;i++){await pg.click('#tapRegularButton');await pg.waitForTimeout(480)}
 await pg.click('#tapAlongPauseButton');await pg.waitForTimeout(300);
 await pg.evaluate(()=>{const C=window.AudioContext.prototype,o=C.createOscillator;window.__osc=0;C.createOscillator=function(){window.__osc++;return o.call(this)}});
 await pg.evaluate(()=>{document.getElementById('tapAlongAudio').currentTime=0});await pg.waitForTimeout(200);

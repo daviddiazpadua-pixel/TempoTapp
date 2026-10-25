@@ -79,7 +79,7 @@ async def main():
                 await js("authSubmit"); await pg.wait_for_timeout(1500)
             async def scratch_track(name, taps=8):
                 await js("homeCreateButton"); await pg.wait_for_timeout(300); await js("createScratchButton"); await pg.wait_for_timeout(400)
-                await js("startButton"); await pg.wait_for_timeout(200)
+                await js("startButton"); await pg.wait_for_timeout(2600)
                 for _ in range(taps): await js("tapButton"); await pg.wait_for_timeout(300)
                 await js("endButton"); await pg.wait_for_timeout(300)
                 await js("saveButton"); await pg.wait_for_timeout(300); await pg.fill("#saveName", name); await js("confirmSaveButton"); await pg.wait_for_timeout(1500)
