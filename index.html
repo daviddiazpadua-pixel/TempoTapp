@@ -929,7 +929,7 @@ html,body{background:var(--ground)!important}
     <div class="section-head"><div><h2>Tap Along to Audio</h2><p>Import a recording, press Play &amp; Tap, then tap the beat while the piece plays. Every tap is saved at the recording’s exact playback position.</p></div><span class="tap-along-badge idle" id="tapAlongBadge"><i></i><span>Audio not loaded</span></span></div>
     <div class="tap-along-layout">
       <label class="audio-drop tap-along-drop" id="tapAlongDrop">
-        <input id="tapAlongFile" type="file" accept="audio/*,.wav,.mp3,.m4a,.aac,.flac,.ogg,.opus">
+        <input id="tapAlongFile" type="file" accept="audio/*,.wav,.mp3,.m4a,.aac,.flac,.ogg,.opus,.aif,.aiff,.aifc">
         <span class="audio-drop-icon">♫</span><strong id="tapAlongDropTitle">Add the piece</strong><span>Tap to choose audio, or drag a recording here on a computer.</span>
       </label>
       <div class="tap-along-player">
@@ -1173,7 +1173,7 @@ html,body{background:var(--ground)!important}
       <div class="step-number">1</div>
       <div class="section-head"><div><h2>Add recording</h2><p>Choose the performance you want TempoTapp to understand.</p></div></div>
       <label class="audio-drop" id="analysisAudioDrop">
-        <input id="analyzeAudioFile" type="file" accept="audio/*,.wav,.mp3,.m4a,.aac,.flac,.ogg,.opus,application/pdf,.pdf">
+        <input id="analyzeAudioFile" type="file" accept="audio/*,.wav,.mp3,.m4a,.aac,.flac,.ogg,.opus,.aif,.aiff,.aifc,application/pdf,.pdf">
         <span class="audio-drop-icon">♪</span>
         <strong id="analysisAudioDropTitle">Drop audio or a sheet-music PDF here, or click to choose</strong>
         <span id="analysisAudioDropSub">Solo piano works best when you also give the musical context.</span>
@@ -1281,10 +1281,10 @@ html,body{background:var(--ground)!important}
       <div class="step-number">1</div>
       <div class="section-head"><div><h2>Add recording</h2><p>Choose the audio you want to reshape.</p></div></div>
       <label class="audio-drop" id="audioDrop">
-        <input id="warpAudioFile" type="file" accept="audio/*,.wav,.mp3,.m4a,.aac">
+        <input id="warpAudioFile" type="file" accept="audio/*,.wav,.mp3,.m4a,.aac,.flac,.ogg,.aif,.aiff,.aifc">
         <span class="audio-drop-icon">♪</span>
         <strong id="audioDropTitle">Choose an audio file</strong>
-        <span id="audioDropSub">WAV, MP3, M4A, AAC and other browser-supported audio</span>
+        <span id="audioDropSub">WAV, AIFF, MP3, M4A, AAC and other common audio</span>
       </label>
       <div class="audio-file-info hidden" id="audioFileInfo"></div>
       <audio id="sourceAudio" class="warp-audio hidden" controls preload="metadata" playsinline></audio>
@@ -1618,7 +1618,7 @@ html,body{background:var(--ground)!important}
 <script>
 (() => {
   'use strict';
-  const APP_VERSION='1.8.1';
+  const APP_VERSION='1.8.2';
   const $ = id => document.getElementById(id);
   if($('appVersionLabel'))$('appVersionLabel').textContent=`TempoTapp ${APP_VERSION} · All data stays on this device.`;
   // ---------------------------------------------------------------------------
@@ -3177,11 +3177,43 @@ html,body{background:var(--ground)!important}
     const badge=$('tapAlongBadge');if(badge){badge.classList.toggle('idle',!has);const span=badge.querySelector('span');if(span)span.textContent=tapAlongActive?'Tapping with audio':(has?'Audio ready':'Audio not loaded')}
     if(a)a.style.opacity=has?'1':'.55';
   }
-  function loadTapAlongFile(file){
+  // ---- AIFF / AIFC support (Logic/GarageBand/Pro Tools exports). Only Safari decodes AIFF natively, so the file is
+  // converted to WAV in the browser first: PCM 8/16/24/32-bit big-endian, 'sowt' little-endian, float32/64, µ-law, A-law.
+  async function isAiffFile(file){if(!file)return false;if(/\.(aif|aiff|aifc)$/i.test(String(file.name||''))||/aiff/i.test(String(file.type||'')))return true;try{const h=new Uint8Array(await file.slice(0,12).arrayBuffer());const t=String.fromCharCode(...h);return t.startsWith('FORM')&&/AIF[FC]$/.test(t.slice(8,12))}catch{return false}}
+  function aiffDecode(buf){
+    const v=new DataView(buf),u8=new Uint8Array(buf),tag=o=>String.fromCharCode(u8[o],u8[o+1],u8[o+2],u8[o+3]);
+    if(buf.byteLength<12||tag(0)!=='FORM'||!/^AIF[FC]$/.test(tag(8)))throw new Error('This AIFF file looks damaged.');
+    let ch=0,frames=0,bits=0,sr=0,comp='NONE',data=null;
+    for(let o=12;o+8<=buf.byteLength;){const id=tag(o),size=v.getUint32(o+4),body=o+8;
+      if(id==='COMM'){ch=v.getUint16(body);frames=v.getUint32(body+2);bits=v.getUint16(body+6);
+        const e=v.getUint16(body+8),sign=e&0x8000?-1:1,ex=(e&0x7fff)-16383-63,hi=v.getUint32(body+10),lo=v.getUint32(body+14);sr=sign*(hi*4294967296+lo)*Math.pow(2,ex);
+        if(tag(8)==='AIFC'&&size>=22)comp=tag(body+18)}
+      else if(id==='SSND'){const off=v.getUint32(body);data={start:body+8+off,end:Math.min(buf.byteLength,body+size)}}
+      o=body+size+(size&1)}
+    if(!ch||!data||!(sr>0))throw new Error('This AIFF file is missing its audio data.');
+    const c=comp.trim().toLowerCase(),le=c==='sowt',isF=c==='fl32'||c==='fl64',law=c==='ulaw'||c==='alaw';
+    if(!['none','twos','sowt','raw','fl32','fl64','ulaw','alaw'].includes(c))throw new Error(`This AIFF-C file uses ${comp.trim()} compression, which TempoTapp can’t read. Export it as WAV or uncompressed AIFF.`);
+    const bps=law?1:isF?(c==='fl64'?8:4):Math.ceil(bits/8),n=Math.min(frames||Infinity,Math.floor((data.end-data.start)/(bps*ch))),out=Array.from({length:ch},()=>new Float32Array(n));
+    const ulaw=x=>{x=~x&255;const s=x&128,e=(x>>4)&7,m=x&15;let y=((m<<3)+132)<<e;y-=132;return(s?-y:y)/32768},alaw=x=>{x^=85;const s=x&128,e=(x>>4)&7,m=x&15;let y=e?((m<<4)+264)<<(e-1):(m<<4)+8;return(s?y:-y)/32768};
+    let p=data.start;for(let i=0;i<n;i++)for(let k=0;k<ch;k++,p+=bps){let x;
+      if(c==='fl32')x=v.getFloat32(p,false);else if(c==='fl64')x=v.getFloat64(p,false);else if(c==='ulaw')x=ulaw(u8[p]);else if(c==='alaw')x=alaw(u8[p]);
+      else if(bps===1)x=c==='raw'?(u8[p]-128)/128:v.getInt8(p)/128;else if(bps===2)x=v.getInt16(p,le)/32768;
+      else if(bps===3){const b0=u8[p],b1=u8[p+1],b2=u8[p+2];let s24=le?(b2<<16)|(b1<<8)|b0:(b0<<16)|(b1<<8)|b2;if(s24&0x800000)s24-=0x1000000;x=s24/8388608}
+      else x=v.getInt32(p,le)/2147483648;out[k][i]=x}
+    return{chs:out,sr:Math.round(sr),bits:isF?32:bits}}
+  function wavFromChannels({chs,sr},float){const nch=chs.length,n=chs[0].length,bps=float?4:2,buf=new ArrayBuffer(44+n*nch*bps),v=new DataView(buf),w=(o,t)=>{for(let i=0;i<t.length;i++)v.setUint8(o+i,t.charCodeAt(i))};
+    w(0,'RIFF');v.setUint32(4,36+n*nch*bps,true);w(8,'WAVE');w(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,float?3:1,true);v.setUint16(22,nch,true);v.setUint32(24,sr,true);v.setUint32(28,sr*nch*bps,true);v.setUint16(32,nch*bps,true);v.setUint16(34,bps*8,true);w(36,'data');v.setUint32(40,n*nch*bps,true);
+    let o=44;for(let i=0;i<n;i++)for(let k=0;k<nch;k++,o+=bps){const x=Math.max(-1,Math.min(1,chs[k][i]));if(float)v.setFloat32(o,x,true);else v.setInt16(o,x<0?x*32768:x*32767,true)}return new Blob([buf],{type:'audio/wav'})}
+  // returns a WAV File for an AIFF input (same name, .wav), the original file otherwise
+  async function audioFileForBrowser(file){if(!(await isAiffFile(file)))return file;const d=aiffDecode(await file.arrayBuffer());const name=String(file.name||'audio').replace(/\.(aif|aiff|aifc)$/i,'')+'.wav';
+    // standard 16-bit PCM WAV: plays in every browser (24-bit/float WAV support varies)
+    try{return new File([wavFromChannels(d,false)],name,{type:'audio/wav',lastModified:file.lastModified||Date.now()})}catch{const b=wavFromChannels(d,false);b.name=name;return b}}
+  async function loadTapAlongFile(file){
     if(!file)return;
+    if(!isPdfFile(file)&&await isAiffFile(file)){try{setTapAlongStatus('Converting the AIFF file…','active');file=await audioFileForBrowser(file)}catch(err){setTapAlongStatus(err.message||'Could not read that AIFF file.','error');return}}
     if(isPdfFile(file)){openSheetMusicPdf(file);return}
-    const ok=(file.type||'').startsWith('audio/')||/\.(wav|mp3|m4a|aac|flac|ogg|opus)$/i.test(file.name||'');
-    if(!ok){setTapAlongStatus('Choose an audio file such as WAV, MP3, M4A, FLAC, OGG, or Opus.','error');return}
+    const ok=(file.type||'').startsWith('audio/')||/\.(wav|mp3|m4a|aac|flac|ogg|opus|aif|aiff|aifc)$/i.test(file.name||'');
+    if(!ok){setTapAlongStatus('Choose an audio file such as WAV, AIFF, MP3, M4A, FLAC, OGG, or Opus.','error');return}
     if(tapAlongActive)endRecording();
     const a=tapAlongAudio();if(tapAlongUrl)URL.revokeObjectURL(tapAlongUrl);
     tapAlongUrl=URL.createObjectURL(file);tapAlongFileName=file.name||'Imported audio';
@@ -3382,7 +3414,7 @@ html,body{background:var(--ground)!important}
     setScoreAnalysisStatus(msg,'good',100);if(auto)setTimeout(()=>{try{$('scoreClickCard')?.scrollIntoView({block:'center',behavior:'smooth'})}catch{}},150);$('status').textContent=auto?`Click track built from ${track.scorePdfName||'the score'}. Check the tempo and time signature in Score Follow.`:msg;
   }
   // Test hook for tests/score_corpus.js (read-only; only present with ?tt-test in the URL).
-  if(/[?&]tt-test\b/.test(location.search))window.__TT_TEST__={scoreBoxes:()=>scoreDetectedRawBoxes.map(b=>({...b})),track:()=>({taps:track.taps.length,tapMs:[...track.taps],scoreMap:JSON.parse(JSON.stringify(track.scoreMap||[])),bpm:track.targetBpm}),rec:()=>({recording,segmentStartReal,segmentBaseMs,listenActive,playing}),analysis:()=>({taps:[...analysisTrainingTaps],down:analysisFirstDownbeatSec,beats:beatAnalysis?.rawBeats?.length||0,firstBeats:(beatAnalysis?.rawBeats||[]).slice(0,6),pos:(beatAnalysis?.barPositions||[]).slice(0,12)}),tempo:()=>scoreDetectedTempo,tempoEvents:()=>scoreTempoEvents(),asReopened:()=>{track.fromScore=false;scoreDetectedRawBoxes=[];scoreSections=[];scoreSectionIdx=-1},sectionIdx:()=>scoreSectionIdx,sections:()=>JSON.parse(JSON.stringify(scoreSections)),meters:()=>scoreDetectedMeters,total:()=>scoreDetectedTotal,busy:()=>scoreAnalysisRunning,renderPage:async p=>{const page=await scorePdfDoc.getPage(p),base=page.getViewport({scale:1}),scale=Math.min(170/72,Math.sqrt(7e6/Math.max(1,base.width*base.height))),vp=page.getViewport({scale}),cv=document.createElement('canvas');cv.width=Math.round(vp.width);cv.height=Math.round(vp.height);const c=cv.getContext('2d');c.fillStyle='#fff';c.fillRect(0,0,cv.width,cv.height);await page.render({canvasContext:c,viewport:vp}).promise;return cv.toDataURL('image/png')},setRecordedTrack:(taps,accents,map)=>{track.taps=[...taps];track.tapAccents=[...accents];track.durationMs=taps.at(-1)+600;track.scoreMap=map;track.fromScore=false;track.scoreAnchors=[];renderDetails();autoMapDetectedScore()},anchors:()=>JSON.parse(JSON.stringify(track.scoreAnchors||[])),boxes:()=>JSON.parse(JSON.stringify(track.scoreMeasureBoxes||[])),events:()=>expandedTrackClickEvents().filter(e=>e.primary).map(e=>({i:e.index,m:e.meta.measure,b:e.meta.beat,acc:e.accent})),page:()=>scorePdfPage};
+  if(/[?&]tt-test\b/.test(location.search))window.__TT_TEST__={scoreBoxes:()=>scoreDetectedRawBoxes.map(b=>({...b})),track:()=>({taps:track.taps.length,tapMs:[...track.taps],scoreMap:JSON.parse(JSON.stringify(track.scoreMap||[])),bpm:track.targetBpm}),rec:()=>({recording,segmentStartReal,segmentBaseMs,listenActive,playing}),analysis:()=>({taps:[...analysisTrainingTaps],down:analysisFirstDownbeatSec,beats:beatAnalysis?.rawBeats?.length||0,firstBeats:(beatAnalysis?.rawBeats||[]).slice(0,6),pos:(beatAnalysis?.barPositions||[]).slice(0,12)}),tempo:()=>scoreDetectedTempo,tempoEvents:()=>scoreTempoEvents(),aiffCheck:async url=>{const r=await fetch(url),b=await r.blob(),f=new File([b],url.split('/').pop());const w=await audioFileForBrowser(f);const ctx=new (window.OfflineAudioContext||window.webkitOfflineAudioContext)(1,44100,44100);const ab=await ctx.decodeAudioData(await w.arrayBuffer());return{name:w.name,type:w.type,ch:ab.numberOfChannels,sr:ab.sampleRate,dur:+ab.duration.toFixed(3),peak:Math.max(...ab.getChannelData(0).filter((_,i)=>i%7===0).map(Math.abs))}},asReopened:()=>{track.fromScore=false;scoreDetectedRawBoxes=[];scoreSections=[];scoreSectionIdx=-1},sectionIdx:()=>scoreSectionIdx,sections:()=>JSON.parse(JSON.stringify(scoreSections)),meters:()=>scoreDetectedMeters,total:()=>scoreDetectedTotal,busy:()=>scoreAnalysisRunning,renderPage:async p=>{const page=await scorePdfDoc.getPage(p),base=page.getViewport({scale:1}),scale=Math.min(170/72,Math.sqrt(7e6/Math.max(1,base.width*base.height))),vp=page.getViewport({scale}),cv=document.createElement('canvas');cv.width=Math.round(vp.width);cv.height=Math.round(vp.height);const c=cv.getContext('2d');c.fillStyle='#fff';c.fillRect(0,0,cv.width,cv.height);await page.render({canvasContext:c,viewport:vp}).promise;return cv.toDataURL('image/png')},setRecordedTrack:(taps,accents,map)=>{track.taps=[...taps];track.tapAccents=[...accents];track.durationMs=taps.at(-1)+600;track.scoreMap=map;track.fromScore=false;track.scoreAnchors=[];renderDetails();autoMapDetectedScore()},anchors:()=>JSON.parse(JSON.stringify(track.scoreAnchors||[])),boxes:()=>JSON.parse(JSON.stringify(track.scoreMeasureBoxes||[])),events:()=>expandedTrackClickEvents().filter(e=>e.primary).map(e=>({i:e.index,m:e.meta.measure,b:e.meta.beat,acc:e.accent})),page:()=>scorePdfPage};
   async function analyzeScorePdf(silent=false){
     if(!scorePdfDoc||scoreAnalysisRunning)return;scoreAnalysisRunning=true;scoreDetectedRawBoxes=[];syncScorePdfUi();const button=$('scoreAnalyzeButton');if(button)button.textContent='Analyzing…';
     try{
@@ -4112,7 +4144,7 @@ html,body{background:var(--ground)!important}
     $('sourceAudio').classList.add('hidden');
     $('audioFileInfo').classList.add('hidden');
     $('audioDropTitle').textContent='Choose an audio file';
-    $('audioDropSub').textContent='WAV, MP3, M4A, AAC and other browser-supported audio';
+    $('audioDropSub').textContent='WAV, AIFF, MP3, M4A, AAC and other common audio';
     $('warpProcessing').classList.add('hidden');
     setWarpStatus('Choose an audio file and click track to begin.');
     updateWarpButtons();
@@ -4176,6 +4208,7 @@ html,body{background:var(--ground)!important}
   async function handleWarpAudioFile(file){
     warpLoadError='';
     if(isPdfFile(file)){openSheetMusicPdf(file);return}
+    if(file&&await isAiffFile(file)){try{setWarpStatus('Converting the AIFF file…','');file=await audioFileForBrowser(file)}catch(err){warpLoadError=err.message||'Could not read that AIFF file.';setWarpStatus(warpLoadError,'error');return false}}
     clearWarpOutput({resetProject:true,resetHistory:true,resetAnalysis:true});
     warpBeatShift=0;syncBeatAlignment();
     if(!file) return false;
@@ -4334,7 +4367,7 @@ html,body{background:var(--ground)!important}
       $('runAudioAnalysisButton').disabled=false;
     }else{
       player.pause();player.removeAttribute('src');player.classList.add('hidden');info.classList.add('hidden');
-      $('analysisAudioDropTitle').textContent='Drop audio here or click to choose';$('analysisAudioDropSub').textContent='WAV, MP3, M4A/AAC, FLAC, OGG · add musical context for difficult piano.';$('runAudioAnalysisButton').disabled=true;
+      $('analysisAudioDropTitle').textContent='Drop audio here or click to choose';$('analysisAudioDropSub').textContent='WAV, AIFF, MP3, M4A/AAC, FLAC, OGG · add musical context for difficult piano.';$('runAudioAnalysisButton').disabled=true;
     }
     syncAnalysisAnchorReadouts();
   }
@@ -4346,10 +4379,11 @@ html,body{background:var(--ground)!important}
   async function handleAnalysisAudioFile(file){
     if(!file)return;
     if(isPdfFile(file)){$('analyzeAudioFile').value='';openSheetMusicPdf(file);return}
+    if(await isAiffFile(file)){const orig=file.name;try{$('analyzeStatus').textContent='Converting the AIFF file…';file=await audioFileForBrowser(file)}catch(err){$('analyzeStatus').textContent=err.message||`Could not read ${orig}.`;return}}
     const ext=(String(file.name||'').toLowerCase().match(/\.([a-z0-9]+)$/)||[])[1]||'';
-    const knownAudio=new Set(['wav','mp3','m4a','aac','flac','ogg','opus','webm','mp4']);
+    const knownAudio=new Set(['wav','mp3','m4a','aac','flac','ogg','opus','webm','mp4','aif','aiff','aifc']);
     if(!(String(file.type||'').startsWith('audio/')||knownAudio.has(ext))){
-      $('analyzeStatus').textContent='That does not look like an audio file. Drop a WAV, MP3, M4A/AAC, FLAC, OGG, or Opus file.';
+      $('analyzeStatus').textContent='That does not look like an audio file. Drop a WAV, AIFF, MP3, M4A/AAC, FLAC, OGG, or Opus file.';
       $('analyzeStatus').className='analyze-status error';
       return;
     }
@@ -5336,7 +5370,7 @@ html,body{background:var(--ground)!important}
     const drop=$('analysisAudioDrop');
     const fileFromDrop=e=>{
       const files=[...(e.dataTransfer?.files||[])];
-      return files.find(f=>String(f.type||'').startsWith('audio/')||/\.(wav|mp3|m4a|aac|flac|ogg|opus|webm|mp4)$/i.test(String(f.name||'')))||files[0]||null;
+      return files.find(f=>String(f.type||'').startsWith('audio/')||/\.(wav|mp3|m4a|aac|flac|ogg|opus|webm|mp4|aif|aiff|aifc)$/i.test(String(f.name||'')))||files[0]||null;
     };
     drop.addEventListener('dragenter',e=>{e.preventDefault();e.stopPropagation();drop.classList.add('dragover')});
     drop.addEventListener('dragover',e=>{e.preventDefault();e.stopPropagation();if(e.dataTransfer)e.dataTransfer.dropEffect='copy';drop.classList.add('dragover')});
