@@ -1,4 +1,4 @@
-# TempoTapp 1.7.3
+# TempoTapp 1.9.0
 
 Click-track creator, beat analyzer, and audio warp tool. Single-page web app. Runs in two modes:
 **device-only** (no backend, everything stays on the device) or **cloud accounts** (Firebase; the
@@ -132,6 +132,19 @@ gradients, glows or shadows. Light-only by choice (sheet-music apps are light be
 screen is a white PDF). To change a color, edit the tokens at the top of `#engraved-theme`.
 
 ## Changelog
+
+### 1.9.0 — the library keeps the sheet music and the recording
+- Saving a click track can keep the sheet-music PDF and the recording it was tapped to ("Keep with this
+  click track", on by default). Device mode: encrypted in IndexedDB under `t<trackId>:score|recording`;
+  cloud mode: Firebase Storage `users/{uid}/tracks/{id}/score|recording` (existing rules cover it).
+- Open restores the PDF (saved measure layout, including hand-moved barlines, wins over a fresh reading)
+  and the recording (Listen: Recording + Clicks works straight away). Re-saving an unchanged file does
+  not upload it again; unticking the box removes the stored copy.
+- Library: Sheet Music and Recordings tabs, search (name, folder, PDF, recording), counts, badges,
+  Download PDF / Download Recording, tempo and length in each row. Tracks saved before 1.9 that
+  referenced a PDF show "PDF not stored". Delete and Delete account remove the files.
+- Cloud migration carries the files; fixed warp-audio migration decrypting records as base64.
+- tests/v19_library.py (desktop + `--mobile`); cloud_e2e.py covers Storage, second device, migration.
 
 ### 1.7.3
 - Count-in before Listen: Recording + Clicks and before score Practice (also on resume).

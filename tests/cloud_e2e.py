@@ -45,7 +45,7 @@ async def main():
             pg = await ctx.new_page()
             errs, dialogs = [], []
             pg.on("pageerror", lambda e: errs.append(f"pageerror: {e}"))
-            pg.on("console", lambda m: errs.append(f"console.error: {m.text}") if m.type == "error" else None)
+            pg.on("console", lambda m: errs.append(f"console.error: {m.text}") if m.type == "error" else (print("   console.warn:", m.text[:300]) if m.type == "warning" else None))
             js = lambda id: pg.evaluate(f"() => {{ const el=document.getElementById('{id}'); if(!el) throw new Error('no element #{id}'); el.click(); }}")
             txt = lambda sel: pg.text_content(sel)
             visible = lambda id: pg.evaluate(f"() => {{ const el=document.getElementById('{id}'); if(!el) return false; const r=el.getBoundingClientRect(); return r.width>0 && r.height>0 && getComputedStyle(el).visibility!=='hidden'; }}")
@@ -83,9 +83,20 @@ async def main():
                 for _ in range(taps): await js("tapButton"); await pg.wait_for_timeout(300)
                 await js("endButton"); await pg.wait_for_timeout(300)
                 await js("saveButton"); await pg.wait_for_timeout(300); await pg.fill("#saveName", name); await js("confirmSaveButton"); await pg.wait_for_timeout(1500)
+            async def score_track(name):
+                await js("homeCreateButton"); await pg.wait_for_timeout(300)
+                await pg.set_input_files("#createSheetPdfFile", f"{TD}/score_real.pdf")
+                await wait_text("#scoreAnalysisStatus", r"ready|Read exactly", timeout=90); await pg.wait_for_timeout(600)
+                await js("saveButton"); await pg.wait_for_timeout(300); await pg.fill("#saveName", name); await js("confirmSaveButton")
+                return await wait_text("#status", r"saved", timeout=30)
             async def library_names():
                 await pg.evaluate("() => document.querySelector('[data-main-nav=\"library\"]').click()"); await pg.wait_for_timeout(1200)
                 return await pg.evaluate("() => [...document.querySelectorAll('#trackList .track-name')].map(e=>e.textContent.trim())")
+            async def wipe_cloud_cache():
+                # drop the cloud download cache; keep Lena's device-only files (small local ids "t1:score") for the migration test
+                await pg.evaluate(r"""() => new Promise(r => { const q=indexedDB.open('tempotap-web-audio-v1'); q.onerror=()=>r();
+                    q.onsuccess=()=>{ const db=q.result; const tx=db.transaction(db.objectStoreNames[0],'readwrite'); const st=tx.objectStore(db.objectStoreNames[0]);
+                    const k=st.getAllKeys(); k.onsuccess=()=>{ for(const key of k.result) if(!/^t\d{1,6}:/.test(String(key))) st.delete(key); }; tx.oncomplete=()=>{db.close();r()}; }; })""")
             async def logout():
                 await js("logoutButton"); await pg.wait_for_timeout(300)
                 if await visible("confirmLogoutButton"): await js("confirmLogoutButton")
@@ -95,9 +106,10 @@ async def main():
             await pg.goto(URL); await pg.wait_for_timeout(600)
             await signup("Local Lena", "lena@example.com", "lenapass123")
             await scratch_track("Pre-sync Track", taps=6)
+            pre_st = await score_track("Pre-sync Score")
             local_names = await library_names()
             await logout()
-            report("device-only library created for migration test", "Pre-sync Track" in local_names, f"names={local_names}")
+            report("device-only library created for migration test (incl. a track with its sheet music)", "Pre-sync Track" in local_names and "with its sheet music" in pre_st, f"names={local_names} scoreSave={pre_st!r}")
 
             # ---------- 1. Switch on cloud mode ----------
             cloud_on["v"] = True
@@ -169,7 +181,7 @@ async def main():
                 st = await wait_text("#warpStatus", r"(Saved|saved|Version)", timeout=90)
                 files = await pg.evaluate("() => { const s=window.__FAKE_FB_STATE__; if(!s) return 'real'; return Object.keys(s.files).filter(k=>/warps\\/\\d+\\/(clean|clicks)\\.wav$/.test(k)).length; }")
                 # wipe the local audio cache so opening must download from Storage
-                await pg.evaluate("() => new Promise(r => { const q=indexedDB.deleteDatabase('tempotap-web-audio-v1'); q.onsuccess=q.onerror=q.onblocked=()=>r(); })")
+                await wipe_cloud_cache()
                 await pg.evaluate("() => document.querySelector('[data-main-nav=\"library\"]').click()"); await pg.wait_for_timeout(600)
                 await js("warpedWarpsTab"); await pg.wait_for_timeout(900)
                 listing = await pg.inner_text("#warpedList")
@@ -178,17 +190,32 @@ async def main():
                 report("warp saved to cloud storage (2 files) and re-opened after cache wipe", (files in (2, 'real')) and "Cloud Warp" in listing and clean.startswith("blob:"), f"save={st[:50]!r} files={files} list={listing[:60]!r} src={clean[:20]!r}")
             except Exception as e: report("warp cloud storage", False, repr(e))
 
+            # ---------- 6b. v1.9: sheet music saved with a click track goes to Storage ----------
+            try:
+                st = await score_track("Cloud Score")
+                sfiles = await pg.evaluate("() => { const s=window.__FAKE_FB_STATE__; if(!s) return 'real'; return Object.keys(s.files).filter(k=>/tracks\/\d+\/score$/.test(k)).length; }")
+                report("cloud: sheet music stored in Storage with its click track", "with its sheet music" in st and sfiles in (1, 'real'), f"status={st!r} scoreFiles={sfiles}")
+            except Exception as e: report("cloud sheet music", False, repr(e))
+
             # ---------- 7. Second device: sign out, wipe local, sign in → everything is there ----------
             try:
                 await logout()
                 await pg.evaluate("() => { for(const k of Object.keys(localStorage)) if(!k.startsWith('fakefb') && k!=='tempotap-web-data-v1') localStorage.removeItem(k); }")
-                await pg.evaluate("() => new Promise(r => { const q=indexedDB.deleteDatabase('tempotap-web-audio-v1'); q.onsuccess=q.onerror=q.onblocked=()=>r(); })")
+                await wipe_cloud_cache()
                 await pg.reload(); await pg.wait_for_timeout(1200)
                 await login("carla@example.com", "carlapass123"); await dismiss_tutorial()
                 names = await library_names()
                 await js("warpedWarpsTab"); await pg.wait_for_timeout(900); wl = await pg.inner_text("#warpedList")
                 report("second device: sign in shows synced tracks and warped audio", "Cloud Track A2" in names and "Cloud Warp" in wl, f"names={names} warps={wl[:50]!r}")
             except Exception as e: report("second device", False, repr(e))
+            try:
+                await js("warpedScoresTab"); await pg.wait_for_timeout(800)
+                listed = await pg.evaluate("() => [...document.querySelectorAll('#trackList .track-name')].map(e=>e.textContent.trim())")
+                await pg.evaluate("() => document.querySelector('#trackList [data-action=open]').click()")
+                st = await wait_text("#status", r"with its sheet music|could not", timeout=120)
+                info = (await txt("#scorePdfFileInfo") or "").strip()
+                report("second device: Sheet Music tab opens the score downloaded from the cloud", listed == ["Cloud Score"] and "with its sheet music" in st and "score_real.pdf" in info, f"listed={listed} status={st!r} info={info!r}")
+            except Exception as e: report("second device sheet music", False, repr(e))
 
             # ---------- 8. Wrong password / forgot password ----------
             try:
@@ -212,7 +239,8 @@ async def main():
                 await login("lena@example.com", "lenapass123"); await dismiss_tutorial()
                 again = await ui_open()
                 names2 = await library_names()
-                report("migration: offer on first sign-in, uploads local track, not offered again", offered and done and "Pre-sync Track" in names and not again and "Pre-sync Track" in names2, f"offered={offered} done={done} names={names} again={again}")
+                mfiles = await pg.evaluate("() => { const s=window.__FAKE_FB_STATE__; if(!s) return 'real'; return Object.keys(s.files).filter(k=>/tracks\/\d+\/score$/.test(k)).length; }")
+                report("migration: offer on first sign-in, uploads local tracks + their sheet music, not offered again", offered and done and "Pre-sync Track" in names and "Pre-sync Score" in names and not again and "Pre-sync Track" in names2 and mfiles in (2, 'real'), f"offered={offered} done={done} names={names} again={again} scoreFilesTotal={mfiles}")
             except Exception as e: report("migration", False, repr(e))
 
             # ---------- 10. Google sign-in (separate account, no password), delete without password ----------
@@ -238,7 +266,7 @@ async def main():
                 await pg.fill("#deleteAccountPassword", "nope-nope-1"); await js("confirmDeleteAccountButton"); await pg.wait_for_timeout(1000)
                 bad = (await txt("#deleteAccountError") or "").strip()
                 await pg.fill("#deleteAccountPassword", "carlapass123"); await js("confirmDeleteAccountButton"); await pg.wait_for_timeout(2500); await accept_ui()
-                gone = await pg.evaluate("() => { const s=window.__FAKE_FB_STATE__; if(!s) return 'real'; return !Object.values(s.users).some(u=>u.email==='carla@example.com') && !Object.keys(s.docs).some(k=>k.includes('/users/')&&s.docs[k].name&&/Cloud/.test(s.docs[k].name)) && Object.keys(s.files).length===0; }")
+                gone = await pg.evaluate("() => { const s=window.__FAKE_FB_STATE__; if(!s) return 'real'; return !Object.values(s.users).some(u=>u.email==='carla@example.com') && !Object.keys(s.docs).some(k=>k.includes('/users/')&&s.docs[k].name&&/Cloud/.test(s.docs[k].name)) && (()=>{ const lena=Object.values(s.users).find(u=>u.email==='lena@example.com'); return Object.keys(s.files).every(k=>lena&&k.includes('/'+lena.uid+'/')); })(); }")
                 report("delete password account: wrong password rejected, right password wipes docs + files", bad and gone in (True, 'real'), f"bad={bad!r} gone={gone}")
             except Exception as e: report("delete account", False, repr(e))
 

@@ -800,6 +800,23 @@ html,body{background:var(--ground)!important}
 .verify-note{margin:12px 0 4px;padding:12px 14px;border:1px solid var(--warning,#9a6b00);border-radius:var(--radius-sm,8px);background:#fff8e6;font-size:14px;line-height:1.5}
 .verify-note .link-button{font-size:14px}
 </style>
+<style id="v19-library">
+.save-attach{border-top:1px solid var(--rule,rgba(20,20,20,.12));padding-top:10px}
+.save-attach-title{display:block;color:var(--muted);font-size:.73rem;font-weight:780;margin-bottom:4px}
+.form-field label.save-attach-row{display:flex;align-items:center;gap:9px;margin:7px 0;color:var(--ink,var(--text));font-size:.88rem;font-weight:600;cursor:pointer}
+.save-attach-row input{width:18px;height:18px;flex:none;accent-color:var(--pencil,#2b5f8a)}
+.save-attach-row em{font-style:normal;color:var(--muted);font-weight:500;word-break:break-all}
+.save-attach-note{color:var(--muted);font-size:.75rem;margin-top:2px}
+.library-search-row{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+.library-search-row input{flex:1;min-width:0}
+.library-count{color:var(--muted);font-size:.78rem;white-space:nowrap}
+.track-badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
+.track-badge{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--rule-2,rgba(20,20,20,.18));border-radius:999px;padding:2px 9px;font-size:.72rem;color:var(--ink-2,var(--soft));max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.track-badge.missing{border-style:dashed;color:var(--muted)}
+.library-tabs{max-width:100%;overflow-x:auto;scrollbar-width:none}
+.library-tab{white-space:nowrap}
+@media(max-width:520px){.library-search-row{flex-direction:column;align-items:stretch;gap:4px}.library-count{text-align:right}.library-tabs{display:grid!important;grid-template-columns:repeat(4,auto);width:100%}.library-tab{padding:10px 4px!important;font-size:.8rem!important;text-align:center}}
+</style>
 </head>
 <body>
 <noscript><div class="mobile-js-warning">TempoTapp needs JavaScript. On iPhone/iPad, an email/Files attachment preview may show the page but disable the app. Open TempoTapp from a normal web link in Safari/Chrome instead.</div></noscript>
@@ -1128,8 +1145,8 @@ html,body{background:var(--ground)!important}
 <div id="libraryPage" class="app-page hidden">
 <main>
   <div class="page-topbar"><button class="nav-btn" id="libraryHomeButton">← Home</button><button class="primary-small" id="libraryCreateButton">+ New Click Track</button></div>
-  <header class="library-header"><div class="eyebrow">Library</div><h1>Your work</h1><p>Saved to your TempoTapp account.</p></header><div class="library-tabs" role="tablist" aria-label="Library type"><button class="library-tab active" id="libraryClicksTab">Click Tracks</button><button class="library-tab" id="libraryWarpsTab">Warped Audio</button></div>
-  <section class="panel"><div class="library-toolbar"><input class="text-input" id="newFolderName" type="text" maxlength="40" placeholder="New folder name"><button class="secondary" id="addFolderButton">+ Add Folder</button>
+  <header class="library-header"><div class="eyebrow">Library</div><h1>Your work</h1><p>Saved to your TempoTapp account.</p></header><div class="library-tabs" role="tablist" aria-label="Library type"><button class="library-tab active" id="libraryClicksTab">Click Tracks</button><button class="library-tab" id="libraryScoresTab">Sheet Music</button><button class="library-tab" id="libraryRecordingsTab">Recordings</button><button class="library-tab" id="libraryWarpsTab">Warped Audio</button></div>
+  <section class="panel"><div class="library-search-row"><input class="text-input" id="librarySearch" type="search" maxlength="80" placeholder="Search by name, piece, PDF or recording" aria-label="Search your click tracks"><span class="library-count" id="libraryCount"></span></div><div class="library-toolbar"><input class="text-input" id="newFolderName" type="text" maxlength="40" placeholder="New folder name"><button class="secondary" id="addFolderButton">+ Add Folder</button>
 <!-- BEGIN OPTIONAL FEATURE: SHARING (import button). Remove with the matching script block. -->
 <button class="secondary" id="importTrackButton" title="Import a .tempotap.json file shared by a teacher, student, or colleague">Import shared track</button><input type="file" id="importTrackFile" class="hidden" accept=".json,.tempotap,application/json">
 <!-- END OPTIONAL FEATURE: SHARING -->
@@ -1141,7 +1158,7 @@ html,body{background:var(--ground)!important}
 <div id="warpedLibraryPage" class="app-page hidden">
 <main>
   <div class="page-topbar"><button class="nav-btn" id="warpedLibraryHomeButton">← Home</button><button class="primary-small" id="warpedLibraryNewButton">+ Warp New Audio</button></div>
-  <header class="library-header"><div class="eyebrow">Library</div><h1>Your work</h1><p>Saved to your TempoTapp account.</p></header><div class="library-tabs" role="tablist" aria-label="Library type"><button class="library-tab" id="warpedClicksTab">Click Tracks</button><button class="library-tab active" id="warpedWarpsTab">Warped Audio</button></div>
+  <header class="library-header"><div class="eyebrow">Library</div><h1>Your work</h1><p>Saved to your TempoTapp account.</p></header><div class="library-tabs" role="tablist" aria-label="Library type"><button class="library-tab" id="warpedClicksTab">Click Tracks</button><button class="library-tab" id="warpedScoresTab">Sheet Music</button><button class="library-tab" id="warpedRecordingsTab">Recordings</button><button class="library-tab active" id="warpedWarpsTab">Warped Audio</button></div>
   <section class="panel"><div class="library-toolbar"><input class="text-input" id="newWarpFolderName" type="text" maxlength="40" placeholder="New folder name"><button class="secondary" id="addWarpFolderButton">+ Add Folder</button></div><div class="track-list" id="warpedList"></div></section>
 </main>
 </div>
@@ -1498,7 +1515,7 @@ html,body{background:var(--ground)!important}
       <details data-cloud-only class="hidden"><summary>Privacy: what leaves my device?</summary><p>Your email, name, click tracks, and saved warped audio are stored in your account on Google Firebase servers in the United States, encrypted in transit and at rest. Access rules allow only your own signed-in session to read your data; TempoTapp does not sell it, use it for advertising, or share it with anyone. Recordings you analyze or warp and the sheet music you load stay on your device — only the finished warped audio you choose to save is uploaded. We collect no analytics and set no tracking cookies. <strong>Delete account</strong> permanently removes everything stored for you.</p></details>
       <details data-cloud-only class="hidden"><summary>I forgot my password</summary><p>On the sign-in screen press <strong>Forgot your password?</strong> and we will email you a link to choose a new one. Confirm your email address after signing up (the link is in your inbox) so that reset emails can reach you.</p></details>
       <!-- BEGIN OPTIONAL FEATURE: SHARING (help text) -->
-      <details><summary>Can I share a click track with students or an ensemble?</summary><p>Yes. In My Click Tracks, press <strong>Share</strong> on any track to export a small <em>.tempotap.json</em> file, then send it by AirDrop, Messages, email, or any file-sharing service. Recipients open My Click Tracks → <strong>Import shared track</strong> on their own device and account. Nothing goes through a server; the file contains only the tap timings and settings, not audio or sheet music.</p></details>
+      <details><summary>Does TempoTapp keep my sheet music and recordings?</summary><p>Yes. When you save a click track made from a PDF or tapped along to a recording, the save window lists them under <strong>Keep with this click track</strong> (on by default). <strong>Open</strong> in your library brings back the score and the recording together with the clicks, and <strong>Download PDF</strong> / <strong>Download Recording</strong> give you the original files. The <strong>Sheet Music</strong> and <strong>Recordings</strong> tabs list just those tracks, and search finds tracks by name, folder, PDF or recording. Deleting a click track deletes its files too.</p></details><details><summary>Can I share a click track with students or an ensemble?</summary><p>Yes. In My Click Tracks, press <strong>Share</strong> on any track to export a small <em>.tempotap.json</em> file, then send it by AirDrop, Messages, email, or any file-sharing service. Recipients open My Click Tracks → <strong>Import shared track</strong> on their own device and account. Nothing goes through a server; the file contains only the tap timings and settings, not audio or sheet music.</p></details>
       <!-- END OPTIONAL FEATURE: SHARING -->
       <!-- BEGIN OPTIONAL FEATURE: AI BEAT TRACKER (help text) -->
       <details><summary>What does the AI beat tracker do, and where does my audio go?</summary><p>Analyze can use a small neural network (BeatNet, 1.6 MB) that was trained on thousands of real performances to find beats, downbeats, and the time signature directly from the sound — it handles rubato, piano, and ambiguous meters far better than the classic onset detector. It runs entirely on this device in a background thread; your recording is never uploaded. If the AI engine cannot load, TempoTapp automatically uses the classic detector and tells you. The AI beat tracker uses BeatNet by Mojtaba Heydari, Frank Cwitkowitz and Zhiyao Duan (ISMIR 2021), licensed CC BY 4.0, with a beat-tracking decoder after Krebs, Böck and Widmer (ISMIR 2015).</p></details>
@@ -1606,6 +1623,10 @@ html,body{background:var(--ground)!important}
     <div class="modal-head"><div><div class="eyebrow">Save</div><h2>Save Click Track</h2></div><button class="icon-btn" id="saveModalClose">×</button></div>
     <div class="form-field"><label for="saveName">Track name</label><input class="text-input" id="saveName" maxlength="80" placeholder="e.g. Cello audition take 1"></div>
     <div class="form-field"><label for="saveFolder">Folder</label><select class="text-input" id="saveFolder"></select></div>
+    <div class="form-field save-attach hidden" id="saveAttachBlock"><span class="save-attach-title">Keep with this click track</span>
+      <label class="save-attach-row hidden" id="saveScoreRow"><input type="checkbox" id="saveIncludeScore" checked><span>Sheet music <em id="saveScoreName"></em></span></label>
+      <label class="save-attach-row hidden" id="saveRecordingRow"><input type="checkbox" id="saveIncludeRecording" checked><span>Recording <em id="saveRecordingName"></em></span></label>
+      <div class="save-attach-note">Opening it from your library brings these back with the clicks.</div></div>
     <div class="form-error" id="saveError"></div>
     <div class="modal-actions"><button class="secondary" id="cancelSaveButton">Cancel</button><button class="save-btn secondary" id="confirmSaveButton">Save & Start New</button></div>
   </div>
@@ -1618,7 +1639,7 @@ html,body{background:var(--ground)!important}
 <script>
 (() => {
   'use strict';
-  const APP_VERSION='1.8.2';
+  const APP_VERSION='1.9.0';
   const $ = id => document.getElementById(id);
   if($('appVersionLabel'))$('appVersionLabel').textContent=`TempoTapp ${APP_VERSION} · All data stays on this device.`;
   // ---------------------------------------------------------------------------
@@ -1692,8 +1713,11 @@ html,body{background:var(--ground)!important}
   const track = { taps: [], tapAccents: [], durationMs: 0, targetBpm: 120, accentMode: 'custom', accentEvery: 4, clickVolume: 100, scoreMap:[{startMeasure:1,meter:'4/4'}], subdivisionMap:[], scoreAnchors:[], scoreMeasureBoxes:[], scorePdfName:'', loadedId: null, loadedName: null, loadedFolderId: null };
   let editHistory = [];
   let recording = false, playing = false;
-  let tapAlongActive = false, tapAlongUrl = null, tapAlongFileName = '';
-  let scorePdfDoc=null, scorePdfModule=null, scorePdfBytes=null, scorePdfPage=1, scorePdfRendering=false, scoreMappingActive=false, scoreMapCursor=0, scorePracticeActive=false, scorePracticeTimers=[], scorePracticeRaf=null, scorePracticeLastBeat=-1, scoreAnalysisRunning=false, scoreDetectedRawBoxes=[];
+  let tapAlongActive = false, tapAlongUrl = null, tapAlongFileName = '', tapAlongFile = null;
+  // v1.9: which stored files the open track was loaded with, so an unchanged file is not uploaded again
+  let trackAttachOrigin = {score:null, recording:null};
+  let libraryView = 'all', libraryViewPinned = false; // reaching the library from anywhere but its tabs shows everything
+  let scorePdfDoc=null, scorePdfModule=null, scorePdfBytes=null, scorePdfFile=null, scorePdfPage=1, scorePdfRendering=false, scoreMappingActive=false, scoreMapCursor=0, scorePracticeActive=false, scorePracticeTimers=[], scorePracticeRaf=null, scorePracticeLastBeat=-1, scoreAnalysisRunning=false, scoreDetectedRawBoxes=[];
   let segmentStartReal = 0, segmentBaseMs = 0, replayStartReal = 0, replayViewMs = 0, frozenViewMs = 0;
   let animationFrame = null, audioCtx = null, playbackTimers = [], conductorTimer = null;
   let currentScreen = 'home', currentUser = null, authMode = 'login', postAuthScreen = null;
@@ -2187,11 +2211,11 @@ html,body{background:var(--ground)!important}
       const u=webRequire(db);
       const ok=u.auth?!!(await webUnlockAuth(u.auth,String(body.password||''))):await webVerifyLegacyPassword(u,String(body.password||''));
       if(!ok)throw new Error('Incorrect password.');
-      const warpIds=db.warps.filter(w=>w.user_id===u.id).map(w=>w.id);
+      const warpIds=db.warps.filter(w=>w.user_id===u.id).map(w=>w.id),trackIds=db.tracks.filter(t=>t.user_id===u.id).map(t=>t.id);
       db.users=db.users.filter(x=>x.id!==u.id);delete db.vaults[String(u.id)];
       for(const k of ['folders','tracks','warpFolders','warps']) db.legacy[k]=db.legacy[k].filter(x=>x.user_id!==u.id);
       webClearSession(db);db.folders=[];db.tracks=[];db.warpFolders=[];db.warps=[];
-      await webSave(db);for(const id of warpIds)await webAudioDelete(id);return {ok:true};
+      await webSave(db);for(const id of warpIds)await webAudioDelete(id);for(const id of trackIds)await webTrackFilesDelete(id);return {ok:true};
     }
     const u=webRequire(db);webEnsureFolders(db,u.id);
     if(path==='/api/folders'){
@@ -2209,7 +2233,7 @@ html,body{background:var(--ground)!important}
       const stamp=webNow(),folder_id=webFolderId(db,u.id,body.folder_id);const t={id:db.next.track++,user_id:u.id,folder_id,name:String(body.name||'').trim(),duration_ms:Number(body.duration_ms)||0,target_bpm:Number(body.target_bpm)||0,accent_mode:body.accent_mode||'custom',accent_every:Number(body.accent_every)||4,click_volume:Math.max(0,Math.min(150,Number.isFinite(Number(body.click_volume))?Number(body.click_volume):100)),taps:Array.isArray(body.taps)?body.taps:[],tap_accents:Array.isArray(body.tap_accents)?body.tap_accents:[],score_map:Array.isArray(body.score_map)?body.score_map:[{startMeasure:1,meter:'4/4'}],subdivision_map:Array.isArray(body.subdivision_map)?body.subdivision_map:[],score_anchors:Array.isArray(body.score_anchors)?body.score_anchors:[],score_measure_boxes:Array.isArray(body.score_measure_boxes)?body.score_measure_boxes:[],score_pdf_name:String(body.score_pdf_name||''),created_at:stamp,updated_at:stamp};if(!t.name)throw new Error('Track name is required.');db.tracks.push(t);await webSave(db);return {track:t};
     }
     let m=path.match(/^\/api\/tracks\/(\d+)$/);
-    if(m){const id=Number(m[1]),t=db.tracks.find(x=>x.id===id&&x.user_id===u.id);if(!t)throw new Error('Track not found.');if(method==='GET')return {track:t};if(method==='DELETE'){db.tracks=db.tracks.filter(x=>x.id!==id);await webSave(db);return {ok:true};}if(method==='PUT'){if(body.name!==undefined)t.name=String(body.name).trim();if(body.duration_ms!==undefined)t.duration_ms=Number(body.duration_ms)||0;if(body.target_bpm!==undefined)t.target_bpm=Number(body.target_bpm)||0;if(body.accent_mode!==undefined)t.accent_mode=body.accent_mode;if(body.accent_every!==undefined)t.accent_every=Number(body.accent_every)||4;if(body.click_volume!==undefined)t.click_volume=Math.max(0,Math.min(150,Number.isFinite(Number(body.click_volume))?Number(body.click_volume):100));if(body.taps!==undefined)t.taps=Array.isArray(body.taps)?body.taps:[];if(body.tap_accents!==undefined)t.tap_accents=Array.isArray(body.tap_accents)?body.tap_accents:[];if(body.score_map!==undefined)t.score_map=Array.isArray(body.score_map)?body.score_map:[{startMeasure:1,meter:'4/4'}];if(body.subdivision_map!==undefined)t.subdivision_map=Array.isArray(body.subdivision_map)?body.subdivision_map:[];if(body.score_anchors!==undefined)t.score_anchors=Array.isArray(body.score_anchors)?body.score_anchors:[];if(body.score_measure_boxes!==undefined)t.score_measure_boxes=Array.isArray(body.score_measure_boxes)?body.score_measure_boxes:[];if(body.score_pdf_name!==undefined)t.score_pdf_name=String(body.score_pdf_name||'');if(body.folder_id!==undefined)t.folder_id=webFolderId(db,u.id,body.folder_id);t.updated_at=webNow();await webSave(db);return {track:t};}}
+    if(m){const id=Number(m[1]),t=db.tracks.find(x=>x.id===id&&x.user_id===u.id);if(!t)throw new Error('Track not found.');if(method==='GET')return {track:t};if(method==='DELETE'){db.tracks=db.tracks.filter(x=>x.id!==id);await webSave(db);await webTrackFilesDelete(id);return {ok:true};}if(method==='PUT'){if(body.name!==undefined)t.name=String(body.name).trim();if(body.duration_ms!==undefined)t.duration_ms=Number(body.duration_ms)||0;if(body.target_bpm!==undefined)t.target_bpm=Number(body.target_bpm)||0;if(body.accent_mode!==undefined)t.accent_mode=body.accent_mode;if(body.accent_every!==undefined)t.accent_every=Number(body.accent_every)||4;if(body.click_volume!==undefined)t.click_volume=Math.max(0,Math.min(150,Number.isFinite(Number(body.click_volume))?Number(body.click_volume):100));if(body.taps!==undefined)t.taps=Array.isArray(body.taps)?body.taps:[];if(body.tap_accents!==undefined)t.tap_accents=Array.isArray(body.tap_accents)?body.tap_accents:[];if(body.score_map!==undefined)t.score_map=Array.isArray(body.score_map)?body.score_map:[{startMeasure:1,meter:'4/4'}];if(body.subdivision_map!==undefined)t.subdivision_map=Array.isArray(body.subdivision_map)?body.subdivision_map:[];if(body.score_anchors!==undefined)t.score_anchors=Array.isArray(body.score_anchors)?body.score_anchors:[];if(body.score_measure_boxes!==undefined)t.score_measure_boxes=Array.isArray(body.score_measure_boxes)?body.score_measure_boxes:[];if(body.score_pdf_name!==undefined)t.score_pdf_name=String(body.score_pdf_name||'');if(body.folder_id!==undefined)t.folder_id=webFolderId(db,u.id,body.folder_id);t.updated_at=webNow();await webSave(db);return {track:t};}}
     if(path==='/api/warps'&&method==='GET'){
       const complete=db.warps.filter(w=>w.user_id===u.id&&w.has_clean&&w.has_clicks);const keys=[...new Set(complete.map(w=>w.project_key))];const out=keys.map(key=>webProjectVersions(db,u.id,key).filter(w=>w.has_clean&&w.has_clicks)[0]).filter(Boolean).map(w=>({...w,folder_name:(db.warpFolders.find(f=>f.id===w.folder_id)||{name:'Unfiled'}).name,version_count:webProjectVersions(db,u.id,w.project_key).filter(v=>v.has_clean&&v.has_clicks).length})).sort((a,b)=>String(b.updated_at).localeCompare(String(a.updated_at)));return {warps:out};
     }
@@ -2226,6 +2250,33 @@ html,body{background:var(--ground)!important}
   async function uploadAudioBlob(path, blob){
     const m=path.match(/^\/api\/warps\/(\d+)\/audio\/(clean|clicks)$/);if(!m)throw new Error('Upload target not found.');const id=Number(m[1]),kind=m[2];
     const db=await webLoad(),u=webRequire(db),w=db.warps.find(x=>x.id===id&&x.user_id===u.id);if(!w)throw new Error('Warped audio not found.');await webAudioPut(`${id}:${kind}`,blob);if(kind==='clean')w.has_clean=true;else w.has_clicks=true;w.updated_at=webNow();await webSave(db);return {ok:true,bytes:blob.size||0};
+  }
+
+  // ---- v1.9: files kept with a saved click track: the sheet-music PDF and the recording it was tapped to ----
+  // Device mode: encrypted in the same IndexedDB store as warped audio, under "t<trackId>:<kind>".
+  // Cloud mode swaps these three functions for the cloud* versions (Firebase Storage users/{uid}/tracks/{id}/{kind}).
+  const TRACK_FILE_KINDS=['score','recording'], TRACK_FILE_MAX=200*1024*1024;
+  function trackFileKey(id,kind){return `t${id}:${kind}`}
+  function trackFileMeta(kind,blob,name){return kind==='score'?{has_score:true,score_pdf_name:String(name||'Score.pdf').slice(0,200),score_pdf_size:blob.size||0}:{has_recording:true,recording_name:String(name||'Recording').slice(0,200),recording_size:blob.size||0,recording_type:String(blob.type||'').slice(0,80)}}
+  function trackFileCleared(kind){return kind==='score'?{has_score:false,score_pdf_size:0}:{has_recording:false,recording_name:'',recording_size:0,recording_type:''}}
+  function trackFileCheck(kind,blob){if(!TRACK_FILE_KINDS.includes(kind))throw new Error('Unknown attachment.');if((blob.size||0)>TRACK_FILE_MAX)throw new Error(kind==='score'?'This PDF is too large to save (200 MB max).':'This recording is too large to save (200 MB max).')}
+  async function webDecryptRecord(key,rec){const b=v=>typeof v==='string'?webB64ToBytes(v):v;const bytes=await webDecryptBytes(key,b(rec.iv),b(rec.data));return new Blob([bytes],{type:rec.type||'application/octet-stream'})}
+  async function webTrackFilesDelete(id,kinds=TRACK_FILE_KINDS){
+    const db=await webOpenAudioDb();
+    await new Promise((resolve,reject)=>{const tx=db.transaction(WEB_DB_STORE,'readwrite');const st=tx.objectStore(WEB_DB_STORE);for(const k of kinds)st.delete(trackFileKey(id,k));tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)});db.close();
+  }
+  async function putTrackFile(id,kind,blob,name){
+    trackFileCheck(kind,blob);
+    const db=await webLoad(),u=webRequire(db),t=db.tracks.find(x=>x.id===Number(id)&&x.user_id===u.id);if(!t)throw new Error('Track not found.');
+    await webAudioPut(trackFileKey(t.id,kind),blob);Object.assign(t,trackFileMeta(kind,blob,name));t.updated_at=webNow();await webSave(db);return {ok:true};
+  }
+  async function getTrackFile(id,kind){
+    const rec=await webAudioGetRaw(trackFileKey(id,kind));if(!rec)return null;if(rec instanceof Blob)return rec;
+    const session=await webSessionFor(await webLoad());if(!session)throw new Error('Sign in to continue.');return webDecryptRecord(session.key,rec);
+  }
+  async function removeTrackFile(id,kind){
+    const db=await webLoad(),u=webRequire(db),t=db.tracks.find(x=>x.id===Number(id)&&x.user_id===u.id);if(!t)return {ok:true};
+    await webTrackFilesDelete(t.id,[kind]);Object.assign(t,trackFileCleared(kind));t.updated_at=webNow();await webSave(db);return {ok:true};
   }
 
 
@@ -2377,6 +2428,7 @@ html,body{background:var(--ground)!important}
         else { const provider=new FB.auth.GoogleAuthProvider(); await FB.auth.reauthenticateWithPopup(u,provider); }
         const uid=u.uid;
         const warps=await cloudList('warps'); for(const w of warps) await cloudDeleteWarpAudio(w.id);
+        const ownTracks=await cloudList('tracks'); for(const t of ownTracks) if(t.has_score||t.has_recording) await cloudDeleteTrackFiles(t.id);
         for(const col of ['tracks','warps','folders','warpFolders']){ const snap=await FB.fs.getDocs(cloudCol(col)); let batch=FB.fs.writeBatch(cloud.db),n=0; for(const d of snap.docs){ batch.delete(d.ref); if(++n>=400){ await batch.commit(); batch=FB.fs.writeBatch(cloud.db); n=0; } } if(n) await batch.commit(); }
         await FB.fs.deleteDoc(FB.fs.doc(cloud.db,'users',uid));
         await FB.auth.deleteUser(u); cloud.user=null; cloud.lastPassword=null;
@@ -2403,7 +2455,7 @@ html,body{background:var(--ground)!important}
       if(m){
         const id=Number(m[1]); const ref=cloudDoc('tracks',id); const snap=await FB.fs.getDoc(ref); if(!snap.exists())throw new Error('Track not found.'); const t=snap.data();
         if(method==='GET')return {track:t};
-        if(method==='DELETE'){ await FB.fs.deleteDoc(ref); return {ok:true}; }
+        if(method==='DELETE'){ await cloudDeleteTrackFiles(id); await FB.fs.deleteDoc(ref); return {ok:true}; }
         if(method==='PUT'){
           const patch={};
           if(body.name!==undefined)patch.name=String(body.name).trim().slice(0,120);
@@ -2477,6 +2529,32 @@ html,body{background:var(--ground)!important}
     const blob=new Blob([bytes],{type:'audio/wav'}); await cloudAudioCachePut(key,blob); return blob;
   }
 
+  // v1.9: files kept with a saved click track (see putTrackFile). Cached on the device after the first download.
+  function cloudTrackFileRef(uid,id,kind){return window.FB.st.ref(cloud.st,`users/${uid}/tracks/${id}/${kind}`)}
+  async function cloudPutTrackFile(id,kind,blob,name){
+    await cloudInit();const FB=window.FB;trackFileCheck(kind,blob);const u=cloudRequire();
+    const ref=cloudDoc('tracks',id);const snap=await FB.fs.getDoc(ref);if(!snap.exists())throw new Error('Track not found.');
+    try{await FB.st.uploadBytes(cloudTrackFileRef(u.uid,id,kind),blob,{contentType:blob.type||(kind==='score'?'application/pdf':'application/octet-stream')})}catch(err){throw cloudFriendlyError(err)}
+    await cloudAudioCachePut(trackFileKey(id,kind),blob);
+    await FB.fs.updateDoc(ref,{...trackFileMeta(kind,blob,name),updated_at:webNow()});return {ok:true};
+  }
+  async function cloudGetTrackFile(id,kind){
+    await cloudInit();const FB=window.FB;const key=trackFileKey(id,kind);
+    const rec=await webAudioGetRaw(key);if(rec instanceof Blob)return rec;
+    const u=cloudRequire();let bytes;
+    try{bytes=await FB.st.getBytes(cloudTrackFileRef(u.uid,id,kind))}catch(err){if(String(err&&err.code||'').includes('object-not-found'))return null;throw cloudFriendlyError(err)}
+    const blob=new Blob([bytes],{type:kind==='score'?'application/pdf':'application/octet-stream'});await cloudAudioCachePut(key,blob);return blob;
+  }
+  async function cloudDeleteTrackFiles(id,kinds=TRACK_FILE_KINDS){
+    const FB=window.FB;const uid=cloudRequire().uid;
+    for(const kind of kinds){try{await FB.st.deleteObject(cloudTrackFileRef(uid,id,kind))}catch{}}
+    try{await webTrackFilesDelete(id,kinds)}catch{}
+  }
+  async function cloudRemoveTrackFile(id,kind){
+    await cloudInit();const FB=window.FB;const ref=cloudDoc('tracks',id);const snap=await FB.fs.getDoc(ref);if(!snap.exists())return {ok:true};
+    await cloudDeleteTrackFiles(id,[kind]);await FB.fs.updateDoc(ref,{...trackFileCleared(kind),updated_at:webNow()});return {ok:true};
+  }
+
   // One-time migration: a library saved on this device before sync existed.
   async function cloudMigrateLocalLibrary(email,password){
     try{
@@ -2496,12 +2574,12 @@ html,body{background:var(--ground)!important}
       const folderMap=new Map(), warpFolderMap=new Map();
       for(const f of (data.folders||[]).filter(f=>f.user_id===local.id)){ if(f.name==='Unfiled'){ folderMap.set(f.id,await cloudFolderId(null)); continue; } try{ const r=await cloudApi('/api/folders',{method:'POST',body:{name:f.name}}); folderMap.set(f.id,r.folder.id); }catch{ const list=await cloudList('folders'); const hit=list.find(x=>x.name.toLowerCase()===f.name.toLowerCase()); folderMap.set(f.id,hit?hit.id:await cloudFolderId(null)); } }
       for(const f of (data.warpFolders||[]).filter(f=>f.user_id===local.id)){ if(f.name==='Unfiled'){ warpFolderMap.set(f.id,await cloudFolderId(null,'warpFolders')); continue; } try{ const r=await cloudApi('/api/warp-folders',{method:'POST',body:{name:f.name}}); warpFolderMap.set(f.id,r.folder.id); }catch{ const list=await cloudList('warpFolders'); const hit=list.find(x=>x.name.toLowerCase()===f.name.toLowerCase()); warpFolderMap.set(f.id,hit?hit.id:await cloudFolderId(null,'warpFolders')); } }
-      for(const t of tracks){ const body={...t}; delete body.id; delete body.user_id; body.folder_id=folderMap.get(t.folder_id); const r=await cloudApi('/api/tracks',{method:'POST',body}); await FB.fs.updateDoc(cloudDoc('tracks',r.track.id),{created_at:t.created_at||r.track.created_at,updated_at:t.updated_at||r.track.updated_at}); }
+      for(const t of tracks){ const body={...t}; delete body.id; delete body.user_id; body.folder_id=folderMap.get(t.folder_id); for(const k of ['has_score','score_pdf_size','has_recording','recording_name','recording_size','recording_type'])delete body[k]; const r=await cloudApi('/api/tracks',{method:'POST',body}); for(const kind of TRACK_FILE_KINDS){ if(!(kind==='score'?t.has_score:t.has_recording)) continue; try{ const rec=await webAudioGetRaw(trackFileKey(t.id,kind)); if(!rec) continue; const blob=rec instanceof Blob?rec:await webDecryptRecord(key,rec); await cloudPutTrackFile(r.track.id,kind,blob,kind==='score'?t.score_pdf_name:t.recording_name); }catch(err){ console.warn('[cloud] attachment not migrated:',err); } } await FB.fs.updateDoc(cloudDoc('tracks',r.track.id),{created_at:t.created_at||r.track.created_at,updated_at:t.updated_at||r.track.updated_at}); }
       const keyMap=new Map();
       for(const w of warps.sort((a,b)=>(a.version_number||0)-(b.version_number||0))){
         const body={...w}; delete body.id; delete body.user_id; body.folder_id=warpFolderMap.get(w.folder_id); body.project_key=keyMap.get(w.project_key)||'';
         const r=await cloudApi('/api/warps',{method:'POST',body}); keyMap.set(w.project_key,r.warp.project_key);
-        for(const kind of ['clean','clicks']){ const rec=await webAudioGetRaw(`${w.id}:${kind}`); if(!rec) continue; let blob; if(rec instanceof Blob) blob=rec; else { const bytes=await webDecryptBytes(key,webB64ToBytes(rec.iv),webB64ToBytes(rec.data)); blob=new Blob([bytes],{type:rec.type||'audio/wav'}); } await cloudUploadAudioBlob(`/api/warps/${r.warp.id}/audio/${kind}`,blob); }
+        for(const kind of ['clean','clicks']){ const rec=await webAudioGetRaw(`${w.id}:${kind}`); if(!rec) continue; let blob; if(rec instanceof Blob) blob=rec; else blob=await webDecryptRecord(key,{...rec,type:rec.type||'audio/wav'}); await cloudUploadAudioBlob(`/api/warps/${r.warp.id}/audio/${kind}`,blob); }
       }
       local.migrated_to_cloud=true; await webSave(db);
       await uiAlert(`${n} item${n===1?'':'s'} uploaded. They are now in your account on every device.`,'Library uploaded');
@@ -2518,6 +2596,7 @@ html,body{background:var(--ground)!important}
 
   if(cloudEnabled()){
     api=cloudApi; uploadAudioBlob=cloudUploadAudioBlob; webAudioGet=cloudAudioGet;
+    putTrackFile=cloudPutTrackFile; getTrackFile=cloudGetTrackFile; removeTrackFile=cloudRemoveTrackFile;
     cloudApplyModeText();
   }
   // =============================================================================
@@ -2839,7 +2918,7 @@ html,body{background:var(--ground)!important}
     closeDashboard();
     if(name === 'recorder'){setCreateMode(createMode);requestAnimationFrame(() => { resizeCanvas(); renderDetails(); });}
     else stopAnimation();
-    if(name === 'library') loadLibrary();
+    if(name === 'library'){ if(!libraryViewPinned){ libraryView='all'; if($('librarySearch')) $('librarySearch').value=''; } libraryViewPinned=false; loadLibrary(); }
     if(name === 'warpedLibrary') loadWarpLibrary();
     if(name === 'analyze') prepareAnalyzePage();
     if(name === 'warp') prepareWarpPage();
@@ -3216,14 +3295,14 @@ html,body{background:var(--ground)!important}
     if(!ok){setTapAlongStatus('Choose an audio file such as WAV, AIFF, MP3, M4A, FLAC, OGG, or Opus.','error');return}
     if(tapAlongActive)endRecording();
     const a=tapAlongAudio();if(tapAlongUrl)URL.revokeObjectURL(tapAlongUrl);
-    tapAlongUrl=URL.createObjectURL(file);tapAlongFileName=file.name||'Imported audio';
+    tapAlongUrl=URL.createObjectURL(file);tapAlongFileName=file.name||'Imported audio';tapAlongFile=file;
     a.src=tapAlongUrl;a.load();$('tapAlongDropTitle').textContent='Replace the piece';$('tapAlongFileInfo').textContent=tapAlongFileName;
     setTapAlongStatus('Audio loaded. Seek to where you want to begin, then press Play & Tap.');syncTapAlongUi();
   }
   function clearTapAlongAudio(){
     if(tapAlongActive)endRecording();
     const a=tapAlongAudio();if(a){a.pause();a.removeAttribute('src');a.load()}
-    if(tapAlongUrl)URL.revokeObjectURL(tapAlongUrl);tapAlongUrl=null;tapAlongFileName='';tapAlongActive=false;
+    if(tapAlongUrl)URL.revokeObjectURL(tapAlongUrl);tapAlongUrl=null;tapAlongFileName='';tapAlongFile=null;tapAlongActive=false;
     $('tapAlongFile').value='';$('tapAlongDropTitle').textContent='Add the piece';$('tapAlongFileInfo').textContent='No recording loaded.';
     setTapAlongStatus('Load a piece, seek to where you want to begin, then press Play & Tap.');syncTapAlongUi();
   }
@@ -3302,7 +3381,7 @@ html,body{background:var(--ground)!important}
     if(file.size>120*1024*1024){$('scorePdfFileInfo').textContent='That PDF is too large. Choose a sheet-music PDF under 120 MB.';return}
     stopScorePractice(true);scoreMappingActive=false;
     try{
-      const pdfjs=await loadPdfJs(),buf=await file.arrayBuffer();scorePdfBytes=new Uint8Array(buf);
+      const pdfjs=await loadPdfJs(),buf=await file.arrayBuffer();scorePdfBytes=new Uint8Array(buf);scorePdfFile=file; // pdf.js detaches the bytes it is given; the File is what gets saved
       // Security review: isEvalSupported:false stops pdf.js from compiling PostScript functions
       // inside the PDF into JavaScript with eval (the CVE-2024-4367 class of bug). pdf.js falls
       // back to a slower interpreter for those rare functions, so rendering is unaffected.
@@ -3314,7 +3393,7 @@ html,body{background:var(--ground)!important}
     }catch(err){scorePdfDoc=null;$('scorePdfFileInfo').textContent=err.message||'Could not open that PDF.';setScoreAnalysisStatus(err.message||'Could not open that PDF.','warn',0);syncScorePdfUi()}
   }
   function removeScorePdf(){
-    stopScorePractice(true);scorePdfDoc=null;scorePdfBytes=null;scorePdfPage=1;scoreMappingActive=false;scoreAnalysisRunning=false;scoreDetectedRawBoxes=[];$('scorePdfFile').value='';$('scorePdfDropTitle').textContent='Add the sheet music';$('scorePdfFileInfo').textContent='No PDF loaded.';$('scorePdfCanvas').width=1;$('scorePdfCanvas').height=1;$('scoreOverlay').innerHTML='';syncScorePdfUi()
+    stopScorePractice(true);scorePdfDoc=null;scorePdfBytes=null;scorePdfFile=null;trackAttachOrigin.score=null;scorePdfPage=1;scoreMappingActive=false;scoreAnalysisRunning=false;scoreDetectedRawBoxes=[];$('scorePdfFile').value='';$('scorePdfDropTitle').textContent='Add the sheet music';$('scorePdfFileInfo').textContent='No PDF loaded.';$('scorePdfCanvas').width=1;$('scorePdfCanvas').height=1;$('scoreOverlay').innerHTML='';syncScorePdfUi()
   }
   let scorePdfWantPage=null; // a page asked for while another one was drawing: drawn right after
   async function renderScorePage(pageNum){
@@ -3795,12 +3874,48 @@ html,body{background:var(--ground)!important}
 
   async function openSave(){
     if(!currentUser){ openAuth('signup'); $('authError').textContent='Create an account or sign in to save this click track.'; return; }
-    try{await loadFolders();fillFolderSelect();$('saveName').value=track.loadedName||'';if(track.loadedFolderId)$('saveFolder').value=String(track.loadedFolderId);$('saveError').textContent='';$('saveModal').classList.add('open')}catch(err){$('status').textContent=err.message}
+    try{await loadFolders();fillFolderSelect();$('saveName').value=track.loadedName||'';if(track.loadedFolderId)$('saveFolder').value=String(track.loadedFolderId);$('saveError').textContent='';syncSaveAttachments();$('saveModal').classList.add('open')}catch(err){$('status').textContent=err.message}
   }
   function closeSave(){$('saveModal').classList.remove('open')}
+  // v1.9: the sheet music on screen belongs to this track once a score has been read for it.
+  function currentScoreAttachment(){return scorePdfDoc&&scorePdfFile&&track.scorePdfName?{name:track.scorePdfName,size:scorePdfFile.size||0}:null}
+  // The loaded recording belongs to the track when it was made With Audio, or came back with it from the library.
+  function currentRecordingAttachment(){if(!tapAlongUrl||!tapAlongFile)return null;if(!(createMode==='media'||trackAttachOrigin.recording?.url===tapAlongUrl))return null;return {name:tapAlongFileName||'Recording',size:tapAlongFile.size||0}}
+  function formatBytes(n){n=Number(n)||0;return n>=1048576?`${(n/1048576).toFixed(n>=10485760?0:1)} MB`:`${Math.max(1,Math.round(n/1024))} KB`}
+  function syncSaveAttachments(){
+    const sc=currentScoreAttachment(),rc=currentRecordingAttachment();
+    $('saveScoreRow').classList.toggle('hidden',!sc);$('saveRecordingRow').classList.toggle('hidden',!rc);$('saveAttachBlock').classList.toggle('hidden',!sc&&!rc);
+    $('saveIncludeScore').checked=true;$('saveIncludeRecording').checked=true;
+    if(sc)$('saveScoreName').textContent=`· ${sc.name} · ${formatBytes(sc.size)}`;
+    if(rc)$('saveRecordingName').textContent=`· ${rc.name} · ${formatBytes(rc.size)}`;
+  }
+  async function saveTrackAttachments(id,prev){
+    const problems=[];
+    const sc=currentScoreAttachment();
+    if(sc){
+      if($('saveIncludeScore').checked){if(!(trackAttachOrigin.score&&trackAttachOrigin.score.id===id&&trackAttachOrigin.score.file===scorePdfFile)){try{$('confirmSaveButton').textContent='Saving the sheet music…';await putTrackFile(id,'score',scorePdfFile.type==='application/pdf'?scorePdfFile:new Blob([scorePdfFile],{type:'application/pdf'}),sc.name)}catch(err){problems.push(`the sheet music (${err.message})`)}}}
+      else if(prev?.has_score){try{await removeTrackFile(id,'score')}catch{}}
+    }
+    const rc=currentRecordingAttachment();
+    if(rc){
+      if($('saveIncludeRecording').checked){if(!(trackAttachOrigin.recording&&trackAttachOrigin.recording.id===id&&trackAttachOrigin.recording.url===tapAlongUrl)){try{$('confirmSaveButton').textContent='Saving the recording…';await putTrackFile(id,'recording',tapAlongFile,rc.name)}catch(err){problems.push(`the recording (${err.message})`)}}}
+      else if(prev?.has_recording){try{await removeTrackFile(id,'recording')}catch{}}
+    }
+    return problems;
+  }
   async function confirmSave(){
     const body={name:$('saveName').value.trim()||`Click Track ${Date.now()}`,folder_id:Number($('saveFolder').value)||null,duration_ms:Math.round(track.durationMs),target_bpm:track.targetBpm,accent_mode:track.accentMode,accent_every:track.accentEvery,click_volume:clampClickVolume(track.clickVolume),taps:track.taps.map(Math.round),tap_accents:[...(track.tapAccents||[])],score_map:normalizeTrackScoreMap().map(x=>({...x})),subdivision_map:normalizeTrackSubdivisionMap().map(x=>({...x})),score_anchors:(track.scoreAnchors||[]).map(x=>({...x})),score_measure_boxes:(track.scoreMeasureBoxes||[]).map(x=>({...x})),score_pdf_name:track.scorePdfName||''};
-    try{ if(track.loadedId) await api(`/api/tracks/${track.loadedId}`,{method:'PUT',body}); else await api('/api/tracks',{method:'POST',body}); closeSave();resetTrack(`“${body.name}” saved. Ready for a new click track.`); }catch(err){$('saveError').textContent=err.message}
+    const btn=$('confirmSaveButton'),label=btn.textContent;btn.disabled=true;btn.textContent='Saving…';
+    try{
+      const prev=track.loadedId?(tracks.find(x=>x.id===track.loadedId)||null):null;
+      const r=track.loadedId?await api(`/api/tracks/${track.loadedId}`,{method:'PUT',body}):await api('/api/tracks',{method:'POST',body});
+      const id=track.loadedId||r?.track?.id;
+      const problems=id?await saveTrackAttachments(id,prev):[];
+      const kept=[currentScoreAttachment()&&$('saveIncludeScore').checked&&!problems.some(p=>p.startsWith('the sheet'))?'sheet music':'',currentRecordingAttachment()&&$('saveIncludeRecording').checked&&!problems.some(p=>p.startsWith('the rec'))?'recording':''].filter(Boolean);
+      closeSave();resetTrack(problems.length?`“${body.name}” saved, but ${problems.join(' and ')} could not be stored.`:`“${body.name}” saved${kept.length?` with its ${kept.join(' and ')}`:''}. Ready for a new click track.`);
+      trackAttachOrigin={score:null,recording:null};
+    }catch(err){$('saveError').textContent=err.message}
+    finally{btn.disabled=false;btn.textContent=label}
   }
 
   async function loadLibrary(){
@@ -3808,13 +3923,69 @@ html,body{background:var(--ground)!important}
     $('trackList').innerHTML='<div class="track-empty">Loading your click tracks…</div>';
     try{const [f,t]=await Promise.all([api('/api/folders'),api('/api/tracks')]);folders=f.folders;tracks=t.tracks;renderLibrary()}catch(err){$('trackList').innerHTML=`<div class="track-empty">${escapeHtml(err.message)}</div>`}
   }
+  function libraryMatches(t,q){if(!q)return true;return [t.name,t.folder_name,t.score_pdf_name,t.recording_name].some(v=>String(v||'').toLowerCase().includes(q))}
   function renderLibrary(){
-    const list=$('trackList');list.innerHTML='';if(!tracks.length){list.innerHTML='<div class="track-empty">No saved click tracks yet.</div>';return}const folderOptions=folders.map(f=>`<option value="${f.id}">${escapeHtml(f.name)}</option>`).join('');for(const folder of folders){const subset=tracks.filter(t=>t.folder_id===folder.id);if(!subset.length)continue;const h=document.createElement('div');h.className='folder-heading';h.textContent=folder.name;list.appendChild(h);subset.forEach(t=>{const item=document.createElement('div');item.className='track-item';item.innerHTML=`<div class="track-name">${escapeHtml(t.name)}</div><div class="track-meta">${t.taps.length} beats · updated ${escapeHtml(new Date(t.updated_at).toLocaleDateString())}</div><div class="track-actions"><button class="secondary" data-action="open" data-id="${t.id}">Open</button><button class="secondary" data-action="rename" data-id="${t.id}">Rename</button>${typeof shareTrackButtonHtml==='function'?shareTrackButtonHtml(t):''}<select data-action="move" data-id="${t.id}">${folderOptions}</select><button class="secondary danger" data-action="delete" data-id="${t.id}">Delete</button></div>`;item.querySelector('select').value=String(t.folder_id);list.appendChild(item)})}}
-  async function openSaved(id){const t=tracks.find(x=>x.id===id)|| (await api(`/api/tracks/${id}`)).track;resetTrack('');track.taps=[...t.taps];track.tapAccents=Array.isArray(t.tap_accents)?[...t.tap_accents]:track.taps.map(()=>null);track.durationMs=t.duration_ms;track.targetBpm=t.target_bpm;track.accentMode=t.accent_mode;track.accentEvery=t.accent_every;track.clickVolume=clampClickVolume(t.click_volume);track.scoreMap=Array.isArray(t.score_map)&&t.score_map.length?t.score_map.map(x=>({...x})):[{startMeasure:1,meter:'4/4'}];track.subdivisionMap=Array.isArray(t.subdivision_map)?t.subdivision_map.map(x=>({...x})):[];track.scoreAnchors=Array.isArray(t.score_anchors)?t.score_anchors.map(x=>({...x})):[];track.scoreMeasureBoxes=Array.isArray(t.score_measure_boxes)?t.score_measure_boxes.map(x=>({...x})):[];track.scorePdfName=String(t.score_pdf_name||'');track.loadedId=t.id;track.loadedName=t.name;track.loadedFolderId=t.folder_id;frozenViewMs=track.durationMs;syncControls();$('status').textContent=`Opened “${t.name}”.`;$('timingFeedback').textContent='Saved click track loaded.';setCreateMode('review');showScreen('recorder')}
+    const list=$('trackList');list.innerHTML='';
+    for(const [id,v] of [['libraryClicksTab','all'],['libraryScoresTab','scores'],['libraryRecordingsTab','recordings']])$(id)?.classList.toggle('active',libraryView===v);
+    const q=String($('librarySearch')?.value||'').trim().toLowerCase();
+    const inView=tracks.filter(t=>libraryView==='scores'?(t.has_score||!!t.score_pdf_name):libraryView==='recordings'?!!t.has_recording:true);
+    const shown=inView.filter(t=>libraryMatches(t,q));
+    const noun=libraryView==='scores'?'piece':libraryView==='recordings'?'recording':'click track';
+    if($('libraryCount'))$('libraryCount').textContent=inView.length?(q?`${shown.length} of ${inView.length}`:`${inView.length} ${noun}${inView.length===1?'':'s'}`):'';
+    if(!inView.length){list.innerHTML=libraryView==='scores'?'<div class="track-empty"><strong>No sheet music saved yet.</strong><br>Create → From Sheet Music, then Save Click Track. The PDF is kept with its click track.</div>':libraryView==='recordings'?'<div class="track-empty"><strong>No recordings saved yet.</strong><br>Create → With Audio, tap along, then Save Click Track. The recording is kept with its click track.</div>':'<div class="track-empty">No saved click tracks yet.</div>';return}
+    if(!shown.length){list.innerHTML=`<div class="track-empty">Nothing matches “${escapeHtml(q)}”.</div>`;return}
+    const folderOptions=folders.map(f=>`<option value="${f.id}">${escapeHtml(f.name)}</option>`).join('');
+    const sections=folders.map(f=>({folder:f,items:shown.filter(t=>t.folder_id===f.id)}));
+    const orphans=shown.filter(t=>!folders.some(f=>f.id===t.folder_id));if(orphans.length)sections.push({folder:{id:null,name:'Other'},items:orphans});
+    for(const {folder,items} of sections){if(!items.length)continue;const h=document.createElement('div');h.className='folder-heading';h.textContent=folder.name;list.appendChild(h);items.forEach(t=>{
+      const bpm=Number(t.target_bpm)>0?` · ${Math.round(t.target_bpm)} BPM`:'',dur=Number(t.duration_ms)>0?` · ${Math.floor(t.duration_ms/60000)}:${String(Math.round(t.duration_ms/1000)%60).padStart(2,'0')}`:'';
+      const badges=[t.has_score?`<span class="track-badge" title="Sheet music saved with this track">Sheet music · ${escapeHtml(t.score_pdf_name||'PDF')}</span>`:t.score_pdf_name?`<span class="track-badge missing" title="Saved before PDFs were kept. Open it, add the PDF again, then Save.">PDF not stored · ${escapeHtml(t.score_pdf_name)}</span>`:'',t.has_recording?`<span class="track-badge" title="Recording saved with this track">Recording · ${escapeHtml(t.recording_name||'audio')}</span>`:''].filter(Boolean).join('');
+      const files=(t.has_score?`<button class="secondary" data-action="pdf" data-id="${t.id}">Download PDF</button>`:'')+(t.has_recording?`<button class="secondary" data-action="rec" data-id="${t.id}">Download Recording</button>`:'');
+      const item=document.createElement('div');item.className='track-item';
+      item.innerHTML=`<div class="track-name">${escapeHtml(t.name)}</div><div class="track-meta">${t.taps.length} beats${bpm}${dur} · updated ${escapeHtml(new Date(t.updated_at).toLocaleDateString())}</div>${badges?`<div class="track-badges">${badges}</div>`:''}<div class="track-actions"><button class="secondary" data-action="open" data-id="${t.id}">${t.has_score&&t.has_recording?'Open (score + recording)':t.has_score?'Open with Score':t.has_recording?'Open with Recording':'Open'}</button>${files}<button class="secondary" data-action="rename" data-id="${t.id}">Rename</button>${typeof shareTrackButtonHtml==='function'?shareTrackButtonHtml(t):''}<select data-action="move" data-id="${t.id}" aria-label="Move to folder">${folderOptions}</select><button class="secondary danger" data-action="delete" data-id="${t.id}">Delete</button></div>`;
+      const sel=item.querySelector('select');if(folder.id!=null)sel.value=String(t.folder_id);list.appendChild(item)})}
+  }
+  async function openSaved(id){const t=tracks.find(x=>x.id===id)|| (await api(`/api/tracks/${id}`)).track;resetTrack('');track.taps=[...t.taps];track.tapAccents=Array.isArray(t.tap_accents)?[...t.tap_accents]:track.taps.map(()=>null);track.durationMs=t.duration_ms;track.targetBpm=t.target_bpm;track.accentMode=t.accent_mode;track.accentEvery=t.accent_every;track.clickVolume=clampClickVolume(t.click_volume);track.scoreMap=Array.isArray(t.score_map)&&t.score_map.length?t.score_map.map(x=>({...x})):[{startMeasure:1,meter:'4/4'}];track.subdivisionMap=Array.isArray(t.subdivision_map)?t.subdivision_map.map(x=>({...x})):[];track.scoreAnchors=Array.isArray(t.score_anchors)?t.score_anchors.map(x=>({...x})):[];track.scoreMeasureBoxes=Array.isArray(t.score_measure_boxes)?t.score_measure_boxes.map(x=>({...x})):[];track.scorePdfName=String(t.score_pdf_name||'');track.loadedId=t.id;track.loadedName=t.name;track.loadedFolderId=t.folder_id;frozenViewMs=track.durationMs;trackAttachOrigin={score:null,recording:null};if(scorePdfDoc&&!t.has_score)removeScorePdf();syncControls();$('status').textContent=`Opened “${t.name}”.`;$('timingFeedback').textContent='Saved click track loaded.';setCreateMode('review');showScreen('recorder');
+    if(t.has_recording)restoreTrackRecording(t);
+    if(t.has_score)restoreTrackScore(t);}
+  async function waitForScoreAnalysis(maxMs=120000){const t0=Date.now();await new Promise(r=>setTimeout(r,200));while(scoreAnalysisRunning&&Date.now()-t0<maxMs)await new Promise(r=>setTimeout(r,200))}
+  async function restoreTrackScore(t){
+    try{
+      $('status').textContent=`Opened “${t.name}”. Loading its sheet music…`;
+      const blob=await getTrackFile(t.id,'score');if(track.loadedId!==t.id)return;
+      if(!blob){$('status').textContent=`Opened “${t.name}”. Its sheet music could not be found; add the PDF again.`;return}
+      await loadScorePdf(new File([blob],t.score_pdf_name||'Score.pdf',{type:'application/pdf'}));
+      trackAttachOrigin.score={id:t.id,file:scorePdfFile};
+      await waitForScoreAnalysis();if(track.loadedId!==t.id)return;
+      // The saved layout wins over a fresh reading, so barlines moved by hand stay where they were put.
+      if(Array.isArray(t.score_measure_boxes)&&t.score_measure_boxes.length){
+        track.taps=[...t.taps];track.tapAccents=Array.isArray(t.tap_accents)?[...t.tap_accents]:track.taps.map(()=>null);track.durationMs=t.duration_ms;frozenViewMs=track.durationMs;
+        track.scoreMap=Array.isArray(t.score_map)&&t.score_map.length?t.score_map.map(x=>({...x})):[{startMeasure:1,meter:'4/4'}];track.subdivisionMap=Array.isArray(t.subdivision_map)?t.subdivision_map.map(x=>({...x})):[];
+        track.scoreAnchors=Array.isArray(t.score_anchors)?t.score_anchors.map(x=>({...x})):[];track.scoreMeasureBoxes=t.score_measure_boxes.map(x=>({...x}));
+        syncControls();const first=track.scoreMeasureBoxes[0];if(first?.page&&scorePdfDoc)await renderScorePage(first.page);else renderScoreOverlay();
+      }
+      syncCreateScoreVisibility();$('status').textContent=`Opened “${t.name}” with its sheet music.`;
+    }catch(err){if(track.loadedId===t.id)$('status').textContent=`Opened “${t.name}”, but its sheet music could not be loaded: ${err.message}`}
+  }
+  async function restoreTrackRecording(t){
+    try{
+      const blob=await getTrackFile(t.id,'recording');if(!blob||track.loadedId!==t.id)return;
+      await loadTapAlongFile(new File([blob],t.recording_name||'Recording',{type:t.recording_type||blob.type||''}));
+      if(track.loadedId!==t.id)return;
+      trackAttachOrigin.recording={id:t.id,url:tapAlongUrl};syncCreateScoreVisibility();
+      setTapAlongStatus('The recording saved with this click track is loaded. Use Listen: Recording + Clicks, or Play & Tap to re-tap.');
+    }catch(err){console.warn('[library] recording not restored:',err)}
+  }
+  async function downloadTrackFile(id,kind){
+    const t=tracks.find(x=>x.id===id);if(!t)return;
+    try{const blob=await getTrackFile(id,kind);if(!blob){alert(kind==='score'?'This sheet music could not be found.':'This recording could not be found.');return}
+      const name=kind==='score'?(t.score_pdf_name||`${t.name}.pdf`):(t.recording_name||`${t.name} recording`);
+      saveBlobToDevice(kind==='score'?new Blob([blob],{type:'application/pdf'}):new Blob([blob],{type:t.recording_type||blob.type||'application/octet-stream'}),name)}catch(err){alert(err.message)}
+  }
   async function addFolder(){const name=$('newFolderName').value.trim();if(!name)return;try{await api('/api/folders',{method:'POST',body:{name}});$('newFolderName').value='';await loadLibrary()}catch(err){alert(err.message)}}
   async function renameTrack(id){const t=tracks.find(x=>x.id===id);if(!t)return;const name=await uiPrompt('New name for this click track',t.name,{title:'Rename click track'});if(name===null||!name.trim())return;try{await api(`/api/tracks/${id}`,{method:'PUT',body:{name:name.trim()}});await loadLibrary()}catch(err){alert(err.message)}}
   async function moveTrack(id,folderId){try{await api(`/api/tracks/${id}`,{method:'PUT',body:{folder_id:Number(folderId)}});await loadLibrary()}catch(err){alert(err.message)}}
-  async function deleteTrack(id){const t=tracks.find(x=>x.id===id);if(!t||!(await uiConfirm(`“${t.name}” will be permanently deleted.`,{title:'Delete click track?',okLabel:'Delete',danger:true})))return;try{await api(`/api/tracks/${id}`,{method:'DELETE'});await loadLibrary()}catch(err){alert(err.message)}}
+  async function deleteTrack(id){const t=tracks.find(x=>x.id===id);const extra=[t?.has_score?'its sheet music':'',t?.has_recording?'its recording':''].filter(Boolean).join(' and ');if(!t||!(await uiConfirm(`“${t.name}”${extra?` and ${extra}`:''} will be permanently deleted.`,{title:'Delete click track?',okLabel:'Delete',danger:true})))return;try{await api(`/api/tracks/${id}`,{method:'DELETE'});await loadLibrary()}catch(err){alert(err.message)}}
 
   async function loadWarpFolders(){
     if(!currentUser){warpFolders=[];return}
@@ -5450,9 +5621,15 @@ html,body{background:var(--ground)!important}
     showScreen(target);
   }));
   $('helpSettingsButton').addEventListener('click',()=>showScreen('help'));
-  $('libraryClicksTab').addEventListener('click',()=>showScreen('library'));
+  const openLibraryView=v=>{libraryView=v;if(currentScreen==='library')renderLibrary();else{libraryViewPinned=true;showScreen('library')}};
+  $('libraryClicksTab').addEventListener('click',()=>openLibraryView('all'));
+  $('libraryScoresTab').addEventListener('click',()=>openLibraryView('scores'));
+  $('libraryRecordingsTab').addEventListener('click',()=>openLibraryView('recordings'));
   $('libraryWarpsTab').addEventListener('click',()=>showScreen('warpedLibrary'));
-  $('warpedClicksTab').addEventListener('click',()=>showScreen('library'));
+  $('warpedClicksTab').addEventListener('click',()=>openLibraryView('all'));
+  $('warpedScoresTab').addEventListener('click',()=>openLibraryView('scores'));
+  $('warpedRecordingsTab').addEventListener('click',()=>openLibraryView('recordings'));
+  $('librarySearch').addEventListener('input',()=>renderLibrary());
   $('warpedWarpsTab').addEventListener('click',()=>showScreen('warpedLibrary'));
   $('startTourButton').addEventListener('click',startTutorial);
   $('tutorialSkip').addEventListener('click',endTutorial);
@@ -5563,7 +5740,7 @@ html,body{background:var(--ground)!important}
   for(const id of ['targetBpm','targetBpmInline','dashTargetBpm'])$(id).addEventListener('input',e=>{if(e.target.value!=='')setTarget(e.target.value)});$('minusBpm').addEventListener('click',()=>setTarget(track.targetBpm-1));$('plusBpm').addEventListener('click',()=>setTarget(track.targetBpm+1));$('accentMode').addEventListener('change',e=>setAccentMode(e.target.value));$('dashAccentMode').addEventListener('change',e=>setAccentMode(e.target.value));$('accentEvery').addEventListener('change',e=>setAccentEvery(e.target.value));$('dashAccentEvery').addEventListener('change',e=>setAccentEvery(e.target.value));$('clickVolume').addEventListener('input',e=>setClickVolume(e.target.value));$('dashClickVolume').addEventListener('input',e=>setClickVolume(e.target.value));
 
   // save/library
-  $('saveModalClose').addEventListener('click',closeSave);$('cancelSaveButton').addEventListener('click',closeSave);$('saveModal').addEventListener('pointerdown',e=>{if(e.target===$('saveModal'))closeSave()});$('confirmSaveButton').addEventListener('click',confirmSave);$('addFolderButton').addEventListener('click',addFolder);$('newFolderName').addEventListener('keydown',e=>{if(e.key==='Enter')addFolder()});$('trackList').addEventListener('click',e=>{const b=e.target.closest('button[data-action]');if(!b)return;const id=Number(b.dataset.id);if(b.dataset.action==='open')openSaved(id);if(b.dataset.action==='rename')renameTrack(id);if(b.dataset.action==='delete')deleteTrack(id);if(b.dataset.action==='share'&&typeof shareExportTrack==='function')shareExportTrack(id)/* [sharing] */});$('trackList').addEventListener('change',e=>{const s=e.target.closest('select[data-action="move"]');if(s)moveTrack(Number(s.dataset.id),s.value)});
+  $('saveModalClose').addEventListener('click',closeSave);$('cancelSaveButton').addEventListener('click',closeSave);$('saveModal').addEventListener('pointerdown',e=>{if(e.target===$('saveModal'))closeSave()});$('confirmSaveButton').addEventListener('click',confirmSave);$('addFolderButton').addEventListener('click',addFolder);$('newFolderName').addEventListener('keydown',e=>{if(e.key==='Enter')addFolder()});$('trackList').addEventListener('click',e=>{const b=e.target.closest('button[data-action]');if(!b)return;const id=Number(b.dataset.id);if(b.dataset.action==='open')openSaved(id);if(b.dataset.action==='pdf')downloadTrackFile(id,'score');if(b.dataset.action==='rec')downloadTrackFile(id,'recording');if(b.dataset.action==='rename')renameTrack(id);if(b.dataset.action==='delete')deleteTrack(id);if(b.dataset.action==='share'&&typeof shareExportTrack==='function')shareExportTrack(id)/* [sharing] */});$('trackList').addEventListener('change',e=>{const s=e.target.closest('select[data-action="move"]');if(s)moveTrack(Number(s.dataset.id),s.value)});
   $('saveWarpModalClose').addEventListener('click',closeSaveWarp);$('cancelSaveWarpButton').addEventListener('click',closeSaveWarp);$('saveWarpModal').addEventListener('pointerdown',e=>{if(e.target===$('saveWarpModal'))closeSaveWarp()});$('confirmSaveWarpButton').addEventListener('click',confirmSaveWarp);$('addWarpFolderButton').addEventListener('click',addWarpFolder);$('newWarpFolderName').addEventListener('keydown',e=>{if(e.key==='Enter')addWarpFolder()});$('warpedList').addEventListener('click',e=>{const b=e.target.closest('button[data-warp-action]');if(!b)return;const id=Number(b.dataset.id);if(b.dataset.warpAction==='open')openSavedWarp(id);if(b.dataset.warpAction==='rename')renameWarp(id);if(b.dataset.warpAction==='delete')deleteWarp(id)});$('warpedList').addEventListener('change',e=>{const sel=e.target.closest('select[data-warp-action="move"]');if(sel)moveWarp(Number(sel.dataset.id),sel.value)});
 
 
