@@ -271,12 +271,29 @@ function analyzePage(gray,w,h,opts={}){
   // per-staff candidates (neighbour staves allowed for cross-staff barlines)
   staves.forEach((s,i)=>{s.cands=staffBarCandidates(b,clean,Ic,Ih,w,h,s,staves[i-1],staves[i+1])});
   let groups=groupSystems(b,w,h,staves,opts.layout||'auto');
-  // auto: also merge consecutive groups whose barlines line up (editions without a systemic barline)
-  if((opts.layout||'auto')==='auto'&&groups.every(g=>g.length===1)){
+  // v1.9.1 (advisor review: piano pages read as two systems per line). In 'auto' two more cues join a
+  // staff with the one below it when no drawn system line connects them (scans, editions without a brace line):
+  //  1. barline alignment — most barlines of the two staves sit at the same x (the grand-staff signature);
+  //  2. spacing pattern — the page's staves come in pairs: a short gap, then a long gap, repeating. A piano
+  //     page with every barline broken in the scan still has this shape; a single-staff page never does.
+  // Either cue joins the pair; neither ever joins a staff that already belongs to a multi-staff system.
+  if((opts.layout||'auto')==='auto'&&groups.some(g=>g.length===1)){
+    const gapOf=(a,c)=>c.top-a.bottom,singles=groups.filter(g=>g.length===1).map(g=>g[0]);
+    // the two staves of a grand staff sit closer together than two systems do: a candidate pair's gap must be
+    // short for this page (below the median gap, or under 7 sp) — aligned barlines alone are not enough, since a
+    // simple piece can have evenly spaced measures on every line
+    const allGaps=staves.slice(1).map((c,i)=>gapOf(staves[i],c)),medGap=median(allGaps);
+    const shortGap=(a,c)=>{const g=gapOf(a,c);return g<(a.sp+c.sp)/2*7||(allGaps.length>=3&&g<=medGap*0.9)};
+    let pairPattern=false;
+    if(singles.length>=4&&singles.length===groups.length&&singles.length%2===0){const gaps=[];for(let i=0;i+1<singles.length;i++)gaps.push(gapOf(singles[i],singles[i+1]));
+      const inner=gaps.filter((_,i)=>i%2===0),outer=gaps.filter((_,i)=>i%2===1);
+      const mi=median(inner),mo=median(outer);pairPattern=mo>mi*1.35&&inner.every(g=>g<mi*1.5&&g>mi*0.5)&&outer.every(g=>g>mi*1.2)}
     const merged=[];for(const g of groups){const prev=merged.at(-1);
-      if(prev){const a=prev.at(-1),c=g[0],sp=(a.sp+c.sp)/2;const xa=a.cands.filter(s=>isBarlike(s,a.sp,false)).map(s=>s.x0),xc=c.cands.filter(s=>isBarlike(s,c.sp,false)).map(s=>s.x0);
-        const aligned=xa.filter(x=>xc.some(y=>Math.abs(x-y)<=Math.max(2,sp*0.25))).length;
-        if(Math.abs(a.left-c.left)<sp*1.5&&Math.abs(a.right-c.right)<sp*1.5&&aligned>=2&&aligned>=0.7*Math.max(xa.length,xc.length)){prev.push(...g);continue}}
+      if(prev&&prev.length===1&&g.length===1){const a=prev.at(-1),c=g[0],sp=(a.sp+c.sp)/2;const xa=a.cands.filter(s=>isBarlike(s,a.sp,false)).map(s=>s.x0),xc=c.cands.filter(s=>isBarlike(s,c.sp,false)).map(s=>s.x0);
+        const aligned=xa.filter(x=>xc.some(y=>Math.abs(x-y)<=Math.max(2,sp*0.3))).length,lr=Math.abs(a.left-c.left)<sp*2&&Math.abs(a.right-c.right)<sp*2;
+        const byBars=lr&&aligned>=2&&aligned>=0.6*Math.min(xa.length,xc.length)&&shortGap(a,c);
+        const byPattern=pairPattern&&lr&&(singles.indexOf(a)%2===0)&&singles.indexOf(c)===singles.indexOf(a)+1;
+        if(byBars||byPattern){prev.push(...g);continue}}
       merged.push(g)}
     groups=merged;
   }

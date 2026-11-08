@@ -90,6 +90,20 @@ function analyzePage(raw){
   // systems: staves joined by a vertical line whose ends sit on a staff's top and a lower staff's bottom
   const parent=staves.map((_,i)=>i),find=i=>parent[i]===i?i:(parent[i]=find(parent[i]));
   for(const v of Vl){const ti=staves.findIndex(s=>near(v.y0,s.top)&&v.x>=s.x0-sp*3&&v.x<=s.x1+sp),bi=staves.findIndex(s=>near(v.y1,s.bottom)&&v.x>=s.x0-sp*3&&v.x<=s.x1+sp);if(ti>=0&&bi>ti)for(let k=ti+1;k<=bi;k++)parent[find(k)]=find(ti)}
+  // v1.9.1 (advisor review): engraved piano PDFs whose barlines are drawn per staff (no line spans the pair)
+  // used to come out as two systems per line. Join a staff with the one below when most of their barline
+  // x positions coincide (vertical lines ending on each staff's own top and bottom), the same cue the
+  // image reader uses; staves already joined by a drawn system line are left alone.
+  {const barsOf=s=>Vl.filter(v=>Math.abs(v.y0-s.top)<=tol&&Math.abs(v.y1-s.bottom)<=tol&&v.x>=s.x0-sp&&v.x<=s.x1+sp).map(v=>v.x);
+    // the pair's gap must be short for this page (below the median staff gap, or under 7 sp): evenly spaced
+    // measures on every line of a simple piece also align, and must not join single staves into systems
+    const allGaps=staves.slice(1).map((c,i)=>c.top-staves[i].bottom),medGap=median(allGaps),shortGap=(a,c)=>{const g=c.top-a.bottom;return g<sp*7||(allGaps.length>=3&&g<=medGap*.9)};
+    for(let i=0;i+1<staves.length;i++){const a=staves[i],c=staves[i+1];if(find(i)===find(i+1))continue;
+      const ga=Object.values(staves.reduce((o,_,k)=>{(o[find(k)]=o[find(k)]||[]).push(k);return o},{}));
+      if(ga.find(g=>g.includes(i)).length>1||ga.find(g=>g.includes(i+1)).length>1)continue;
+      const xa=barsOf(a),xc=barsOf(c);if(xa.length<2||xc.length<2)continue;
+      const aligned=xa.filter(x=>xc.some(y=>Math.abs(x-y)<=Math.max(1,sp*.3))).length;
+      if(aligned>=2&&aligned>=.6*Math.min(xa.length,xc.length)&&Math.abs(a.x0-c.x0)<sp*2&&shortGap(a,c))parent[find(i+1)]=find(i)}}
   const groups={};staves.forEach((s,i)=>{(groups[find(i)]=groups[find(i)]||[]).push(s)});
   const systems=Object.values(groups).map(st=>({staves:st.sort((a,b)=>a.top-b.top)})).sort((a,b)=>a.staves[0].top-b.staves[0].top);
   for(const sys of systems){const st=sys.staves;sys.top=st[0].top;sys.bottom=st.at(-1).bottom;sys.x0=Math.min(...st.map(s=>s.x0));sys.x1=Math.max(...st.map(s=>s.x1));sys.sp=median(st.map(s=>s.sp));

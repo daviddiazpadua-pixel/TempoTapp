@@ -824,6 +824,42 @@ html,body{background:var(--ground)!important}
 .library-tab{white-space:nowrap}
 @media(max-width:520px){.library-search-row{flex-direction:column;align-items:stretch;gap:4px}.library-count{text-align:right}.library-tabs{display:grid!important;grid-template-columns:repeat(4,auto);width:100%}.library-tab{padding:10px 4px!important;font-size:.8rem!important;text-align:center}}
 </style>
+<style id="score-editor-v191">
+/* v1.9.1 — advisor review of the score reader.
+   Measure boxes were a 1px pale-green outline: easy to lose on a busy page. Now a clear ink outline with a
+   numbered tag, alternating tint so neighbouring measures read apart, and the active measure in red. */
+.score-measure-box{border:2px solid rgba(20,20,20,.55)!important;background:rgba(43,95,138,.045)!important;border-radius:3px!important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.65)}
+.score-measure-box:nth-child(even){background:rgba(31,107,58,.05)!important}
+.score-measure-box.active{border-color:#b5121b!important;background:rgba(181,18,27,.08)!important;box-shadow:0 0 0 3px rgba(181,18,27,.16)!important}
+.score-measure-label{left:-2px!important;top:auto!important;bottom:-2px;padding:2px 6px!important;border-radius:0 6px 0 3px!important;background:rgba(20,20,20,.82)!important;color:#fff!important;font-size:.68rem!important;font-weight:800!important;letter-spacing:.02em}
+.score-measure-box.active .score-measure-label{background:#b5121b!important}
+.score-bar-handle::after{content:"";position:absolute;left:50%;top:0;bottom:0;width:3px;transform:translateX(-50%);background:rgba(181,18,27,.9);box-shadow:0 0 0 2px rgba(255,255,255,.7)}
+/* Adjust box: drag the top or bottom edge; drag it over the box below/above to merge the two into one measure */
+.score-edge-handle{position:absolute;left:0;height:14px;transform:translateY(-50%);pointer-events:auto;cursor:ns-resize;z-index:4}
+.score-edge-handle::after{content:"";position:absolute;left:0;right:0;top:50%;height:3px;transform:translateY(-50%);background:rgba(43,95,138,.95);box-shadow:0 0 0 2px rgba(255,255,255,.75)}
+.score-edge-handle::before{content:"";position:absolute;left:50%;top:50%;width:26px;height:10px;transform:translate(-50%,-50%);border-radius:5px;background:rgba(43,95,138,.95);box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.score-measure-box.merge-target{border-color:#2b5f8a!important;border-style:dashed!important;background:rgba(43,95,138,.16)!important}
+.score-stage.edit-join .score-measure-box,.score-stage.edit-resize .score-measure-box{pointer-events:auto;cursor:pointer}
+.score-measure-box.selected{border-color:#2b5f8a!important;box-shadow:0 0 0 3px rgba(43,95,138,.22)!important;background:rgba(43,95,138,.1)!important}
+/* compact chrome when the score fills the screen (phones: the toolbar must not take half the screen) */
+.score-workspace.score-fullscreen .score-toolbar{gap:6px}
+.score-workspace.score-fullscreen .score-toolbar button{padding:6px 9px!important;font-size:.76rem!important;min-height:34px!important}
+.score-workspace.score-fullscreen .score-edit-label{font-size:.72rem}
+.score-workspace.score-fullscreen .score-edit-hint{font-size:.74rem;padding:6px 10px;margin:0 0 6px}
+@media (max-width:900px){.score-workspace.score-fullscreen .score-toolbar-group{gap:4px}.score-workspace.score-fullscreen .score-page-label{font-size:.72rem}}
+.score-stage.edit-join .score-measure-box:hover{background:rgba(43,95,138,.14)!important}
+@media (pointer:coarse){.score-edge-handle{height:28px}.score-bar-handle{width:28px}}
+/* view: fit the whole page (no inner scrolling) and a full-screen score workspace */
+.score-view-tools .on,.score-view-tools [aria-pressed="true"]{background:var(--bar,#141414)!important;color:var(--bar-text,#f4f3ee)!important;border-color:var(--bar,#141414)!important}
+.score-stage-shell.fit-page{max-height:none!important;overflow:visible!important}
+.score-workspace.score-fullscreen{position:fixed;inset:0;z-index:950;overflow:auto;background:var(--ground,#f1f0eb);padding:8px max(8px,env(safe-area-inset-right)) calc(16px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left));margin:0;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.score-workspace.score-fullscreen .score-toolbar{position:sticky;top:0;z-index:5;background:var(--ground,#f1f0eb);padding:max(6px,env(safe-area-inset-top,0px)) 0 8px;margin:0}
+.score-workspace.score-fullscreen .score-stage-shell{max-height:none!important;border-radius:8px}
+.score-workspace.score-fullscreen .score-toolbar-spacer{display:none}
+body.score-fullscreen-open{overflow:hidden!important}
+body.score-fullscreen-open .main-nav,body.score-fullscreen-open .dashboard-toggle{display:none!important}
+body.score-fullscreen-open .score-float-bar{z-index:960}
+</style>
 <style id="iphone-duo">
 /* =========================================================================
    iPHONE DUO SUPPORT (v1.9.1) — Apple's foldable iPhone, September 2026
@@ -1221,9 +1257,14 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
           <button class="secondary compact-primary" data-score-edit="move" type="button">Move barline</button>
           <button class="secondary compact-primary" data-score-edit="add" type="button">Add barline</button>
           <button class="secondary compact-primary" data-score-edit="remove" type="button">Remove barline</button>
+          <!-- v1.9.1 advisor review: boxes that miss part of a measure, and piano lines read as two measures -->
+          <button class="secondary compact-primary" data-score-edit="resize" type="button">Adjust box</button>
+          <button class="secondary compact-primary" data-score-edit="join" type="button">Join lines</button>
           <button class="secondary compact-primary" id="scoreEditUndo" type="button" disabled>Undo</button>
         </div>
-        <div class="score-toolbar-group">
+        <div class="score-toolbar-group score-view-tools">
+          <button class="secondary compact-primary" id="scoreFitPageButton" type="button" aria-pressed="false">Fit page</button>
+          <button class="secondary compact-primary" id="scoreFullscreenButton" type="button" aria-pressed="false">Full screen</button>
           <button class="secondary compact-primary" id="scoreRemovePdfButton">Remove PDF</button>
         </div>
       </div>
@@ -3598,6 +3639,14 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
   function removeScorePdf(){
     stopScorePractice(true);scorePdfDoc=null;scorePdfBytes=null;scorePdfFile=null;trackAttachOrigin.score=null;scorePdfPage=1;scoreMappingActive=false;scoreAnalysisRunning=false;scoreDetectedRawBoxes=[];$('scorePdfFile').value='';$('scorePdfDropTitle').textContent='Add the sheet music';$('scorePdfFileInfo').textContent='No PDF loaded.';$('scorePdfCanvas').width=1;$('scorePdfCanvas').height=1;$('scoreOverlay').innerHTML='';syncScorePdfUi()
   }
+  // v1.9.1 — view modes (advisor review: "see the whole page, not a strip you scroll"). Fit page is on by
+  // default on phones; Full screen turns the score workspace into a fixed overlay (works on iPhone, where the
+  // Fullscreen API is not available to pages) and is left with the same button or Escape.
+  let scoreFitPage=window.innerWidth<=900,scoreFullscreen=false;
+  function syncScoreViewUi(){const f=$('scoreFitPageButton'),fs=$('scoreFullscreenButton');if(f){f.setAttribute('aria-pressed',String(scoreFitPage));f.textContent=scoreFitPage?'Fit page ✓':'Fit page'}if(fs){fs.setAttribute('aria-pressed',String(scoreFullscreen));fs.textContent=scoreFullscreen?'Exit full screen':'Full screen'}
+    $('scoreStageShell')?.classList.toggle('fit-page',scoreFitPage);$('scoreWorkspace')?.classList.toggle('score-fullscreen',scoreFullscreen);document.body.classList.toggle('score-fullscreen-open',scoreFullscreen)}
+  function toggleScoreFitPage(){scoreFitPage=!scoreFitPage;syncScoreViewUi();if(scorePdfDoc)renderScorePage(scorePdfPage)}
+  function toggleScoreFullscreen(force){scoreFullscreen=typeof force==='boolean'?force:!scoreFullscreen;if(scoreFullscreen&&!scoreFitPage)scoreFitPage=true;syncScoreViewUi();if(scorePdfDoc)renderScorePage(scorePdfPage);if(scoreFullscreen)$('scoreWorkspace')?.scrollTo?.(0,0)}
   let scorePdfWantPage=null; // a page asked for while another one was drawing: drawn right after
   async function renderScorePage(pageNum){
     if(!scorePdfDoc)return;if(scorePdfRendering){scorePdfWantPage=pageNum;return}
@@ -3605,7 +3654,9 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
     try{
       scorePdfPage=Math.max(1,Math.min(scorePdfDoc.numPages,Math.round(Number(pageNum)||1)));
       const page=await scorePdfDoc.getPage(scorePdfPage),base=page.getViewport({scale:1});
-      const shell=$('scoreStageShell'),targetWidth=Math.max(300,Math.min(1150,(shell?.clientWidth||900)-24)),scale=Math.max(.55,Math.min(2.1,targetWidth/base.width));
+      const shell=$('scoreStageShell'),targetWidth=Math.max(300,Math.min(1150,(shell?.clientWidth||900)-24));let scale=Math.max(.55,Math.min(2.1,targetWidth/base.width));
+      // v1.9.1 "Fit page": the whole page on screen, no inner scrolling — scale by the room below the toolbar too
+      if(scoreFitPage&&shell){const r=shell.getBoundingClientRect(),reserve=scoreFullscreen?16:(window.innerWidth<=900?96:28),avail=Math.max(260,(scoreFullscreen?window.innerHeight-Math.max(0,r.top):window.innerHeight-Math.max(0,r.top))-reserve-24);scale=Math.max(.3,Math.min(scale,avail/base.height))}
       const vp=page.getViewport({scale}),dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1)),canvas=$('scorePdfCanvas'),ctx2=canvas.getContext('2d');
       canvas.width=Math.round(vp.width*dpr);canvas.height=Math.round(vp.height*dpr);canvas.style.width=`${vp.width}px`;canvas.style.height=`${vp.height}px`;
       $('scoreStage').style.width=`${vp.width}px`;$('scoreStage').style.height=`${vp.height}px`;ctx2.setTransform(dpr,0,0,dpr,0,0);
@@ -3859,7 +3910,7 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
   }
   // ---- Fix measures directly on the PDF (#15): move / add / remove barlines, set where beat 1 sits ----
   // Edits change the measure list itself, so every later measure renumbers and nothing after a fix is offset.
-  let scoreEditMode='off',scoreEditHistory=[],scoreBoxSeq=0,scoreEditDrag=null;
+  let scoreEditMode='off',scoreEditHistory=[],scoreBoxSeq=0,scoreEditDrag=null,scoreSelectedBoxId=null; // v1.9.1: Adjust box works on one tapped box at a time
   function scoreBoxKey(b){if(!b.id)b.id=++scoreBoxSeq;return String(b.id)}
   function scoreBoxesSorted(){return [...scoreDetectedRawBoxes].sort((a,b)=>a.page-b.page||a.system-b.system||a.x0-b.x0)}
   function ensureScoreContFlags(){const L=scoreBoxesSorted();L.forEach((b,i)=>{scoreBoxKey(b);if(b.cont===undefined)b.cont=i>0&&Number.isFinite(b.measure)&&b.measure===L[i-1].measure})}
@@ -3882,14 +3933,20 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
     renderScoreOverlay();if(msg)setScoreAnalysisStatus(`${msg} · ${scoreDetectedTotal} measures now.`,'good',100);
   }
   function undoScoreEdit(){const h=scoreEditHistory.pop();if(!h)return;scoreDetectedRawBoxes=h.boxes;scoreDetectedMeters=h.meters;scoreDetectedTotal=h.total;$('scoreEditUndo').disabled=!scoreEditHistory.length;applyScoreEdits('Undone')}
-  function setScoreEditMode(m){scoreEditMode=scoreEditMode===m?'off':m;if(scoreEditMode!=='off'&&scoreMappingActive)endScoreMapping();document.querySelectorAll('[data-score-edit]').forEach(b=>b.classList.toggle('on',b.dataset.scoreEdit===scoreEditMode));$('scoreStage')?.classList.toggle('edit-remove',scoreEditMode==='remove');
-    const hint=$('scoreEditHint');if(hint){hint.classList.toggle('hidden',scoreEditMode==='off');hint.textContent=scoreEditMode==='move'?'Drag a red barline left or right to where the real barline is. Drag a green ▼ to where beat 1 of that measure starts.':scoreEditMode==='add'?'Click inside a measure exactly where a missed barline is. A new measure is created and every later measure renumbers.':scoreEditMode==='remove'?'Click a red barline that isn’t a real barline. The two measures merge and every later measure renumbers.':''}
+  function setScoreEditMode(m){scoreEditMode=scoreEditMode===m?'off':m;if(scoreEditMode!=='off'&&scoreMappingActive)endScoreMapping();document.querySelectorAll('[data-score-edit]').forEach(b=>b.classList.toggle('on',b.dataset.scoreEdit===scoreEditMode));$('scoreStage')?.classList.toggle('edit-remove',scoreEditMode==='remove');$('scoreStage')?.classList.toggle('edit-join',scoreEditMode==='join');$('scoreStage')?.classList.toggle('edit-resize',scoreEditMode==='resize');if(scoreEditMode!=='resize')scoreSelectedBoxId=null;
+    const hint=$('scoreEditHint');if(hint){hint.classList.toggle('hidden',scoreEditMode==='off');hint.textContent=scoreEditMode==='move'?'Drag a red barline left or right to where the real barline is. Drag a green ▼ to where beat 1 of that measure starts.':scoreEditMode==='add'?'Click inside a measure exactly where a missed barline is. A new measure is created and every later measure renumbers.':scoreEditMode==='remove'?'Click a red barline that isn’t a real barline. The two measures merge and every later measure renumbers.':
+      scoreEditMode==='resize'?'Tap a measure to select it, then drag its blue top or bottom edge so the box covers the whole measure. Drag the edge over the box below (or above) and the two become one measure — for piano music read as two lines. Its red barline still moves left and right.':
+      scoreEditMode==='join'?'Click any measure on a line that was split from the line under it (piano: right hand and left hand read as separate measures). The two lines join into one system.':''}
     ensureScoreContFlags();renderScoreOverlay()}
   function scoreStageFrac(e){const r=$('scoreStage').getBoundingClientRect();return{x:Math.max(0,Math.min(1,(e.clientX-r.left)/r.width)),y:Math.max(0,Math.min(1,(e.clientY-r.top)/r.height))}}
   function scoreBoxById(id){return scoreDetectedRawBoxes.find(b=>String(b.id)===String(id))}
   function scoreNextInSystem(b){const L=scoreBoxesSorted(),i=L.indexOf(b),n=L[i+1];return n&&n.page===b.page&&n.system===b.system?n:null}
   function scoreEditPointerDown(e){
-    if(scoreEditMode==='off'||!scoreDetectedRawBoxes.length)return;let h=e.target.closest('.score-bar-handle,.score-start-handle,.score-measure-box.addable');
+    if(scoreEditMode==='off'||!scoreDetectedRawBoxes.length)return;let h=e.target.closest('.score-bar-handle,.score-start-handle,.score-edge-handle,.score-measure-box.addable');
+    if(scoreEditMode==='join'){const f=scoreStageFrac(e),hit=scoreDetectedRawBoxes.find(b=>b.page===scorePdfPage&&f.x>=b.x0&&f.x<=b.x1&&f.y>=b.y0&&f.y<=b.y1);if(!hit)return;e.preventDefault();e.stopPropagation();joinSystemBelow(hit);return}
+    if(scoreEditMode==='resize'&&!h){const f=scoreStageFrac(e),hit=scoreDetectedRawBoxes.filter(b=>b.page===scorePdfPage&&f.x>=b.x0&&f.x<=b.x1&&f.y>=b.y0&&f.y<=b.y1).sort((a,b)=>(a.x1-a.x0)*(a.y1-a.y0)-(b.x1-b.x0)*(b.y1-b.y0))[0];if(!hit)return;e.preventDefault();e.stopPropagation();scoreSelectedBoxId=scoreBoxKey(hit);renderScoreOverlay();return}
+    if(scoreEditMode==='resize'&&h&&h.classList.contains('score-edge-handle')){const b=scoreBoxById(h.dataset.boxKey);if(!b)return;e.preventDefault();e.stopPropagation();scoreEditSnapshot();scoreEditDrag={b,kind:h.dataset.edge,pid:e.pointerId,moved:false,target:null,y0:b.y0,y1:b.y1};try{h.setPointerCapture(e.pointerId)}catch{}return}
+    if(scoreEditMode==='resize'&&h&&h.classList.contains('score-bar-handle')){const b=scoreBoxById(h.dataset.boxKey);if(!b)return;e.preventDefault();e.stopPropagation();scoreEditSnapshot();scoreEditDrag={b,kind:'bar',next:scoreNextInSystem(b),pid:e.pointerId,moved:false};try{h.setPointerCapture(e.pointerId)}catch{}return}
     if(scoreEditMode==='add'){const f=scoreStageFrac(e),hit=scoreDetectedRawBoxes.find(b=>b.page===scorePdfPage&&f.x>b.x0&&f.x<b.x1&&f.y>=b.y0-0.01&&f.y<=b.y1+0.01);h=hit?{classList:{contains:c=>c==='score-measure-box'},dataset:{boxKey:scoreBoxKey(hit)}}:null}
     if(!h)return;const b=scoreBoxById(h.dataset.boxKey);if(!b)return;e.preventDefault();e.stopPropagation();
     if(scoreEditMode==='remove'&&h.classList.contains('score-bar-handle')){scoreEditSnapshot();const n=scoreNextInSystem(b);
@@ -3899,17 +3956,51 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
     if(scoreEditMode==='add'&&h.classList.contains('score-measure-box')){const {x}=scoreStageFrac(e);if(x<=b.x0+0.004||x>=b.x1-0.004)return;scoreEditSnapshot();const c={...b,id:++scoreBoxSeq,x0:x,cx0:x,cont:false,meter:undefined,meterAlt:undefined,printed:undefined,title:undefined,restart:false,ev:(b.ev||[]).filter(e=>e.frac>=(x-(b.cx0||b.x0))/Math.max(1e-6,b.x1-(b.cx0||b.x0))).map(e=>({...e,frac:0})),cols:(b.cols||[]).filter(v=>v>x)};b.ev=(b.ev||[]).filter(e=>!c.ev.length||e.frac<(x-(b.cx0||b.x0))/Math.max(1e-6,b.x1-(b.cx0||b.x0)));b.cols=(b.cols||[]).filter(v=>v<x);b.x1=x;if(Number.isFinite(b.cx0)&&b.cx0>=x)b.cx0=b.x0;scoreDetectedRawBoxes.push(c);shiftScoreMeters(b.measure,+1);applyScoreEdits(`Barline added in M${b.measure}`);return}
     if(scoreEditMode==='move'){scoreEditSnapshot();scoreEditDrag={b,kind:h.classList.contains('score-start-handle')?'start':'bar',next:h.classList.contains('score-bar-handle')?scoreNextInSystem(b):null,pid:e.pointerId,moved:false};try{h.setPointerCapture(e.pointerId)}catch{}}
   }
-  function scoreEditPointerMove(e){const d=scoreEditDrag;if(!d)return;const {x}=scoreStageFrac(e);d.moved=true;
+  function scoreEditPointerMove(e){const d=scoreEditDrag;if(!d)return;const {x,y}=scoreStageFrac(e);d.moved=true;
+    if(d.kind==='top'||d.kind==='bottom'){
+      if(d.kind==='top')d.b.y0=Math.min(d.b.y1-0.01,y);else d.b.y1=Math.max(d.b.y0+0.01,y);
+      if(d.b.y<d.b.y0||d.b.y>d.b.y1)d.b.y=Math.max(d.b.y0,Math.min(d.b.y1,d.b.y));
+      // a box in the neighbouring system that the dragged edge now covers past its middle becomes the merge target
+      const ov=(p,q)=>Math.min(p.x1,q.x1)-Math.max(p.x0,q.x0);d.target=null;
+      for(const o of scoreDetectedRawBoxes){if(o===d.b||o.page!==d.b.page||o.system===d.b.system)continue;if(ov(o,d.b)<Math.min(o.x1-o.x0,d.b.x1-d.b.x0)*0.5)continue;
+        const mid=(o.y0+o.y1)/2;if((d.kind==='bottom'&&o.y0>=d.y0&&y>=mid)||(d.kind==='top'&&o.y1<=d.y1&&y<=mid)){if(!d.target||Math.abs(mid-y)<Math.abs((d.target.y0+d.target.y1)/2-y))d.target=o}}
+      for(const cb of track.scoreMeasureBoxes||[]){const src=scoreBoxById(cb.id);if(src){cb.y0=src.y0;cb.y1=src.y1;cb.y=src.y}}
+      renderScoreOverlay();if(d.target){const el=$('scoreOverlay').querySelector(`.score-measure-box[data-box-key="${scoreBoxKey(d.target)}"]`);el?.classList.add('merge-target')}return}
     if(d.kind==='start'){d.b.cx0=Math.max(d.b.x0,Math.min(d.b.x1-0.006,x))}
     else{const lo=(Number.isFinite(d.b.cx0)?Math.max(d.b.x0,d.b.cx0):d.b.x0)+0.006,hi=d.next?d.next.x1-0.006:1;const nx=Math.max(lo,Math.min(hi,x));d.b.x1=nx;if(d.next){d.next.x0=nx;if(!Number.isFinite(d.next.cx0)||d.next.cx0<nx)d.next.cx0=nx}}
     for(const cb of track.scoreMeasureBoxes||[]){const src=scoreBoxById(cb.id);if(src){cb.x0=src.x0;cb.x1=src.x1;cb.cx0=src.cx0}}renderScoreOverlay()}
-  function scoreEditPointerUp(){const d=scoreEditDrag;if(!d)return;scoreEditDrag=null;if(!d.moved){scoreEditHistory.pop();$('scoreEditUndo').disabled=!scoreEditHistory.length;return}applyScoreEdits(d.kind==='start'?`Beat 1 of M${d.b.measure} moved`:`Barline after M${d.b.measure} moved`)}
+  function scoreEditPointerUp(){const d=scoreEditDrag;if(!d)return;scoreEditDrag=null;if(!d.moved){scoreEditHistory.pop();$('scoreEditUndo').disabled=!scoreEditHistory.length;return}
+    if(d.kind==='top'||d.kind==='bottom'){if(d.target){mergeBoxes(d.b,d.target);applyScoreEdits(`Two boxes joined into M${d.b.measure}`);return}applyScoreEdits(`Box of M${d.b.measure} adjusted`);return}
+    applyScoreEdits(d.kind==='start'?`Beat 1 of M${d.b.measure} moved`:`Barline after M${d.b.measure} moved`)}
+  // v1.9.1 — one measure from two boxes (a piano measure read as a right-hand box and a left-hand box):
+  // the surviving box spans both; printed marks of the removed one move across; it leaves the list, so
+  // every later measure renumbers.
+  function mergeBoxes(keep,gone){
+    keep.x0=Math.min(keep.x0,gone.x0);keep.x1=Math.max(keep.x1,gone.x1);keep.y0=Math.min(keep.y0,gone.y0);keep.y1=Math.max(keep.y1,gone.y1);
+    if(!Number.isFinite(keep.cx0)||keep.cx0<keep.x0)keep.cx0=keep.x0;if(keep.y<keep.y0||keep.y>keep.y1)keep.y=keep.y0;
+    keep.meter=keep.meter||gone.meter;keep.title=keep.title||gone.title;keep.restart=keep.restart||gone.restart;if(!Number.isFinite(keep.printed)&&Number.isFinite(gone.printed))keep.printed=gone.printed;
+    keep.ev=[...(keep.ev||[]),...(gone.ev||[])].sort((a,b)=>a.frac-b.frac);keep.cols=[...new Set([...(keep.cols||[]),...(gone.cols||[])])].sort((a,b)=>a-b);
+    scoreDetectedRawBoxes=scoreDetectedRawBoxes.filter(b=>b!==gone);
+    // the other boxes of the removed system move into the kept one's system so the line stays one row
+    const sysGone=gone.system;for(const b of scoreDetectedRawBoxes)if(b.page===gone.page&&b.system===sysGone)b.system=keep.system}
+  // v1.9.1 — join a whole line with the line under it (piano music whose two staves were read as two systems):
+  // boxes that overlap horizontally become one measure each; a box with no partner keeps its place in the row.
+  function joinSystemBelow(box){
+    const page=box.page,sysIds=[...new Set(scoreDetectedRawBoxes.filter(b=>b.page===page).map(b=>b.system))].sort((a,b)=>a-b),k=sysIds.indexOf(box.system);
+    let other=sysIds[k+1];if(other===undefined){other=sysIds[k-1];if(other===undefined){setScoreAnalysisStatus('This page has only one line of music — nothing to join.','warn',100);return}}
+    const A=scoreDetectedRawBoxes.filter(b=>b.page===page&&b.system===Math.min(box.system,other)).sort((a,b)=>a.x0-b.x0),B=scoreDetectedRawBoxes.filter(b=>b.page===page&&b.system===Math.max(box.system,other)).sort((a,b)=>a.x0-b.x0);
+    scoreEditSnapshot();const ov=(p,q)=>Math.min(p.x1,q.x1)-Math.max(p.x0,q.x0);const used=new Set();
+    for(const a of A){let best=null,bo=0;for(const b of B){if(used.has(b))continue;const o=ov(a,b);if(o>bo){bo=o;best=b}}if(best&&bo>=Math.min(a.x1-a.x0,best.x1-best.x0)*0.5){used.add(best);mergeBoxes(a,best)}}
+    const top=Math.min(...A.map(b=>b.y0)),bottom=Math.max(...[...A,...B].map(b=>b.y1));for(const b of B)if(!used.has(b)){b.system=A[0].system;b.y0=top;b.y1=bottom}for(const a of A){a.y0=Math.min(a.y0,top);a.y1=Math.max(a.y1,bottom)}
+    applyScoreEdits(`Two lines joined into one system`)}
   function renderScoreOverlay(activeBeat=null){
     const ov=$('scoreOverlay');if(!ov)return;ov.innerHTML='';const activeMeta=Number.isInteger(activeBeat)?trackBeatMeta(activeBeat):null;
     for(const b of (track.scoreMeasureBoxes||[]).filter(x=>Number(x.page)===scorePdfPage)){
       const box=document.createElement('span');box.className=`score-measure-box${activeMeta&&Number(b.measure)===activeMeta.measure?' active':''}${scoreEditMode==='add'?' addable':''}`;box.dataset.boxKey=scoreBoxKey(b);box.style.left=`${b.x0*100}%`;box.style.top=`${b.y0*100}%`;box.style.width=`${Math.max(.2,(b.x1-b.x0)*100)}%`;box.style.height=`${Math.max(.2,(b.y1-b.y0)*100)}%`;const lab=document.createElement('span');lab.className='score-measure-label';lab.textContent=`M${scoreMeasureLabel(b.measure)}`;box.appendChild(lab);ov.appendChild(box);
       const meter=trackMeterAtMeasure(Number(b.measure)),beats=scoreBeatsPerMeasure(meter);for(let beat=1;beat<=beats;beat++){const idx=trackIndexForMeasureBeat(Number(b.measure),beat);if(idx<0)continue;const pt=scorePointForBeat(idx);if(!pt||Number(pt.page)!==scorePdfPage||Math.abs(pt.y-b.y)>0.002||pt.x<b.x0-1e-6||pt.x>b.x1+1e-6)continue;const mark=document.createElement('span'),accent=beatAccent(idx);mark.className=`score-beat-mark${accent?' accent':''}`;mark.style.left=`${pt.x*100}%`;mark.style.top=`${b.y*100}%`;mark.title=`M${scoreMeasureLabel(b.measure)}.${beat}`;ov.appendChild(mark)}
-      if(scoreEditMode!=='off'){const right=document.createElement('span');right.className='score-bar-handle';right.style.left=`${b.x1*100}%`;right.style.top=`${b.y0*100}%`;right.style.height=`${(b.y1-b.y0)*100}%`;right.dataset.boxKey=scoreBoxKey(b);right.title=scoreEditMode==='remove'?`Remove the barline after M${b.measure}`:`Drag to move the barline after M${b.measure}`;ov.appendChild(right);
+      if(scoreEditMode==='resize'&&scoreBoxKey(b)===String(scoreSelectedBoxId)){box.classList.add('selected');const stageH=$('scoreStage').getBoundingClientRect().height||600,boxPx=(b.y1-b.y0)*stageH,hh=Math.max(8,Math.min(matchMedia('(pointer:coarse)').matches?28:14,boxPx*.36));/* handles never taller than a third of the box, so a short box's top and bottom handles stay apart on a fitted phone page */
+        for(const edge of ['top','bottom']){const eh=document.createElement('span');eh.className='score-edge-handle';eh.dataset.edge=edge;eh.dataset.boxKey=scoreBoxKey(b);eh.style.height=`${hh}px`;eh.style.left=`${b.x0*100}%`;eh.style.width=`${Math.max(.2,(b.x1-b.x0)*100)}%`;eh.style.top=`${(edge==='top'?b.y0:b.y1)*100}%`;eh.title=edge==='top'?`Drag the top of M${b.measure}`:`Drag the bottom of M${b.measure} · over the box below to join them`;ov.appendChild(eh)}}
+      if(scoreEditMode!=='off'&&scoreEditMode!=='join'&&!(scoreEditMode==='resize'&&scoreBoxKey(b)!==String(scoreSelectedBoxId))){const right=document.createElement('span');right.className='score-bar-handle';right.style.left=`${b.x1*100}%`;right.style.top=`${b.y0*100}%`;right.style.height=`${(b.y1-b.y0)*100}%`;right.dataset.boxKey=scoreBoxKey(b);right.title=scoreEditMode==='remove'?`Remove the barline after M${b.measure}`:`Drag to move the barline after M${b.measure}`;ov.appendChild(right);
         if(scoreEditMode==='move'){const st=document.createElement('span');st.className='score-start-handle';const cx=Number.isFinite(b.cx0)?b.cx0:b.x0;st.style.left=`${cx*100}%`;st.style.top=`${b.y*100}%`;st.dataset.boxKey=scoreBoxKey(b);st.title=`Drag to set where beat 1 of M${b.measure} sits`;ov.appendChild(st)}}
     }
     for(const a of (track.scoreAnchors||[]).filter(x=>Number(x.page)===scorePdfPage&&x.source!=='auto')){
@@ -5920,7 +6011,9 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
   $('scoreLayoutMode').addEventListener('change',()=>{if(scorePdfDoc)analyzeScorePdf(false)});
   $('scorePrevPage').addEventListener('click',()=>renderScorePage(scorePdfPage-1));
   $('scoreNextPage').addEventListener('click',()=>renderScorePage(scorePdfPage+1));
-  $('scoreRemovePdfButton').addEventListener('click',removeScorePdf);
+  $('scoreRemovePdfButton').addEventListener('click',()=>{if(scoreFullscreen)toggleScoreFullscreen(false);removeScorePdf()});
+  $('scoreFitPageButton').addEventListener('click',toggleScoreFitPage);$('scoreFullscreenButton').addEventListener('click',()=>toggleScoreFullscreen());
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&scoreFullscreen)toggleScoreFullscreen(false)});syncScoreViewUi();
   $('scoreStartMappingButton').addEventListener('click',startScoreMapping);
   $('scorePrevMapBeat').addEventListener('click',()=>stepScoreMap(-1));
   $('scoreNextMapBeat').addEventListener('click',()=>stepScoreMap(1));
@@ -5928,7 +6021,7 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
   $('scoreMapMode').addEventListener('change',()=>{scoreMapCursor=0;updateScoreMapReadout()});
   $('scoreStage').addEventListener('pointerdown',e=>{if(!e.target.closest('.score-anchor'))mapScoreClick(e)});
   document.querySelectorAll('[data-score-edit]').forEach(b=>b.addEventListener('click',()=>setScoreEditMode(b.dataset.scoreEdit)));$('scoreEditUndo').addEventListener('click',undoScoreEdit);
-  $('scoreStage').addEventListener('pointerdown',scoreEditPointerDown,true);$('scoreOverlay').addEventListener('pointermove',scoreEditPointerMove);$('scoreOverlay').addEventListener('pointerup',scoreEditPointerUp);$('scoreOverlay').addEventListener('pointercancel',scoreEditPointerUp);
+  $('scoreStage').addEventListener('pointerdown',scoreEditPointerDown,true);/* v1.9.1: listen on the window — the overlay is rebuilt during a drag, which releases pointer capture, so a fast drag used to stop after the first move */window.addEventListener('pointermove',scoreEditPointerMove);window.addEventListener('pointerup',scoreEditPointerUp);window.addEventListener('pointercancel',scoreEditPointerUp);
   $('scoreOverlay').addEventListener('click',e=>{const b=e.target.closest('.score-anchor');if(!b)return;const idx=Number(b.dataset.scoreBeat),targets=scoreMapTargets(),pos=targets.indexOf(idx);if(pos>=0){scoreMapCursor=pos;scoreMappingActive=true;$('scoreStartMappingButton').textContent='Mapping… click the PDF';updateScoreMapReadout()}});
   $('scorePracticeStart').addEventListener('click',startScorePractice);
   $('scorePracticePause').addEventListener('click',pauseScorePractice);
