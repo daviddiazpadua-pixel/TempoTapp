@@ -231,10 +231,21 @@ function contentXs(c,Ic,w,h,g,xa,xb,skip,lt=1,firstOnly=false){
   const xs=[];
   xa=Math.round(xa);xb=Math.round(xb);if(xb-xa<3)return xs;
   for(const s of g){const sp=s.sp,e=Math.max(3,Math.round(sp*0.58)),y0=Math.max(0,Math.round(s.top-sp*2)),y1=Math.min(h-1,Math.round(s.bottom+sp*2));
-    for(const k of components(c,w,h,xa,y0,xb,y1)){
+    const comps=components(c,w,h,xa,y0,xb,y1);
+    // v1.9.1: the clef's horizontal span — staff-line removal can split a clef (the bass clef's head came off and
+    // was taken for a notehead, so beat 1 sat on the clef); nothing inside a clef's span is a note
+    const clefs=comps.filter(k=>{const kw=(k.x1-k.x0+1)/sp,kh=(k.y1-k.y0+1)/sp;return kh>=2.4&&kw>=1.2&&kw<=3.6&&k.x0<=xa+sp*1.5});
+    for(const k of comps){
       const kw=(k.x1-k.x0+1)/sp,kh=(k.y1-k.y0+1)/sp;if(kh<0.35&&kw<0.6)continue;
       if(skip&&skip.some(r=>k.x0>=r[0]-2&&k.x1<=r[1]+2))continue;
       if(kh>=2.4&&kw>=1.2&&kw<=3.6&&k.x0<=xa+sp*1.5)continue;            // clef at the line start
+      if(clefs.some(q=>q!==k&&k.x0>=q.x0-1&&k.x1<=q.x1+1))continue;       // a piece of that clef
+      // v1.9.1: common-time "C" / cut-time symbol near the line start — a stemless glyph about two spaces tall,
+      // centred on the middle line (digits are read separately; this symbol was taken for a note, so beat 1 sat on it)
+      if(kh>=1.5&&kh<=2.5&&kw>=0.9&&kw<=2.3&&k.x0<=xa+sp*6&&Math.abs((k.y0+k.y1)/2-s.mid)<=sp*0.45&&k.y0>=s.top-sp*0.3&&k.y1<=s.bottom+sp*0.3){
+        let st=false;const Wk=k.x1-k.x0+1,mk=new Uint8Array(Wk*(k.y1-k.y0+1));for(let i=0;i<k.pts.length;i+=2)mk[(k.pts[i+1]-k.y0)*Wk+(k.pts[i]-k.x0)]=1;
+        for(let x=0;x<Wk&&!st;x++){let run=0;for(let y=0;y<=k.y1-k.y0;y++){if(mk[y*Wk+x]){if(++run>=sp*2.6){st=true;break}}else run=0}}
+        if(!st)continue}
       const r=classify(k);
       if(r&&r.other<0.33&&r.other<=r.d&&(!r.nr||r.other<r.nr.d-0.03))continue;  // clef / accidental
       if(r&&r.nr&&r.nr.d<0.28&&r.nr.d<=r.d){xs.push(k.x0);if(firstOnly)return xs;continue}                    // notehead or rest glyph

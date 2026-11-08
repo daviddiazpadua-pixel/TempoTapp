@@ -9,7 +9,7 @@ const m0=await meas();
 const dots=await pg.evaluate(()=>{const ov=document.getElementById('scoreOverlay'),r=ov.getBoundingClientRect(),box=ov.querySelector('.score-measure-box'),br=box.getBoundingClientRect(),mk=[...ov.querySelectorAll('.score-beat-mark')].map(e=>e.getBoundingClientRect()).filter(m=>m.top>br.top-30&&m.top<br.bottom).sort((a,b)=>a.left-b.left)[0];return{boxLeft:(br.left-r.left)/r.width,dot:(mk.left+mk.width/2-r.left)/r.width}});
 ok('Beat 1 of measure 1 sits after the clef/key/time signature',dots.dot-dots.boxLeft>0.04,`box ${dots.boxLeft.toFixed(3)} dot ${dots.dot.toFixed(3)}`);
 // add a barline inside measure 2
-await pg.click('[data-score-edit="add"]');const box2=await pg.evaluate(()=>{const bx=[...document.querySelectorAll('#scoreOverlay .score-measure-box')][1].getBoundingClientRect();return{x:bx.left+bx.width*0.5,y:bx.top+bx.height*0.6}});
+await pg.click('[data-score-edit="add"]');await pg.evaluate(()=>document.getElementById('scoreStageShell').scrollIntoView({block:'center'}));await pg.waitForTimeout(150);/* v1.9.1: the stage sits lower on the page */const box2=await pg.evaluate(()=>{const bx=[...document.querySelectorAll('#scoreOverlay .score-measure-box')][1].getBoundingClientRect();return{x:bx.left+bx.width*0.5,y:bx.top+bx.height*0.6}});
 await pg.mouse.click(box2.x,box2.y);await pg.waitForTimeout(400);const m1=await meas();
 ok('Add barline: one more measure, click track rebuilt',m1.total===m0.total+1&&new RegExp(`${m0.total+1} measures`).test(m1.pill),`${m0.total} → ${m1.total} (${m1.pill})`);
 // remove that barline again

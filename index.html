@@ -849,6 +849,23 @@ html,body{background:var(--ground)!important}
 @media (max-width:900px){.score-workspace.score-fullscreen .score-toolbar-group{gap:4px}.score-workspace.score-fullscreen .score-page-label{font-size:.72rem}}
 .score-stage.edit-join .score-measure-box:hover{background:rgba(43,95,138,.14)!important}
 @media (pointer:coarse){.score-edge-handle{height:28px}.score-bar-handle{width:28px}}
+/* OPTIONAL FEATURE: ANALYZE — entry points hidden (see SHOW_ANALYZE in the script) */
+body.analyze-hidden .main-nav-link[data-main-nav="analyze"],body.analyze-hidden #homeAnalyzeButton,body.analyze-hidden .create-analysis-link,body.analyze-hidden #createHubAnalyzeButton{display:none!important}
+/* guided recording (metronome you can take over) */
+body:not(.create-mode-scratch) .metronome-guide{display:none!important}
+.metronome-guide{display:inline-flex;align-items:center;gap:8px;padding:0 10px;font-weight:650;font-size:.86rem;color:var(--ink-2,var(--soft));white-space:nowrap}
+.metronome-guide input{width:18px;height:18px;accent-color:var(--pencil,#b5121b);margin:0}
+.guided-pad{position:fixed;left:12px;right:12px;bottom:calc(72px + env(safe-area-inset-bottom,0px));z-index:965;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:stretch}
+.guided-pad.hidden{display:none}
+.guided-pad-tap{min-height:96px;border:2px solid var(--ink,#141414);border-radius:16px;background:var(--ink,#141414);color:#fff;font:italic 400 1.7rem var(--serif,serif);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;box-shadow:0 10px 30px rgba(20,20,20,.3);touch-action:manipulation;-webkit-user-select:none;user-select:none}
+.guided-pad-tap small{font:600 .72rem var(--sans,sans-serif);color:rgba(255,255,255,.72)}
+.guided-pad-tap:active{background:var(--pencil,#b5121b);border-color:var(--pencil,#b5121b)}
+.guided-pad-end{min-width:84px;border:1.5px solid var(--ink,#141414);border-radius:16px;background:#fff;color:var(--ink,#141414);font-weight:800;font-size:1rem}
+@media(min-width:901px){.guided-pad{left:auto;right:28px;bottom:28px;width:min(520px,60vw)}body.create-mode-scratch .guided-pad{display:none}} /* desktop From Scratch already has the big tap pad in the page */
+@media(max-width:900px){body.guided-on #recorderPage .tap{display:none!important}} /* phones: the floating pad replaces the fixed one while the metronome runs */
+body.score-fullscreen-open .guided-pad{z-index:965;bottom:calc(16px + env(safe-area-inset-bottom,0px))}
+.score-retime-row label{color:var(--ink-2,var(--soft))!important;font-weight:700!important}
+.score-retime-row input{width:82px!important;min-width:0!important}
 /* view: fit the whole page (no inner scrolling) and a full-screen score workspace */
 .score-view-tools .on,.score-view-tools [aria-pressed="true"]{background:var(--bar,#141414)!important;color:var(--bar-text,#f4f3ee)!important;border-color:var(--bar,#141414)!important}
 .score-stage-shell.fit-page{max-height:none!important;overflow:visible!important}
@@ -1090,7 +1107,7 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
     <section class="hero home-hero">
       <div class="eyebrow">TempoTapp</div>
       <h1>Make music follow your timing.</h1>
-      <p>Create precise click tracks, analyze real performances, and shape recordings around the timing you want.</p>
+      <p>Click tracks from your sheet music or a metronome you can take over, and recordings shaped around the timing you want.</p>
       <div class="hero-actions">
         <button class="hero-primary" id="homeCreateButton">Create Click Track <span>→</span></button>
         <button class="hero-secondary" id="homeAnalyzeButton">Analyze a Recording <span>→</span></button>
@@ -1126,7 +1143,7 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
     <header class="create-choice-header">
       <div class="eyebrow">Create a Click Track</div>
       <h1>How do you want to build it?</h1>
-      <p>Choose the workflow that matches what you have. Both paths end in the same precise measure, subdivision, editing, MIDI, save, Analyze, and Warp tools.</p>
+      <p>Choose the workflow that matches what you have. Every path ends in the same measure, subdivision, editing, MIDI, save and Warp tools.</p>
     </header>
     <section class="create-choice-grid">
       <label class="create-choice-card sheet" id="createSheetMusicCard" for="createSheetPdfFile">
@@ -1134,14 +1151,14 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
         <span class="create-choice-icon">𝄞</span>
         <h2>From Sheet Music</h2>
         <p>Upload the PDF. TempoTapp counts the measures, reads the tempo marking, and makes the click track for you.</p>
-        <div class="create-choice-points"><span>Automatic, no tapping</span><span>Adjust tempo and time signature</span><span>Practice with moving score follow</span></div>
+        <div class="create-choice-points"><span>Measures and tempo read for you</span><span>Tap your own timing over any passage</span><span>Practice with the moving score</span></div>
         <b>Choose a PDF →</b>
       </label>
       <button class="create-choice-card" id="createScratchButton" type="button">
         <span class="create-choice-icon">●</span>
         <h2>From Scratch</h2>
-        <p>Build timing with your taps only. No recording or score on screen.</p>
-        <div class="create-choice-points"><span>Tap the pulse freely</span><span>Set meters and subdivisions</span><span>Drag/edit every click</span></div>
+        <p>A metronome at your tempo lays down the beats; tap where the music slows down or speeds up and your timing takes over.</p>
+        <div class="create-choice-points"><span>Metronome you can take over</span><span>Set meters and subdivisions</span><span>Drag/edit every click</span></div>
         <b>Start a blank click track →</b>
       </button>
       <button class="create-choice-card media" id="createMediaButton" type="button">
@@ -1240,10 +1257,14 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
             <button class="hero-primary compact-primary" id="scoreMakeClickButton" disabled>Make Click Track</button>
           </div>
           <div class="score-auto-row hidden" id="scoreFollowRow"><label class="score-follow"><input type="checkbox" id="scoreFollowTempo" checked> Follow the tempo changes printed in the score</label><span class="score-analysis-status" id="scoreTempoSummary"></span></div>
+          <!-- v1.9.1: tap your own timing over a passage (ritardando, accelerando, fermata) -->
+          <div class="score-auto-row score-retime-row"><label>Tap your own timing from measure<input id="scoreRetimeMeasure" type="number" inputmode="numeric" min="1" step="1" value="1"></label><button class="hero-primary compact-primary" id="scoreRetimeButton">Tap from here</button><span class="score-analysis-status">Count-in, then the score follows while you tap. Press End when the passage is done; the rest of the piece follows your last beat.</span></div>
           <div class="score-auto-row"><button class="secondary compact-primary" id="scoreClickPlayButton" disabled>▶ Play Click Track</button><button class="secondary compact-primary" id="scoreClickStopButton" disabled>■ Stop</button><span class="score-analysis-status" id="scoreClickPlayStatus"></span></div>
         </div>
       </div>
     </div>
+    <!-- v1.9.1 guided recording pad: always reachable (also over the full-screen score) -->
+    <div class="guided-pad hidden" id="guidedPad" role="group" aria-label="Tap pad"><button type="button" class="guided-pad-tap" id="guidedPadButton">TAP<small id="guidedPadInfo">metronome</small></button><button type="button" class="guided-pad-end" id="guidedPadEnd">■ End</button></div>
     <div class="score-float-bar hidden" id="scoreFloatBar" role="group" aria-label="Score playback"><button type="button" id="scoreFloatStop">■ Stop</button><span id="scoreFloatInfo"></span></div>
     <div class="score-workspace hidden" id="scoreWorkspace">
       <div class="score-toolbar">
@@ -1321,6 +1342,7 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
       <div class="controls">
         <button class="secondary recording-btn" id="startButton">● Start Clicks</button>
         <button class="secondary" id="endButton" disabled>■ End Clicks</button>
+        <label class="metronome-guide" id="metronomeGuideWrap" title="The metronome clicks at the Target BPM and every click is a beat. Tap to take over the timing where the music slows down or speeds up; stop tapping and the metronome continues."><input type="checkbox" id="metronomeGuide" checked> Metronome guide</label>
         <button class="secondary" id="undoTapButton" disabled>Undo tap</button>
         <button class="secondary" id="playButton" disabled>▶ Replay</button>
         <button class="secondary" id="stopButton" disabled>■ Stop</button>
@@ -1884,6 +1906,13 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
 (() => {
   'use strict';
   const APP_VERSION='1.9.1';
+  // ===== OPTIONAL FEATURE: ANALYZE A RECORDING (hidden in v1.9.1 after the advisor review) =====
+  // Automatic beat detection from audio is not reliable enough for rubato classical playing, so its entry
+  // points are hidden and the score is the source of timing. The Analyze page and its code are intact:
+  // set SHOW_ANALYZE=true (or window.TEMPOTAPP_SHOW_ANALYZE=true in vendor/cloud-config.js) to bring it back.
+  const SHOW_ANALYZE=!!window.TEMPOTAPP_SHOW_ANALYZE;
+  document.body.classList.toggle('analyze-hidden',!SHOW_ANALYZE);
+  // ===== END OPTIONAL FEATURE: ANALYZE =====
   const $ = id => document.getElementById(id);
   if($('appVersionLabel'))$('appVersionLabel').textContent=`TempoTapp ${APP_VERSION} · All data stays on this device.`;
   // ---------------------------------------------------------------------------
@@ -3138,6 +3167,7 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
     document.body.scrollTop=0;
   }
   function showScreen(name){
+    if(name==='analyze'&&!SHOW_ANALYZE)name='createHub'; // OPTIONAL FEATURE: ANALYZE (hidden)
     normalizePageNavigation();
     if(name !== 'recorder' && recording) endRecording();
     if(name !== 'recorder' && playing) stopReplay(false);
@@ -4058,8 +4088,96 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
   function countInMs(){const b=Number(track.targetBpm)||0;return b>0?Math.max(300,Math.min(1200,60000/b)):700}
   async function startRecording(){ if(recording||playing||countdownBusy)return;if(window.innerWidth<=900){try{document.querySelector('.timeline-card')?.scrollIntoView({block:'start',behavior:'smooth'})}catch{}}$('status').textContent='Get ready…';await runCountdown($('recCountdown'),{n:4,ms:countInMs()});startRecordingNow()}
   function startRecordingNow(){ if(recording||playing)return;if(window.innerWidth<=900){setTimeout(()=>{try{document.querySelector('.timeline-card')?.scrollIntoView({block:'start',behavior:'smooth'})}catch{}},60)}tapAlongActive=false;const a=tapAlongAudio();if(a&&!a.paused)a.pause();segmentBaseMs=track.durationMs;segmentStartReal=performance.now();recording=true;frozenViewMs=track.durationMs;$('status').textContent=segmentBaseMs>0?'Recording continued.':'Recording…';$('timingFeedback').textContent=track.targetBpm===0?'No target beat selected.':(segmentBaseMs>0?'Continuing from where you stopped.':'Recording started.');renderDetails();startAnimation(); }
-  function endRecording(){ if(!recording)return;const wasTapAlong=tapAlongActive,endMs=currentRecordTime();tapAlongActive=false;if(wasTapAlong){const a=tapAlongAudio();if(a&&!a.paused)a.pause()}track.durationMs=Math.max(endMs,track.taps.length?track.taps.at(-1):0);frozenViewMs=track.durationMs;recording=false;stopAnimation();$('status').textContent=`Recording ended · ${track.taps.length} beat${track.taps.length===1?'':'s'}.`;$('timingFeedback').textContent=wasTapAlong?'Tap-along stopped. Seek and press Play & Tap to continue.':'Press Start Clicks to continue, Replay to review, or Save when ready.';if(wasTapAlong)setTapAlongStatus('Tap-along stopped. Seek if needed, then press Play & Tap to continue.');renderDetails(); }
-  function recordTap(style='auto',ts){if(recording&&!playing)track.fromScore=false;/* v1.5.1: hand-tapped edits make this the user's own track */ if(!recording||playing){if(!recording)$('status').textContent=tapAlongUrl?'Press Play & Tap or Start Clicks first.':'Press Start Clicks first.';return}if(tapAlongActive&&tapAlongAudio()?.paused){setTapAlongStatus('The recording is paused. Press Play & Tap to continue.','error');return}const now=currentRecordTime(ts),prev=track.taps.length?track.taps.at(-1):null;if(prev!==null&&now<=prev+12){$('status').textContent='That tap was too close to the previous beat.';return}const i=track.taps.length;track.taps.push(now);track.tapAccents=track.tapAccents||[];track.tapAccents.push(style==='accent'?1:style==='plain'?0:null);const auto=trackBeatMeta(i).downbeat||isAccent(i),accent=explicitTapAccent(i,auto);clickSound(accent);animateConductor(prev===null?520:now-prev);timingFeedback(nearestGuideDelta(now));$('status').textContent=style==='accent'?'Accented beat recorded.':(track.taps.length===1?'First tap recorded.':(tapAlongActive?'Beat locked to the recording.':'Beat recorded.'));renderDetails(); }
+  function endRecording(){ if(!recording)return;if(guided){const g=guided;guidedFinish();guidedPadShow(false);recording=false;stopAnimation();frozenViewMs=track.durationMs;$('timingFeedback').textContent=g.mode==='score'?'Press Practice to hear the retimed passage with the score, or Save.':'Press Replay to hear it, Start Clicks to continue, or Save.';renderDetails();return}
+    const wasTapAlong=tapAlongActive,endMs=currentRecordTime();tapAlongActive=false;if(wasTapAlong){const a=tapAlongAudio();if(a&&!a.paused)a.pause()}track.durationMs=Math.max(endMs,track.taps.length?track.taps.at(-1):0);frozenViewMs=track.durationMs;recording=false;stopAnimation();$('status').textContent=`Recording ended · ${track.taps.length} beat${track.taps.length===1?'':'s'}.`;$('timingFeedback').textContent=wasTapAlong?'Tap-along stopped. Seek and press Play & Tap to continue.':'Press Start Clicks to continue, Replay to review, or Save when ready.';if(wasTapAlong)setTapAlongStatus('Tap-along stopped. Seek if needed, then press Play & Tap to continue.');renderDetails(); }
+  // =====================================================================================================
+  // v1.9.1 — GUIDED RECORDING (advisor review): a metronome you can take over.
+  // From Scratch: the metronome clicks at the target tempo and every click is recorded as a beat. When you
+  // tap, your tap becomes that beat and the metronome re-phases from it; stop tapping and it carries on at
+  // the target tempo. So a whole piece is laid down by the metronome and only the ritardando or accelerando
+  // is tapped by hand.
+  // From Sheet Music ("Tap from measure N"): the same engine, but the planned beats are the click track the
+  // score produced, from measure N onward. Your taps retime that passage; when you press End, the measures you
+  // did not reach keep their planned durations and simply follow on from your last tap.
+  // Beats recorded by the metronome are "provisional" until a tap near them claims them.
+  // =====================================================================================================
+  let guided=null; // {mode:'scratch'|'score', from, planned:[ms], nextExpected, planIdx, auto:Map(index→osc), timer, lastInterval}
+  function guidedActive(){return !!guided&&recording}
+  function guidedPlannedInterval(){if(!guided)return 60000/Math.max(20,track.targetBpm||100);
+    if(guided.mode==='score'){const k=guided.planIdx;const p=guided.planned;if(k>0&&k<p.length)return Math.max(60,p[k]-p[k-1]);if(k===0&&p.length>1)return Math.max(60,p[1]-p[0]);return guided.lastInterval}
+    return 60000/Math.max(20,track.targetBpm||100)}
+  function guidedPerfForRecordMs(ms){return segmentStartReal+(ms-segmentBaseMs)}
+  function guidedPump(){
+    if(!guided||!recording)return;const now=currentRecordTime(),look=130;
+    while(guided.nextExpected<=now+look){
+      if(guided.mode==='score'&&guided.planIdx>=guided.planned.length){if(now>guided.nextExpected)endRecording();return} // the planned passage is over
+      const t=Math.round(guided.nextExpected),i=track.taps.length;
+      track.taps.push(t);track.tapAccents=track.tapAccents||[];track.tapAccents.push(null);
+      const accent=trackBeatMeta(i).downbeat||isAccent(i);let osc=null;try{osc=clickAt(ctxTimeForPerf(guidedPerfForRecordMs(t)),accent,'primary')}catch{}
+      guided.auto.set(i,osc);
+      guided.planIdx++;const iv=guidedPlannedInterval();guided.lastInterval=iv;guided.nextExpected=t+iv;
+      setTimeout(()=>{if(guided&&recording&&guided.auto.has(i)){animateConductor(iv);guidedFollow(i)}},Math.max(0,guidedPerfForRecordMs(t)-performance.now()));
+    }
+    renderDetails();
+  }
+  function guidedFollow(i){if(scorePdfDoc&&(track.scoreMeasureBoxes||[]).length){const p=scorePointForBeat(i);if(p&&Number(p.page)!==scorePdfPage){if(!scorePdfRendering)renderScorePage(Number(p.page)).then(()=>renderScoreOverlay(i))}else renderScoreOverlay(i)}
+    const meta=trackBeatMeta(i),el=$('guidedPadInfo');if(el)el.textContent=`M${scoreMeasureLabel(meta.measure)}.${meta.beat}${guided?.auto.has(i)?' · metronome':' · you'}`}
+  function guidedTap(now,style){
+    if(!guided)return;const iv=guided.lastInterval||guidedPlannedInterval(),win=iv*0.6;
+    // the provisional beat this tap is meant for: the nearest metronome beat within ±60% of a beat
+    let best=-1,bd=Infinity;for(const [i] of guided.auto){const d=Math.abs(track.taps[i]-now);if(d<=win&&d<bd){bd=d;best=i}}
+    if(best>=0){const osc=guided.auto.get(best);if(track.taps[best]>now&&osc){try{osc.stop(audio().currentTime)}catch{}} // tapped early: silence the metronome click that had not sounded yet
+      guided.auto.delete(best);track.taps[best]=Math.round(now);track.tapAccents[best]=style==='accent'?1:style==='plain'?0:null;
+      // metronome beats already laid down after this one (look-ahead) are dropped; they re-phase from the tap
+      for(let j=best+1;j<track.taps.length;j++){const o=guided.auto.get(j);if(o){try{o.stop(audio().currentTime)}catch{}}guided.auto.delete(j)}track.taps.length=best+1;track.tapAccents.length=best+1;
+      // re-phase: the next metronome beat is one planned interval after the tap
+      if(guided.mode==='score')guided.planIdx=best-guided.from+1;guided.nextExpected=now+guidedPlannedInterval();guided.lastInterval=guidedPlannedInterval();
+      clickSound(trackBeatMeta(best).downbeat||isAccent(best)||style==='accent');animateConductor(best?now-track.taps[best-1]:520);timingFeedback(bd*(track.taps[best]<=now?1:-1));guidedFollow(best);
+      $('status').textContent=`Beat taken over · M${scoreMeasureLabel(trackBeatMeta(best).measure)}.${trackBeatMeta(best).beat}`;renderDetails();return}
+    // no metronome beat near: a beat of your own (the metronome re-phases from it)
+    const i=track.taps.length;track.taps.push(Math.round(now));track.tapAccents=track.tapAccents||[];track.tapAccents.push(style==='accent'?1:style==='plain'?0:null);
+    if(guided.mode==='score')guided.planIdx=i-guided.from+1;guided.nextExpected=now+guidedPlannedInterval();guided.lastInterval=guidedPlannedInterval();
+    clickSound(trackBeatMeta(i).downbeat||isAccent(i)||style==='accent');animateConductor(i?now-track.taps[i-1]:520);guidedFollow(i);$('status').textContent='Your beat recorded · the metronome continues from it.';renderDetails();
+  }
+  function guidedFinish(){
+    if(!guided)return;const g=guided;guided=null;clearInterval(g.timer);
+    // drop provisional beats still in the future (look-ahead) and silence their clicks
+    const now=currentRecordTime();for(const [i,o] of g.auto){if(track.taps[i]>now+20){try{o&&o.stop(audio().currentTime)}catch{}}}
+    while(track.taps.length&&g.auto.has(track.taps.length-1)&&track.taps.at(-1)>now+20){track.taps.pop();track.tapAccents.pop()}
+    if(g.mode==='score'){// the rest of the piece keeps its planned durations and follows on from the last beat
+      const k=track.taps.length-g.from;for(let j=k;j<g.planned.length;j++){const d=g.planned[j]-(j>0?g.planned[j-1]:g.planned[0]-g.lastInterval);track.taps.push(Math.round(track.taps.at(-1)+Math.max(60,d)));track.tapAccents.push(g.accents[j]??null)}
+      track.durationMs=Math.round(track.taps.at(-1)+g.tailMs);
+      const touched=[...Array(k).keys()].filter(j=>!g.auto.has(g.from+j)).length;if(touched)track.fromScore=false;
+      $('status').textContent=touched?`Retimed from M${scoreMeasureLabel(trackBeatMeta(g.from).measure)} · ${touched} beat${touched===1?'':'s'} tapped by you · the rest follows your last beat.`:'No taps — the click track is unchanged.';
+      renderDetails();syncScorePdfUi();renderScoreOverlay();return}
+    track.durationMs=Math.max(track.durationMs,track.taps.length?track.taps.at(-1)+g.lastInterval:0);$('status').textContent=`Recording ended · ${track.taps.length} beats (${g.userCount||[...track.taps.keys()].filter(i=>!g.auto.has(i)).length} tapped by you, the rest from the metronome).`
+  }
+  function guidedPadShow(on){const pad=$('guidedPad');if(pad)pad.classList.toggle('hidden',!on);document.body.classList.toggle('guided-on',!!on)}
+  // From Scratch with the metronome
+  async function startGuidedScratch(){
+    if(recording||playing||countdownBusy)return;if(!(Number(track.targetBpm)>0)){$('status').textContent='Set a Target BPM first — the metronome needs a tempo.';return}
+    await unlockAudioForMobile().catch(()=>{});$('status').textContent='Get ready…';await runCountdown($('recCountdown'),{n:4,ms:countInMs()});if(recording||playing)return;
+    startRecordingNow();const iv=60000/track.targetBpm;guided={mode:'scratch',from:track.taps.length,planned:[],planIdx:0,auto:new Map(),lastInterval:iv,nextExpected:track.taps.length?Math.max(segmentBaseMs,track.taps.at(-1)+iv):segmentBaseMs,timer:null};
+    guided.timer=setInterval(guidedPump,15);guidedPump();$('status').textContent=`Metronome at ${track.targetBpm} · tap to take over the timing, stop tapping and it carries on.`;$('timingFeedback').textContent='Every metronome click is a beat. Your taps replace the beats they land on.';guidedPadShow(true)
+  }
+  // From Sheet Music: retime a passage by tapping, from measure m (track measure number within the section)
+  async function startScoreRetime(measureLabelOrNo){
+    if(recording||playing||countdownBusy)return;if(!track.taps.length){$('status').textContent='Make the click track from the score first.';return}
+    // accept a printed bar number or a track measure number
+    let m=Math.round(Number(measureLabelOrNo)||1);const byLabel=(track.scoreMeasureBoxes||[]).find(b=>Number(b.label)===m);if(byLabel)m=Number(byLabel.measure);
+    const from=trackIndexForMeasureBeat(m,1);if(from<0){$('status').textContent=`Measure ${measureLabelOrNo} is not in this click track.`;return}
+    if(scorePracticeActive)stopScorePractice(true);if(listenActive)stopListenWithAudio(true);
+    await unlockAudioForMobile().catch(()=>{});
+    const planned=track.taps.slice(from),accents=(track.tapAccents||[]).slice(from),tailMs=Math.max(60,track.durationMs-track.taps.at(-1)),prevIv=from>0?track.taps[from]-track.taps[from-1]:(planned[1]-planned[0])||60000/Math.max(20,track.targetBpm||100);
+    const bpb=scoreBeatsPerMeasure(trackMeterAtMeasure(m));$('status').textContent=`Count-in, then tap from measure ${scoreMeasureLabel(m)}…`;guidedPadShow(true);if($('guidedPadInfo'))$('guidedPadInfo').textContent=`From M${scoreMeasureLabel(m)} · count-in`;
+    renderScoreOverlay(from);await runCountdown($('recCountdown'),{n:bpb,ms:Math.max(250,Math.min(1500,prevIv))});if(recording||playing){guidedPadShow(false);return}
+    track.taps.length=from;track.tapAccents=(track.tapAccents||[]).slice(0,from);track.durationMs=from>0?track.taps[from-1]:0;
+    segmentBaseMs=from>0?track.taps[from-1]:0;segmentStartReal=performance.now();recording=true;frozenViewMs=segmentBaseMs;tapAlongActive=false;renderDetails();startAnimation();
+    guided={mode:'score',from,planned,accents,tailMs,planIdx:0,auto:new Map(),lastInterval:prevIv,nextExpected:from>0?segmentBaseMs+prevIv:segmentBaseMs,timer:null};
+    guided.timer=setInterval(guidedPump,15);guidedPump();$('timingFeedback').textContent='The score follows. Tap where you want the timing to be yours; press End when the passage is done.';
+  }
+  function recordTap(style='auto',ts){if(guidedActive()&&!playing){const now=currentRecordTime(ts),prev=track.taps.length?Math.max(...track.taps.filter(t=>t<=now)):null;if(prev!==null&&now<=prev+12)return;guidedTap(now,style);return}
+    if(recording&&!playing)track.fromScore=false;/* v1.5.1: hand-tapped edits make this the user's own track */ if(!recording||playing){if(!recording)$('status').textContent=tapAlongUrl?'Press Play & Tap or Start Clicks first.':'Press Start Clicks first.';return}if(tapAlongActive&&tapAlongAudio()?.paused){setTapAlongStatus('The recording is paused. Press Play & Tap to continue.','error');return}const now=currentRecordTime(ts),prev=track.taps.length?track.taps.at(-1):null;if(prev!==null&&now<=prev+12){$('status').textContent='That tap was too close to the previous beat.';return}const i=track.taps.length;track.taps.push(now);track.tapAccents=track.tapAccents||[];track.tapAccents.push(style==='accent'?1:style==='plain'?0:null);const auto=trackBeatMeta(i).downbeat||isAccent(i),accent=explicitTapAccent(i,auto);clickSound(accent);animateConductor(prev===null?520:now-prev);timingFeedback(nearestGuideDelta(now));$('status').textContent=style==='accent'?'Accented beat recorded.':(track.taps.length===1?'First tap recorded.':(tapAlongActive?'Beat locked to the recording.':'Beat recorded.'));renderDetails(); }
   let replaySched=null;
   function replay(){ if(recording||playing||track.durationMs<=0)return;if(listenActive)stopListenWithAudio(false);if(scorePracticeActive)stopScorePractice(false);playing=true;audio();const lead=140;replayStartReal=performance.now()+lead;replayViewMs=0;frozenViewMs=0;$('status').textContent='Replaying measures + subdivisions…';renderDetails();
     const evs=expandedTrackClickEvents().map(ev=>({...ev,t:ev.ms/1000,kind:ev.primary?'primary':'subdivision'}));
@@ -6027,7 +6145,11 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
   $('scorePracticePause').addEventListener('click',pauseScorePractice);
   $('scorePracticeStop').addEventListener('click',()=>stopScorePractice(true));
   $('scoreFloatStop').addEventListener('click',()=>{if(scorePracticeActive)stopScorePractice(true);if(playing)stopReplay(true);syncScoreClickPlayUi()});
-  $('startButton').addEventListener('click',startRecording);
+  $('startButton').addEventListener('click',()=>{if(createMode==='scratch'&&$('metronomeGuide')?.checked&&!tapAlongUrl)startGuidedScratch();else startRecording()});
+  // the guide checkbox belongs to From Scratch only
+  document.body.classList.add('guide-ready');
+  $('guidedPadButton').addEventListener('pointerdown',e=>{if(e.button!==undefined&&e.button!==0)return;audio();recordTap('auto',e.timeStamp);e.preventDefault()});$('guidedPadEnd').addEventListener('click',endRecording);
+  $('scoreRetimeButton').addEventListener('click',()=>startScoreRetime($('scoreRetimeMeasure').value||1));
   $('trackStartMeter').addEventListener('change',()=>{track.scoreMap=normalizeTrackScoreMap([{startMeasure:1,meter:$('trackStartMeter').value},...track.scoreMap.filter(x=>Number(x.startMeasure)!==1)]);renderDetails()});
   $('addTrackMeterButton').addEventListener('click',addTrackMeterChange);
   $('addTrackSubdivisionButton').addEventListener('click',addTrackSubdivision);

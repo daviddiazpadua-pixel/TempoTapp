@@ -133,7 +133,34 @@ screen is a white PDF). To change a color, edit the tokens at the top of `#engra
 
 ## Changelog
 
-### 1.9.1 — iPhone Duo
+### 1.9.1 — advisor review: score reader fixes, metronome you can take over, iPhone Duo
+Score reader (`vendor/score-omr.js`, `vendor/score-vector.js`, Create screen):
+- Piano / grand-staff pages: both readers now join two staves into one system when their barlines line up
+  and the gap between them is short for the page (or the staves come in a short-gap/long-gap pair pattern),
+  so right hand and left hand are no longer read as separate measures. Single-staff pages with evenly
+  spaced measures are never joined.
+- Beat 1 no longer lands on the clef: pieces of a clef split by staff-line removal, and the common-time
+  "C" symbol, are ignored when the first note of a measure is located.
+- Measure boxes are a clear ink outline with a numbered tag (active measure red).
+- Fix measures gained **Adjust box** (tap a measure; drag its top/bottom edge; drag over the box below or
+  above to merge the two into one measure) and **Join lines** (tap a measure to join its line with the one
+  beneath — a whole mis-split piano line in one tap). Both undo. Drag listeners moved to the window so a
+  fast drag no longer stops when the overlay re-renders.
+- **Fit page** (whole page on screen, no inner scrolling; default on phones) and **Full screen** (the score
+  workspace becomes a fixed overlay — works on iPhone where the Fullscreen API is unavailable; Escape exits).
+Click track creation:
+- **Metronome guide** (From Scratch, on by default): the metronome at the Target BPM lays down every beat;
+  tapping takes that beat over and the metronome re-phases from it; stop tapping and it continues. A whole
+  piece is recorded by the metronome and only the ritardando/accelerando is tapped. (`guided*` functions.)
+- **Tap your own timing from measure N** (From Sheet Music): count-in, then the score-built click track plays
+  from that measure with the score following; your taps retime the passage; End leaves the rest of the piece
+  at its planned durations, following on from your last beat. The same engine as the metronome guide.
+- "Analyze a Recording" is hidden (`SHOW_ANALYZE`, fenced `OPTIONAL FEATURE: ANALYZE`): automatic beat
+  detection is not reliable enough for rubato classical playing, so the score is the source of timing.
+  The page and code are intact; set `window.TEMPOTAPP_SHOW_ANALYZE=true` in `vendor/cloud-config.js` to show it.
+- tests/v17_pdf_edit.js scrolls the stage into view before coordinate clicks (the stage sits lower now).
+
+iPhone Duo:
 - Layout support for Apple's foldable iPhone, in `index.html` under `<style id="iphone-duo">` (every
   rule labelled "iPhone Duo:"). Safari 27.1 viewports it targets: outer display 382×580 / 594×368,
   inner display 669×867 / 951×585, Split View 385×571.
