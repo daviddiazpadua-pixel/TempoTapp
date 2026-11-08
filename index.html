@@ -64,6 +64,13 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="format-detection" content="telephone=no">
 <meta name="theme-color" content="#141414">
+<!-- iPhone Duo / full-screen (v1.9.1): the web app manifest + home-screen icon let iOS install
+     TempoTapp from Share → Add to Home Screen, where it opens edge-to-edge with no Safari bars
+     (display: standalone). Inside Safari itself no website can hide the browser's own toolbar. -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-title" content="TempoTapp">
 
 
 
@@ -964,6 +971,32 @@ html,body{background:var(--ground)!important}
     width:min(470px,calc(env(viewport-segment-width 0 0,50vw) - 32px))!important}
   .tutorial-card{left:calc(env(viewport-segment-width 0 0,50vw) / 2);width:min(390px,calc(env(viewport-segment-width 0 0,50vw) - 28px))}
   .score-float-bar{left:calc(env(viewport-segment-width 0 0,50vw) / 2);max-width:calc(env(viewport-segment-width 0 0,50vw) - 32px)}
+}
+/* ---- iPhone Duo: installed (Home Screen) full-screen mode ----
+   When TempoTapp is opened from the Home Screen it runs with no Safari chrome and the page
+   extends under the status bar (black-translucent) and, on the Duo's outer display, beside the
+   side system controls. Push the sticky header and the fixed tap pad / tab bar inside the safe
+   area so the clock never sits on the wordmark and nothing is hidden behind the rounded corners.
+   Applies to every iPhone in standalone mode; it is a no-op inside Safari (insets are 0 there
+   except the home indicator, which the tab bar already respects). */
+@media (display-mode:standalone){
+  .global-nav{height:auto!important;min-height:76px;padding-top:env(safe-area-inset-top,0px)!important;
+    padding-left:max(18px,env(safe-area-inset-left))!important;padding-right:max(18px,env(safe-area-inset-right))!important;
+    display:flex;align-items:center}
+  .app-page:not(.hidden){min-height:calc(100dvh - 76px - env(safe-area-inset-top,0px))}
+  #recorderPage .tap{left:max(12px,env(safe-area-inset-left))!important;right:max(12px,env(safe-area-inset-right))!important}
+  .dashboard-toggle{right:max(12px,env(safe-area-inset-right))!important}
+  .tutorial-card{bottom:calc(82px + env(safe-area-inset-bottom,0px))}
+  /* the app's own body background fills the whole screen, including behind the status bar */
+  html,body{background:var(--ground,#f1f0eb)!important;min-height:100dvh}
+}
+@media (display-mode:standalone) and (max-width:620px) and (max-height:640px){
+  .global-nav{min-height:60px}
+  .app-page:not(.hidden){min-height:calc(100dvh - 60px - env(safe-area-inset-top,0px))}
+}
+@media (display-mode:standalone) and (max-width:900px) and (max-height:430px) and (orientation:landscape){
+  .global-nav{min-height:52px}
+  .app-page:not(.hidden){min-height:calc(100dvh - 52px - env(safe-area-inset-top,0px))}
 }
 /* ====================== end iPHONE DUO SUPPORT ====================== */
 </style>

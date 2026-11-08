@@ -147,6 +147,9 @@ screen is a white PDF). To change a color, edit the tokens at the top of `#engra
   hinge and keeps dialogs, the tutorial card and the practice bar in the left half. A posture change
   dispatches a synthetic `resize` so the canvases redraw. No-op in browsers without those APIs.
 - Nothing changes for regular iPhones (≈390×850) or iPads.
+- Installable: `manifest.webmanifest` + `icons/` (original "Tt" mark) so Share → Add to Home Screen opens
+  TempoTapp edge-to-edge with no Safari bars. In that mode the header, tap pad and floating controls
+  are pushed inside the safe area (`@media (display-mode:standalone)` in `#iphone-duo`).
 
 ### 1.9.0 — the library keeps the sheet music and the recording
 - Saving a click track can keep the sheet-music PDF and the recording it was tapped to ("Keep with this
