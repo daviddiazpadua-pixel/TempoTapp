@@ -155,6 +155,11 @@ Click track creation:
 - **Tap your own timing from measure N** (From Sheet Music): count-in, then the score-built click track plays
   from that measure with the score following; your taps retime the passage; End leaves the rest of the piece
   at its planned durations, following on from your last beat. The same engine as the metronome guide.
+- **Tempo changes & holds** (score click card): "From measure N: X BPM" entries (each holds until the next
+  entry) and "Hold measure N beat B for +E beats" (fermata / stretched note). Apply rebuilds the click
+  track from the score with the edits; they are saved with the track (`score_edits`) and restored on open.
+- Create hub is two panels (From Sheet Music, With Audio); From Scratch moved to a link row below them,
+  and its Metronome guide is off by default.
 - "Analyze a Recording" is hidden (`SHOW_ANALYZE`, fenced `OPTIONAL FEATURE: ANALYZE`): automatic beat
   detection is not reliable enough for rubato classical playing, so the score is the source of timing.
   The page and code are intact; set `window.TEMPOTAPP_SHOW_ANALYZE=true` in `vendor/cloud-config.js` to show it.

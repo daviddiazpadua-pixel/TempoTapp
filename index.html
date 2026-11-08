@@ -379,7 +379,7 @@ button{-webkit-user-select:none;user-select:none}
 .create-choice-header{max-width:760px;margin:0 auto 28px;text-align:center}
 .create-choice-header h1{font-size:clamp(2.7rem,7vw,4.7rem);line-height:.98;letter-spacing:-.06em;margin:10px 0 15px}
 .create-choice-header p{color:var(--soft);font-size:1.02rem;line-height:1.65;margin:0 auto;max-width:650px}
-.create-choice-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;max-width:1180px;margin:0 auto}label.create-choice-card{cursor:pointer;position:relative}label.create-choice-card input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}.create-choice-card.sheet{border-color:var(--ink,#141414);border-width:2px}
+.create-choice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;max-width:960px;margin:0 auto}label.create-choice-card{cursor:pointer;position:relative}label.create-choice-card input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}.create-choice-card.sheet{border-color:var(--ink,#141414);border-width:2px}
 .create-choice-card{border:1px solid var(--line);border-radius:24px;background:linear-gradient(180deg,#e7e7e4,#e7e7e4);padding:25px;text-align:left;color:var(--text);min-height:255px;display:flex;flex-direction:column;align-items:flex-start;gap:11px;transition:border-color .18s ease,transform .18s ease,background .18s ease}
 .create-choice-card:hover{border-color:rgba(20,20,20,0.36);transform:translateY(-2px)}
 .create-choice-card.media{background:linear-gradient(180deg,rgba(231,231,228,0.34),#e7e7e4)}
@@ -390,8 +390,8 @@ button{-webkit-user-select:none;user-select:none}
 .create-choice-points{display:grid;gap:6px;margin-top:2px;color:var(--soft);font-size:.83rem}
 .create-choice-points span:before{content:'✓';color:var(--mint);font-weight:900;margin-right:7px}
 .create-choice-card b{margin-top:auto;color:#141414;font-size:.85rem}
-.create-analysis-link{max-width:960px;margin:16px auto 0;padding:15px 18px;border:1px solid var(--line);border-radius:16px;background:#e7e7e4;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
-.create-analysis-link p{margin:0;color:var(--muted);font-size:.84rem}
+.create-scratch-link,.create-analysis-link{max-width:960px;margin:16px auto 0;padding:15px 18px;border:1px solid var(--line);border-radius:16px;background:#e7e7e4;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.create-scratch-link p,.create-analysis-link p{margin:0;color:var(--muted);font-size:.84rem}
 .create-mode-banner{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:-5px 0 18px;padding:12px 14px;border:1px solid var(--line);border-radius:15px;background:#e7e7e4}
 .create-mode-banner strong{display:block;font-size:.9rem}
 .create-mode-banner span{display:block;color:var(--muted);font-size:.76rem;margin-top:2px}
@@ -851,6 +851,15 @@ html,body{background:var(--ground)!important}
 @media (pointer:coarse){.score-edge-handle{height:28px}.score-bar-handle{width:28px}}
 /* OPTIONAL FEATURE: ANALYZE — entry points hidden (see SHOW_ANALYZE in the script) */
 body.analyze-hidden .main-nav-link[data-main-nav="analyze"],body.analyze-hidden #homeAnalyzeButton,body.analyze-hidden .create-analysis-link,body.analyze-hidden #createHubAnalyzeButton{display:none!important}
+/* tempo changes & holds editor */
+.score-tempo-edits{margin:10px 0 2px;padding:12px 14px;border:1px dashed var(--line);border-radius:12px;background:rgba(255,255,255,.5)}
+.score-tempo-edits-head{display:flex;flex-direction:column;gap:3px;margin-bottom:8px}
+.score-tempo-edit-list{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 10px}
+.score-tempo-edit-list:empty::before{content:"No edits yet — the click track follows the score as read.";color:var(--muted);font-size:.8rem}
+.score-tempo-chip{display:inline-flex;align-items:center;gap:8px;padding:6px 8px 6px 12px;border:1.5px solid var(--ink,#141414);border-radius:999px;background:#fff;font-size:.82rem;font-weight:700}
+.score-tempo-chip.hold{border-style:dashed}
+.score-tempo-chip button{border:none;background:var(--ink,#141414);color:#fff;border-radius:50%;width:22px;height:22px;line-height:1;font-size:.9rem;cursor:pointer;padding:0}
+.score-tempo-add input{width:84px!important;min-width:0!important}
 /* guided recording (metronome you can take over) */
 body:not(.create-mode-scratch) .metronome-guide{display:none!important}
 .metronome-guide{display:inline-flex;align-items:center;gap:8px;padding:0 10px;font-weight:650;font-size:.86rem;color:var(--ink-2,var(--soft));white-space:nowrap}
@@ -1154,13 +1163,6 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
         <div class="create-choice-points"><span>Measures and tempo read for you</span><span>Tap your own timing over any passage</span><span>Practice with the moving score</span></div>
         <b>Choose a PDF →</b>
       </label>
-      <button class="create-choice-card" id="createScratchButton" type="button">
-        <span class="create-choice-icon">●</span>
-        <h2>From Scratch</h2>
-        <p>A metronome at your tempo lays down the beats; tap where the music slows down or speeds up and your timing takes over.</p>
-        <div class="create-choice-points"><span>Metronome you can take over</span><span>Set meters and subdivisions</span><span>Drag/edit every click</span></div>
-        <b>Start a blank click track →</b>
-      </button>
       <button class="create-choice-card media" id="createMediaButton" type="button">
         <span class="create-choice-icon">♫</span>
         <h2>With Audio</h2>
@@ -1168,6 +1170,11 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
         <div class="create-choice-points"><span>Tap while the recording plays</span><span>Listen back with the clicks</span><span>Drag any click to fix it</span></div>
         <b>Build alongside the piece →</b>
       </button>
+    </section>
+    <!-- v1.9.1: From Scratch moved out of the main choice (advisor review: two clear paths) -->
+    <section class="create-scratch-link">
+      <p><strong>Prefer to tap every beat yourself?</strong> Start a blank click track — with an optional metronome you can take over.</p>
+      <button class="secondary" id="createScratchButton" type="button">Start from scratch →</button>
     </section>
     <section class="create-analysis-link">
       <p><strong>Want TempoTapp to find the beats automatically?</strong> Use the full Analyze tool — it is still available exactly as before.</p>
@@ -1257,6 +1264,23 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
             <button class="hero-primary compact-primary" id="scoreMakeClickButton" disabled>Make Click Track</button>
           </div>
           <div class="score-auto-row hidden" id="scoreFollowRow"><label class="score-follow"><input type="checkbox" id="scoreFollowTempo" checked> Follow the tempo changes printed in the score</label><span class="score-analysis-status" id="scoreTempoSummary"></span></div>
+          <!-- v1.9.1: edit the built click track — a tempo from a given measure, and holds (a beat held longer) -->
+          <div class="score-tempo-edits" id="scoreTempoEdits">
+            <div class="score-tempo-edits-head"><strong>Tempo changes &amp; holds</strong><span class="score-analysis-status">Set a BPM from any measure on, and hold a beat longer (a fermata or a stretched note). Apply rebuilds the click track from the score with these edits.</span></div>
+            <div class="score-tempo-edit-list" id="scoreTempoEditList"></div>
+            <div class="score-auto-row score-tempo-add">
+              <label>From measure<input id="scoreTempoEditMeasure" type="number" inputmode="numeric" min="1" step="1" placeholder="5"></label>
+              <label>BPM<input id="scoreTempoEditBpm" type="number" inputmode="numeric" min="20" max="400" step="1" placeholder="72"></label>
+              <button class="secondary compact-primary" id="scoreTempoEditAdd" type="button">+ Tempo change</button>
+            </div>
+            <div class="score-auto-row score-tempo-add">
+              <label>Hold measure<input id="scoreHoldMeasure" type="number" inputmode="numeric" min="1" step="1" placeholder="12"></label>
+              <label>beat<input id="scoreHoldBeat" type="number" inputmode="numeric" min="1" max="12" step="1" value="1"></label>
+              <label>extra beats<input id="scoreHoldExtra" type="number" inputmode="decimal" min="0.25" max="16" step="0.25" value="1"></label>
+              <button class="secondary compact-primary" id="scoreHoldAdd" type="button">+ Hold</button>
+              <button class="hero-primary compact-primary" id="scoreTempoEditApply" type="button">Apply to click track</button>
+            </div>
+          </div>
           <!-- v1.9.1: tap your own timing over a passage (ritardando, accelerando, fermata) -->
           <div class="score-auto-row score-retime-row"><label>Tap your own timing from measure<input id="scoreRetimeMeasure" type="number" inputmode="numeric" min="1" step="1" value="1"></label><button class="hero-primary compact-primary" id="scoreRetimeButton">Tap from here</button><span class="score-analysis-status">Count-in, then the score follows while you tap. Press End when the passage is done; the rest of the piece follows your last beat.</span></div>
           <div class="score-auto-row"><button class="secondary compact-primary" id="scoreClickPlayButton" disabled>▶ Play Click Track</button><button class="secondary compact-primary" id="scoreClickStopButton" disabled>■ Stop</button><span class="score-analysis-status" id="scoreClickPlayStatus"></span></div>
@@ -1342,7 +1366,7 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
       <div class="controls">
         <button class="secondary recording-btn" id="startButton">● Start Clicks</button>
         <button class="secondary" id="endButton" disabled>■ End Clicks</button>
-        <label class="metronome-guide" id="metronomeGuideWrap" title="The metronome clicks at the Target BPM and every click is a beat. Tap to take over the timing where the music slows down or speeds up; stop tapping and the metronome continues."><input type="checkbox" id="metronomeGuide" checked> Metronome guide</label>
+        <label class="metronome-guide" id="metronomeGuideWrap" title="The metronome clicks at the Target BPM and every click is a beat. Tap to take over the timing where the music slows down or speeds up; stop tapping and the metronome continues."><input type="checkbox" id="metronomeGuide"> Metronome guide</label>
         <button class="secondary" id="undoTapButton" disabled>Undo tap</button>
         <button class="secondary" id="playButton" disabled>▶ Replay</button>
         <button class="secondary" id="stopButton" disabled>■ Stop</button>
@@ -2503,10 +2527,10 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
       const arr=db.tracks.filter(t=>t.user_id===u.id).map(t=>({...t,folder_name:(db.folders.find(f=>f.id===t.folder_id)||{name:'Unfiled'}).name})).sort((a,b)=>String(b.updated_at).localeCompare(String(a.updated_at)));return {tracks:arr};
     }
     if(path==='/api/tracks'&&method==='POST'){
-      const stamp=webNow(),folder_id=webFolderId(db,u.id,body.folder_id);const t={id:db.next.track++,user_id:u.id,folder_id,name:String(body.name||'').trim(),duration_ms:Number(body.duration_ms)||0,target_bpm:Number(body.target_bpm)||0,accent_mode:body.accent_mode||'custom',accent_every:Number(body.accent_every)||4,click_volume:Math.max(0,Math.min(150,Number.isFinite(Number(body.click_volume))?Number(body.click_volume):100)),taps:Array.isArray(body.taps)?body.taps:[],tap_accents:Array.isArray(body.tap_accents)?body.tap_accents:[],score_map:Array.isArray(body.score_map)?body.score_map:[{startMeasure:1,meter:'4/4'}],subdivision_map:Array.isArray(body.subdivision_map)?body.subdivision_map:[],score_anchors:Array.isArray(body.score_anchors)?body.score_anchors:[],score_measure_boxes:Array.isArray(body.score_measure_boxes)?body.score_measure_boxes:[],score_pdf_name:String(body.score_pdf_name||''),created_at:stamp,updated_at:stamp};if(!t.name)throw new Error('Track name is required.');db.tracks.push(t);await webSave(db);return {track:t};
+      const stamp=webNow(),folder_id=webFolderId(db,u.id,body.folder_id);const t={id:db.next.track++,user_id:u.id,folder_id,name:String(body.name||'').trim(),duration_ms:Number(body.duration_ms)||0,target_bpm:Number(body.target_bpm)||0,accent_mode:body.accent_mode||'custom',accent_every:Number(body.accent_every)||4,click_volume:Math.max(0,Math.min(150,Number.isFinite(Number(body.click_volume))?Number(body.click_volume):100)),taps:Array.isArray(body.taps)?body.taps:[],tap_accents:Array.isArray(body.tap_accents)?body.tap_accents:[],score_map:Array.isArray(body.score_map)?body.score_map:[{startMeasure:1,meter:'4/4'}],subdivision_map:Array.isArray(body.subdivision_map)?body.subdivision_map:[],score_anchors:Array.isArray(body.score_anchors)?body.score_anchors:[],score_measure_boxes:Array.isArray(body.score_measure_boxes)?body.score_measure_boxes:[],score_edits:(body.score_edits&&typeof body.score_edits==='object')?body.score_edits:null,score_pdf_name:String(body.score_pdf_name||''),created_at:stamp,updated_at:stamp};if(!t.name)throw new Error('Track name is required.');db.tracks.push(t);await webSave(db);return {track:t};
     }
     let m=path.match(/^\/api\/tracks\/(\d+)$/);
-    if(m){const id=Number(m[1]),t=db.tracks.find(x=>x.id===id&&x.user_id===u.id);if(!t)throw new Error('Track not found.');if(method==='GET')return {track:t};if(method==='DELETE'){db.tracks=db.tracks.filter(x=>x.id!==id);await webSave(db);await webTrackFilesDelete(id);return {ok:true};}if(method==='PUT'){if(body.name!==undefined)t.name=String(body.name).trim();if(body.duration_ms!==undefined)t.duration_ms=Number(body.duration_ms)||0;if(body.target_bpm!==undefined)t.target_bpm=Number(body.target_bpm)||0;if(body.accent_mode!==undefined)t.accent_mode=body.accent_mode;if(body.accent_every!==undefined)t.accent_every=Number(body.accent_every)||4;if(body.click_volume!==undefined)t.click_volume=Math.max(0,Math.min(150,Number.isFinite(Number(body.click_volume))?Number(body.click_volume):100));if(body.taps!==undefined)t.taps=Array.isArray(body.taps)?body.taps:[];if(body.tap_accents!==undefined)t.tap_accents=Array.isArray(body.tap_accents)?body.tap_accents:[];if(body.score_map!==undefined)t.score_map=Array.isArray(body.score_map)?body.score_map:[{startMeasure:1,meter:'4/4'}];if(body.subdivision_map!==undefined)t.subdivision_map=Array.isArray(body.subdivision_map)?body.subdivision_map:[];if(body.score_anchors!==undefined)t.score_anchors=Array.isArray(body.score_anchors)?body.score_anchors:[];if(body.score_measure_boxes!==undefined)t.score_measure_boxes=Array.isArray(body.score_measure_boxes)?body.score_measure_boxes:[];if(body.score_pdf_name!==undefined)t.score_pdf_name=String(body.score_pdf_name||'');if(body.folder_id!==undefined)t.folder_id=webFolderId(db,u.id,body.folder_id);t.updated_at=webNow();await webSave(db);return {track:t};}}
+    if(m){const id=Number(m[1]),t=db.tracks.find(x=>x.id===id&&x.user_id===u.id);if(!t)throw new Error('Track not found.');if(method==='GET')return {track:t};if(method==='DELETE'){db.tracks=db.tracks.filter(x=>x.id!==id);await webSave(db);await webTrackFilesDelete(id);return {ok:true};}if(method==='PUT'){if(body.name!==undefined)t.name=String(body.name).trim();if(body.duration_ms!==undefined)t.duration_ms=Number(body.duration_ms)||0;if(body.target_bpm!==undefined)t.target_bpm=Number(body.target_bpm)||0;if(body.accent_mode!==undefined)t.accent_mode=body.accent_mode;if(body.accent_every!==undefined)t.accent_every=Number(body.accent_every)||4;if(body.click_volume!==undefined)t.click_volume=Math.max(0,Math.min(150,Number.isFinite(Number(body.click_volume))?Number(body.click_volume):100));if(body.taps!==undefined)t.taps=Array.isArray(body.taps)?body.taps:[];if(body.tap_accents!==undefined)t.tap_accents=Array.isArray(body.tap_accents)?body.tap_accents:[];if(body.score_map!==undefined)t.score_map=Array.isArray(body.score_map)?body.score_map:[{startMeasure:1,meter:'4/4'}];if(body.subdivision_map!==undefined)t.subdivision_map=Array.isArray(body.subdivision_map)?body.subdivision_map:[];if(body.score_anchors!==undefined)t.score_anchors=Array.isArray(body.score_anchors)?body.score_anchors:[];if(body.score_measure_boxes!==undefined)t.score_measure_boxes=Array.isArray(body.score_measure_boxes)?body.score_measure_boxes:[];if(body.score_edits!==undefined)t.score_edits=(body.score_edits&&typeof body.score_edits==='object')?body.score_edits:null;if(body.score_pdf_name!==undefined)t.score_pdf_name=String(body.score_pdf_name||'');if(body.folder_id!==undefined)t.folder_id=webFolderId(db,u.id,body.folder_id);t.updated_at=webNow();await webSave(db);return {track:t};}}
     if(path==='/api/warps'&&method==='GET'){
       const complete=db.warps.filter(w=>w.user_id===u.id&&w.has_clean&&w.has_clicks);const keys=[...new Set(complete.map(w=>w.project_key))];const out=keys.map(key=>webProjectVersions(db,u.id,key).filter(w=>w.has_clean&&w.has_clicks)[0]).filter(Boolean).map(w=>({...w,folder_name:(db.warpFolders.find(f=>f.id===w.folder_id)||{name:'Unfiled'}).name,version_count:webProjectVersions(db,u.id,w.project_key).filter(v=>v.has_clean&&v.has_clicks).length})).sort((a,b)=>String(b.updated_at).localeCompare(String(a.updated_at)));return {warps:out};
     }
@@ -2720,7 +2744,7 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
       }
       if(path==='/api/tracks'&&method==='POST'){
         const stamp=webNow(),folder_id=await cloudFolderId(body.folder_id);
-        const t={id:cloudNewId(),user_id:u.uid,folder_id,name:String(body.name||'').trim(),duration_ms:Number(body.duration_ms)||0,target_bpm:Number(body.target_bpm)||0,accent_mode:body.accent_mode||'custom',accent_every:Number(body.accent_every)||4,click_volume:Math.max(0,Math.min(150,Number.isFinite(Number(body.click_volume))?Number(body.click_volume):100)),taps:Array.isArray(body.taps)?body.taps:[],tap_accents:Array.isArray(body.tap_accents)?body.tap_accents:[],score_map:Array.isArray(body.score_map)?body.score_map:[{startMeasure:1,meter:'4/4'}],subdivision_map:Array.isArray(body.subdivision_map)?body.subdivision_map:[],score_anchors:Array.isArray(body.score_anchors)?body.score_anchors:[],score_measure_boxes:Array.isArray(body.score_measure_boxes)?body.score_measure_boxes:[],score_pdf_name:String(body.score_pdf_name||''),created_at:stamp,updated_at:stamp};
+        const t={id:cloudNewId(),user_id:u.uid,folder_id,name:String(body.name||'').trim(),duration_ms:Number(body.duration_ms)||0,target_bpm:Number(body.target_bpm)||0,accent_mode:body.accent_mode||'custom',accent_every:Number(body.accent_every)||4,click_volume:Math.max(0,Math.min(150,Number.isFinite(Number(body.click_volume))?Number(body.click_volume):100)),taps:Array.isArray(body.taps)?body.taps:[],tap_accents:Array.isArray(body.tap_accents)?body.tap_accents:[],score_map:Array.isArray(body.score_map)?body.score_map:[{startMeasure:1,meter:'4/4'}],subdivision_map:Array.isArray(body.subdivision_map)?body.subdivision_map:[],score_anchors:Array.isArray(body.score_anchors)?body.score_anchors:[],score_measure_boxes:Array.isArray(body.score_measure_boxes)?body.score_measure_boxes:[],score_edits:(body.score_edits&&typeof body.score_edits==='object')?body.score_edits:null,score_pdf_name:String(body.score_pdf_name||''),created_at:stamp,updated_at:stamp};
         if(!t.name)throw new Error('Track name is required.'); if(t.name.length>120)throw new Error('Track name is too long.');
         await FB.fs.setDoc(cloudDoc('tracks',t.id),t); return {track:t};
       }
@@ -2743,6 +2767,7 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
           if(body.subdivision_map!==undefined)patch.subdivision_map=Array.isArray(body.subdivision_map)?body.subdivision_map:[];
           if(body.score_anchors!==undefined)patch.score_anchors=Array.isArray(body.score_anchors)?body.score_anchors:[];
           if(body.score_measure_boxes!==undefined)patch.score_measure_boxes=Array.isArray(body.score_measure_boxes)?body.score_measure_boxes:[];
+          if(body.score_edits!==undefined)patch.score_edits=(body.score_edits&&typeof body.score_edits==='object')?body.score_edits:null;
           if(body.score_pdf_name!==undefined)patch.score_pdf_name=String(body.score_pdf_name||'');
           if(body.folder_id!==undefined)patch.folder_id=await cloudFolderId(body.folder_id);
           patch.updated_at=webNow();
@@ -2912,7 +2937,7 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
         accent_mode:String(t.accent_mode||'custom'), accent_every:Number(t.accent_every)||4, click_volume:Number.isFinite(Number(t.click_volume))?Number(t.click_volume):100,
         taps:Array.isArray(t.taps)?t.taps:[], tap_accents:Array.isArray(t.tap_accents)?t.tap_accents:[],
         score_map:Array.isArray(t.score_map)?t.score_map:[], subdivision_map:Array.isArray(t.subdivision_map)?t.subdivision_map:[],
-        score_anchors:Array.isArray(t.score_anchors)?t.score_anchors:[], score_measure_boxes:Array.isArray(t.score_measure_boxes)?t.score_measure_boxes:[],
+        score_anchors:Array.isArray(t.score_anchors)?t.score_anchors:[], score_measure_boxes:Array.isArray(t.score_measure_boxes)?t.score_measure_boxes:[], score_edits:(t.score_edits&&typeof t.score_edits==='object')?t.score_edits:null,
         score_pdf_name:String(t.score_pdf_name||'')
       }
     };
@@ -3105,7 +3130,7 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
     document.body.classList.toggle('create-mode-media',createMode==='media');
     document.body.classList.toggle('create-mode-review',createMode==='review');
     const config=createMode==='scratch'
-      ?{pill:'From scratch',title:'From Scratch',desc:'A metronome at your tempo lays down the beats; tap to take over where the music bends.',eyebrow:'Create · From Scratch',heading:'Build your timing.',copy:'Set the Target BPM and press Start. The metronome records every beat; tap where the music slows down or speeds up and your taps become those beats. Untick Metronome guide to tap everything yourself.'}
+      ?{pill:'From scratch',title:'From Scratch',desc:'Tap every beat yourself, or tick Metronome guide to have the metronome lay them down and take over only where the music bends.',eyebrow:'Create · From Scratch',heading:'Build your timing.',copy:'Press Start, then tap exactly how you want the music to move. Tick Metronome guide and the metronome at the Target BPM records the beats for you; tap only where the music slows down or speeds up.'}
       :createMode==='media'
         ?{pill:'With audio',title:'With Audio',desc:'Build the click track alongside a real recording.',eyebrow:'Create · With Audio',heading:'Build it with the piece.',copy:'Play the recording and tap BEAT or ACCENT as it goes.'}
         :createMode==='sheet'
@@ -3763,16 +3788,21 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
     if(scorePracticeActive)stopScorePractice(true);
     const taps=[],acc=[];let t=0,lastIv=interval,plan=null;const R=scoreSectionRange();
     if(scoreFollowTempo()&&scoreTempoBase&&scoreReadMode==='exact'){plan=scoreTempoPlan(R.s,measures,meterAt,bpm/Math.max(1,scoreTempoBase.bpm))}
-    if(plan){for(let i=0;i<plan.beats.length;i++){const b=plan.beats[i];taps.push(Math.round(t));acc.push(b.f===0?1:0);lastIv=60000/Math.max(5,plan.q[i])*scoreBeatQuarters(b.meter);t+=lastIv}}
-    else for(let m=1;m<=measures;m++){const bpb=scoreBeatsPerMeasure(meterAt(m));for(let k=0;k<bpb;k++){taps.push(Math.round(t));acc.push(k===0?1:0);t+=interval}}
+    // v1.9.1 — the user's own edits on top of the score: a BPM from measure N on (until the next edit), and holds
+    const tempoEdits=[...(track.scoreTempoEdits||[])].sort((a,b)=>a.measure-b.measure),holds=track.scoreHolds||[];
+    const bpmAt=m=>{let v=null;for(const e of tempoEdits)if(e.measure<=m)v=e.bpm;return v};
+    const holdFactor=(m,k)=>{const h=holds.find(x=>x.measure===m&&x.beat===k+1);return h?1+Math.max(0,Number(h.extra)||0):1};
+    if(plan){for(let i=0;i<plan.beats.length;i++){const b=plan.beats[i],mm=b.m-R.s+1,k=Math.round(b.f*b.bpb);taps.push(Math.round(t));acc.push(b.f===0?1:0);const ob=bpmAt(mm);lastIv=(ob?60000/ob:60000/Math.max(5,plan.q[i])*scoreBeatQuarters(b.meter))*holdFactor(mm,k);t+=lastIv}}
+    else for(let m=1;m<=measures;m++){const bpb=scoreBeatsPerMeasure(meterAt(m)),ob=bpmAt(m),iv=ob?60000/ob:interval;for(let k=0;k<bpb;k++){taps.push(Math.round(t));acc.push(k===0?1:0);lastIv=iv*holdFactor(m,k);t+=lastIv}}
     const beats=taps.length;track.taps=taps;track.tapAccents=acc;
-    track.durationMs=Math.round(plan?t:beats*interval);track.targetBpm=bpm;track.accentMode='custom';track.scoreSection=R.sec?{start:R.s,end:R.e,title:R.sec.title}:null;
+    track.durationMs=Math.round(t);track.targetBpm=bpm;track.accentMode='custom';track.scoreSection=R.sec?{start:R.s,end:R.e,title:R.sec.title}:null;
     track.scoreMap=map.map(x=>({...x}));track.subdivisionMap=[];track.scoreAnchors=(track.scoreAnchors||[]).filter(a=>a.source!=='auto');
     track.fromScore=true;track.loadedId=null;track.loadedFolderId=null;track.loadedName=(track.scorePdfName||'Score').replace(/\.pdf$/i,'')+' click track';
     editHistory=[];frozenViewMs=track.durationMs;segmentBaseMs=track.durationMs;
     syncControls();setCreateMode('review');renderDetails();autoMapDetectedScore();
     const dur=Math.round(track.durationMs/1000),durTxt=dur>=60?`${Math.floor(dur/60)}:${String(dur%60).padStart(2,'0')}`:`${dur} s`,nTempo=plan?new Set(plan.q.map(x=>Math.round(x))).size:1;
-    const msg=`Click track ready · ${R.sec?`“${R.sec.title||'Section'}” · m${scoreMeasureLabel(1)}–${scoreMeasureLabel(measures)} · `:''}${measures} measures${map.length>1?` · ${map.length-1} time-signature change${map.length===2?'':'s'}`:` of ${map[0].meter}`}${plan?` · follows the printed tempos (${scoreUnitGlyph(scoreTempoBase.unit)} = ${bpm} at the start${nTempo>1?`, ${nTempo} different tempos`:''})`:` at ${bpm} BPM`} · ${durTxt}. Press Play to hear it, or Practice to follow the score.`;
+    const nEdits=tempoEdits.length+holds.length;
+    const msg=`Click track ready · ${nEdits?`${tempoEdits.length?`${tempoEdits.length} tempo change${tempoEdits.length===1?'':'s'}`:''}${tempoEdits.length&&holds.length?' and ':''}${holds.length?`${holds.length} hold${holds.length===1?'':'s'}`:''} applied · `:''}${R.sec?`“${R.sec.title||'Section'}” · m${scoreMeasureLabel(1)}–${scoreMeasureLabel(measures)} · `:''}${measures} measures${map.length>1?` · ${map.length-1} time-signature change${map.length===2?'':'s'}`:` of ${map[0].meter}`}${plan?` · follows the printed tempos (${scoreUnitGlyph(scoreTempoBase.unit)} = ${bpm} at the start${nTempo>1?`, ${nTempo} different tempos`:''})`:` at ${bpm} BPM`} · ${durTxt}. Press Play to hear it, or Practice to follow the score.`;
     scoreLastBuildMsg=msg;if(scoreReadMode==='exact'&&!auto&&scoreDetectedRawBoxes.some(b=>b.src==='exact')){setScoreAnalysisStatus('✓ Read exactly from the PDF and checked · '+msg,'good',100);$('status').textContent=msg;return}
     setScoreAnalysisStatus(msg,'good',100);if(auto)setTimeout(()=>{try{$('scoreClickCard')?.scrollIntoView({block:'center',behavior:'smooth'})}catch{}},150);$('status').textContent=auto?`Click track built from ${track.scorePdfName||'the score'}. Check the tempo and time signature in Score Follow.`:msg;
   }
@@ -4083,7 +4113,7 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
   }
 
   function resetTrack(message='Ready.'){
-    stopReplay(false);if(tapAlongActive){tapAlongActive=false;const a=tapAlongAudio();if(a&&!a.paused)a.pause()}recording=false;track.taps=[];track.tapAccents=[];track.durationMs=0;track.fromScore=false;track.loadedId=null;track.loadedName=null;track.loadedFolderId=null;track.scoreMap=[{startMeasure:1,meter:'4/4'}];track.subdivisionMap=[];track.scoreAnchors=[];track.scoreMeasureBoxes=[];track.scorePdfName='';scoreDetectedRawBoxes=[];scoreMappingActive=false;scoreMapCursor=0;editHistory=[];frozenViewMs=0;segmentBaseMs=0;$('cutStart').value='1';$('cutEnd').value='2';$('timingFeedback').className='';$('timingFeedback').textContent='Press Start Clicks to begin.';$('status').textContent=message;renderDetails();
+    stopReplay(false);if(tapAlongActive){tapAlongActive=false;const a=tapAlongAudio();if(a&&!a.paused)a.pause()}recording=false;track.taps=[];track.tapAccents=[];track.durationMs=0;track.fromScore=false;track.loadedId=null;track.loadedName=null;track.loadedFolderId=null;track.scoreMap=[{startMeasure:1,meter:'4/4'}];track.subdivisionMap=[];track.scoreAnchors=[];track.scoreMeasureBoxes=[];track.scoreTempoEdits=[];track.scoreHolds=[];if(typeof renderScoreTempoEdits==='function')renderScoreTempoEdits();track.scorePdfName='';scoreDetectedRawBoxes=[];scoreMappingActive=false;scoreMapCursor=0;editHistory=[];frozenViewMs=0;segmentBaseMs=0;$('cutStart').value='1';$('cutEnd').value='2';$('timingFeedback').className='';$('timingFeedback').textContent='Press Start Clicks to begin.';$('status').textContent=message;renderDetails();
   }
   function countInMs(){const b=Number(track.targetBpm)||0;return b>0?Math.max(300,Math.min(1200,60000/b)):700}
   async function startRecording(){ if(recording||playing||countdownBusy)return;if(window.innerWidth<=900){try{document.querySelector('.timeline-card')?.scrollIntoView({block:'start',behavior:'smooth'})}catch{}}$('status').textContent='Get ready…';await runCountdown($('recCountdown'),{n:4,ms:countInMs()});startRecordingNow()}
@@ -4316,7 +4346,7 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
     return problems;
   }
   async function confirmSave(){
-    const body={name:$('saveName').value.trim()||`Click Track ${Date.now()}`,folder_id:Number($('saveFolder').value)||null,duration_ms:Math.round(track.durationMs),target_bpm:track.targetBpm,accent_mode:track.accentMode,accent_every:track.accentEvery,click_volume:clampClickVolume(track.clickVolume),taps:track.taps.map(Math.round),tap_accents:[...(track.tapAccents||[])],score_map:normalizeTrackScoreMap().map(x=>({...x})),subdivision_map:normalizeTrackSubdivisionMap().map(x=>({...x})),score_anchors:(track.scoreAnchors||[]).map(x=>({...x})),score_measure_boxes:(track.scoreMeasureBoxes||[]).map(x=>({...x})),score_pdf_name:track.scorePdfName||''};
+    const body={name:$('saveName').value.trim()||`Click Track ${Date.now()}`,folder_id:Number($('saveFolder').value)||null,duration_ms:Math.round(track.durationMs),target_bpm:track.targetBpm,accent_mode:track.accentMode,accent_every:track.accentEvery,click_volume:clampClickVolume(track.clickVolume),taps:track.taps.map(Math.round),tap_accents:[...(track.tapAccents||[])],score_map:normalizeTrackScoreMap().map(x=>({...x})),subdivision_map:normalizeTrackSubdivisionMap().map(x=>({...x})),score_anchors:(track.scoreAnchors||[]).map(x=>({...x})),score_measure_boxes:(track.scoreMeasureBoxes||[]).map(x=>({...x})),score_edits:{tempo:(track.scoreTempoEdits||[]).map(x=>({...x})),holds:(track.scoreHolds||[]).map(x=>({...x}))},score_pdf_name:track.scorePdfName||''};
     const btn=$('confirmSaveButton'),label=btn.textContent;btn.disabled=true;btn.textContent='Saving…';
     try{
       const prev=track.loadedId?(tracks.find(x=>x.id===track.loadedId)||null):null;
@@ -4357,7 +4387,7 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
       item.innerHTML=`<div class="track-name">${escapeHtml(t.name)}</div><div class="track-meta">${t.taps.length} beats${bpm}${dur} · updated ${escapeHtml(new Date(t.updated_at).toLocaleDateString())}</div>${badges?`<div class="track-badges">${badges}</div>`:''}<div class="track-actions"><button class="secondary" data-action="open" data-id="${t.id}">${t.has_score&&t.has_recording?'Open (score + recording)':t.has_score?'Open with Score':t.has_recording?'Open with Recording':'Open'}</button>${files}<button class="secondary" data-action="rename" data-id="${t.id}">Rename</button>${typeof shareTrackButtonHtml==='function'?shareTrackButtonHtml(t):''}<select data-action="move" data-id="${t.id}" aria-label="Move to folder">${folderOptions}</select><button class="secondary danger" data-action="delete" data-id="${t.id}">Delete</button></div>`;
       const sel=item.querySelector('select');if(folder.id!=null)sel.value=String(t.folder_id);list.appendChild(item)})}
   }
-  async function openSaved(id){const t=tracks.find(x=>x.id===id)|| (await api(`/api/tracks/${id}`)).track;resetTrack('');track.taps=[...t.taps];track.tapAccents=Array.isArray(t.tap_accents)?[...t.tap_accents]:track.taps.map(()=>null);track.durationMs=t.duration_ms;track.targetBpm=t.target_bpm;track.accentMode=t.accent_mode;track.accentEvery=t.accent_every;track.clickVolume=clampClickVolume(t.click_volume);track.scoreMap=Array.isArray(t.score_map)&&t.score_map.length?t.score_map.map(x=>({...x})):[{startMeasure:1,meter:'4/4'}];track.subdivisionMap=Array.isArray(t.subdivision_map)?t.subdivision_map.map(x=>({...x})):[];track.scoreAnchors=Array.isArray(t.score_anchors)?t.score_anchors.map(x=>({...x})):[];track.scoreMeasureBoxes=Array.isArray(t.score_measure_boxes)?t.score_measure_boxes.map(x=>({...x})):[];track.scorePdfName=String(t.score_pdf_name||'');track.loadedId=t.id;track.loadedName=t.name;track.loadedFolderId=t.folder_id;frozenViewMs=track.durationMs;trackAttachOrigin={score:null,recording:null};if(scorePdfDoc&&!t.has_score)removeScorePdf();syncControls();$('status').textContent=`Opened “${t.name}”.`;$('timingFeedback').textContent='Saved click track loaded.';setCreateMode('review');showScreen('recorder');
+  async function openSaved(id){const t=tracks.find(x=>x.id===id)|| (await api(`/api/tracks/${id}`)).track;resetTrack('');track.taps=[...t.taps];track.tapAccents=Array.isArray(t.tap_accents)?[...t.tap_accents]:track.taps.map(()=>null);track.durationMs=t.duration_ms;track.targetBpm=t.target_bpm;track.accentMode=t.accent_mode;track.accentEvery=t.accent_every;track.clickVolume=clampClickVolume(t.click_volume);track.scoreMap=Array.isArray(t.score_map)&&t.score_map.length?t.score_map.map(x=>({...x})):[{startMeasure:1,meter:'4/4'}];track.subdivisionMap=Array.isArray(t.subdivision_map)?t.subdivision_map.map(x=>({...x})):[];track.scoreAnchors=Array.isArray(t.score_anchors)?t.score_anchors.map(x=>({...x})):[];track.scoreMeasureBoxes=Array.isArray(t.score_measure_boxes)?t.score_measure_boxes.map(x=>({...x})):[];track.scoreTempoEdits=Array.isArray(t.score_edits?.tempo)?t.score_edits.tempo.map(x=>({...x})):[];track.scoreHolds=Array.isArray(t.score_edits?.holds)?t.score_edits.holds.map(x=>({...x})):[];if(typeof renderScoreTempoEdits==='function')renderScoreTempoEdits();track.scorePdfName=String(t.score_pdf_name||'');track.loadedId=t.id;track.loadedName=t.name;track.loadedFolderId=t.folder_id;frozenViewMs=track.durationMs;trackAttachOrigin={score:null,recording:null};if(scorePdfDoc&&!t.has_score)removeScorePdf();syncControls();$('status').textContent=`Opened “${t.name}”.`;$('timingFeedback').textContent='Saved click track loaded.';setCreateMode('review');showScreen('recorder');
     if(t.has_recording)restoreTrackRecording(t);
     if(t.has_score)restoreTrackScore(t);}
   async function waitForScoreAnalysis(maxMs=120000){const t0=Date.now();await new Promise(r=>setTimeout(r,200));while(scoreAnalysisRunning&&Date.now()-t0<maxMs)await new Promise(r=>setTimeout(r,200))}
@@ -6150,6 +6180,18 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
   document.body.classList.add('guide-ready');
   $('guidedPadButton').addEventListener('pointerdown',e=>{if(e.button!==undefined&&e.button!==0)return;audio();recordTap('auto',e.timeStamp);e.preventDefault()});$('guidedPadEnd').addEventListener('click',endRecording);
   $('scoreRetimeButton').addEventListener('click',()=>startScoreRetime($('scoreRetimeMeasure').value||1));
+  // v1.9.1 — tempo changes & holds editor
+  function scoreResolveMeasure(v){let m=Math.round(Number(v)||0);if(!m)return 0;const byLabel=(track.scoreMeasureBoxes||[]).find(b=>Number(b.label)===m);return byLabel?Number(byLabel.measure):m}
+  function renderScoreTempoEdits(){const list=$('scoreTempoEditList');if(!list)return;list.innerHTML='';
+    [...(track.scoreTempoEdits||[])].sort((a,b)=>a.measure-b.measure).forEach(e=>{const c=document.createElement('span');c.className='score-tempo-chip';c.innerHTML=`From M${scoreMeasureLabel(e.measure)}: ${e.bpm} BPM <button type="button" aria-label="Remove">×</button>`;c.querySelector('button').onclick=()=>{track.scoreTempoEdits=track.scoreTempoEdits.filter(x=>x!==e);renderScoreTempoEdits()};list.appendChild(c)});
+    [...(track.scoreHolds||[])].sort((a,b)=>a.measure-b.measure||a.beat-b.beat).forEach(h=>{const c=document.createElement('span');c.className='score-tempo-chip hold';c.innerHTML=`Hold M${scoreMeasureLabel(h.measure)} beat ${h.beat} +${h.extra} beat${Number(h.extra)===1?'':'s'} <button type="button" aria-label="Remove">×</button>`;c.querySelector('button').onclick=()=>{track.scoreHolds=track.scoreHolds.filter(x=>x!==h);renderScoreTempoEdits()};list.appendChild(c)})}
+  $('scoreTempoEditAdd').addEventListener('click',()=>{const m=scoreResolveMeasure($('scoreTempoEditMeasure').value),bpm=Math.round(Number($('scoreTempoEditBpm').value)||0);if(!m||bpm<20||bpm>400){setScoreAnalysisStatus('Enter the measure and a BPM between 20 and 400.','warn',100);return}
+    track.scoreTempoEdits=(track.scoreTempoEdits||[]).filter(e=>e.measure!==m);track.scoreTempoEdits.push({measure:m,bpm});$('scoreTempoEditMeasure').value='';$('scoreTempoEditBpm').value='';renderScoreTempoEdits()});
+  $('scoreHoldAdd').addEventListener('click',()=>{const m=scoreResolveMeasure($('scoreHoldMeasure').value),beat=Math.max(1,Math.round(Number($('scoreHoldBeat').value)||1)),extra=Math.max(.25,Number($('scoreHoldExtra').value)||1);if(!m){setScoreAnalysisStatus('Enter the measure to hold.','warn',100);return}
+    track.scoreHolds=(track.scoreHolds||[]).filter(h=>!(h.measure===m&&h.beat===beat));track.scoreHolds.push({measure:m,beat,extra});$('scoreHoldMeasure').value='';renderScoreTempoEdits()});
+  $('scoreTempoEditApply').addEventListener('click',()=>{if(!scoreDetectedRawBoxes.length&&!Number($('scoreClickMeasures').value)){setScoreAnalysisStatus('Add a score (or a measure count) first.','warn',100);return}
+    if(!track.fromScore&&track.taps.length&&!confirm('Apply rebuilds the click track from the score with your tempo changes and holds. Passages you tapped by hand will be replaced. Continue?'))return;makeClickTrackFromScore(false)});
+  renderScoreTempoEdits();
   $('trackStartMeter').addEventListener('change',()=>{track.scoreMap=normalizeTrackScoreMap([{startMeasure:1,meter:$('trackStartMeter').value},...track.scoreMap.filter(x=>Number(x.startMeasure)!==1)]);renderDetails()});
   $('addTrackMeterButton').addEventListener('click',addTrackMeterChange);
   $('addTrackSubdivisionButton').addEventListener('click',addTrackSubdivision);
