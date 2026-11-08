@@ -877,7 +877,7 @@ html,body{background:var(--ground)!important}
   .app-page:not(.hidden){min-height:calc(100dvh - 52px)}
   .main-nav{padding-top:4px!important;padding-bottom:calc(4px + env(safe-area-inset-bottom,0px))!important}
   .main-nav-link{min-height:40px!important}
-  body{padding-bottom:calc(52px + env(safe-area-inset-bottom,0px))!important}
+  .app-page:not(.hidden){padding-bottom:calc(52px + env(safe-area-inset-bottom,0px))!important}
   main{padding-top:10px;padding-bottom:calc(64px + env(safe-area-inset-bottom,0px))!important}
   #homePage .home-main{padding:8px 16px calc(64px + env(safe-area-inset-bottom,0px))!important}
   #homePage .hero.home-hero{padding:16px 20px!important}
@@ -987,9 +987,29 @@ html,body{background:var(--ground)!important}
   #recorderPage .tap{left:max(12px,env(safe-area-inset-left))!important;right:max(12px,env(safe-area-inset-right))!important}
   .dashboard-toggle{right:max(12px,env(safe-area-inset-right))!important}
   .tutorial-card{bottom:calc(82px + env(safe-area-inset-bottom,0px))}
-  /* the app's own body background fills the whole screen, including behind the status bar */
-  html,body{background:var(--ground,#f1f0eb)!important;min-height:100dvh}
 }
+
+/* ---- iPhone Duo: the strip beside the outer display's side controls ----
+   Safari 27.1 keeps web content out of the vertical strip where the Duo's cover screen shows
+   the clock, battery and signal, and fills that strip with the PAGE BACKGROUND colour (WebKit,
+   Oct 2026; Apple is still investigating a way to let pages draw there). With a light page
+   background the strip read as a grey "sidebar" cutting through the dark header and tab bar.
+   Fix: the document background becomes the same ink as the header and tab bar, and the light
+   paper ground moves onto the page containers themselves. Result: the strip, header and tab bar
+   form one continuous dark frame around the content — the same look as a native app's chrome.
+   This applies everywhere (it is also what shows during rubber-band overscroll); the visible
+   content area is unchanged because every page container now carries the ground colour. */
+html,body{background:var(--bar,#141414)!important}
+body{min-height:100dvh}
+.app-page:not(.hidden){background:var(--ground,#f1f0eb)}
+/* phones: the fixed tab bar sits over the body's bottom padding — that padding must stay light,
+   so the page container absorbs it instead of the body */
+@media(max-width:900px){
+  body{padding-bottom:0!important}
+  .app-page:not(.hidden){padding-bottom:calc(78px + env(safe-area-inset-bottom,0px));box-sizing:border-box}
+}
+/* fallbacks when no page is shown yet (first paint): keep the ground visible under the header */
+body>main,body>.hero{background:var(--ground,#f1f0eb)}
 @media (display-mode:standalone) and (max-width:620px) and (max-height:640px){
   .global-nav{min-height:60px}
   .app-page:not(.hidden){min-height:calc(100dvh - 60px - env(safe-area-inset-top,0px))}

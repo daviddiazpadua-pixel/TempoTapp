@@ -150,6 +150,10 @@ screen is a white PDF). To change a color, edit the tokens at the top of `#engra
 - Installable: `manifest.webmanifest` + `icons/` (original "Tt" mark) so Share → Add to Home Screen opens
   TempoTapp edge-to-edge with no Safari bars. In that mode the header, tap pad and floating controls
   are pushed inside the safe area (`@media (display-mode:standalone)` in `#iphone-duo`).
+- Outer-display side strip: Safari 27.1 keeps pages out of the strip beside the Duo's cover-screen
+  clock/battery and paints it with the page background. The document background is now the header
+  ink (`--bar`) and the light ground sits on `.app-page`, so the strip joins the header and tab bar
+  as one dark frame instead of showing as a grey sidebar.
 
 ### 1.9.0 — the library keeps the sheet music and the recording
 - Saving a click track can keep the sheet-music PDF and the recording it was tapped to ("Keep with this
