@@ -3105,7 +3105,7 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
     document.body.classList.toggle('create-mode-media',createMode==='media');
     document.body.classList.toggle('create-mode-review',createMode==='review');
     const config=createMode==='scratch'
-      ?{pill:'From scratch',title:'From Scratch',desc:'Tap a click track without loading media.',eyebrow:'Create · From Scratch',heading:'Build your timing.',copy:'Press Start, then tap exactly how you want the music to move.'}
+      ?{pill:'From scratch',title:'From Scratch',desc:'A metronome at your tempo lays down the beats; tap to take over where the music bends.',eyebrow:'Create · From Scratch',heading:'Build your timing.',copy:'Set the Target BPM and press Start. The metronome records every beat; tap where the music slows down or speeds up and your taps become those beats. Untick Metronome guide to tap everything yourself.'}
       :createMode==='media'
         ?{pill:'With audio',title:'With Audio',desc:'Build the click track alongside a real recording.',eyebrow:'Create · With Audio',heading:'Build it with the piece.',copy:'Play the recording and tap BEAT or ACCENT as it goes.'}
         :createMode==='sheet'
