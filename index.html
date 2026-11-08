@@ -817,6 +817,156 @@ html,body{background:var(--ground)!important}
 .library-tab{white-space:nowrap}
 @media(max-width:520px){.library-search-row{flex-direction:column;align-items:stretch;gap:4px}.library-count{text-align:right}.library-tabs{display:grid!important;grid-template-columns:repeat(4,auto);width:100%}.library-tab{padding:10px 4px!important;font-size:.8rem!important;text-align:center}}
 </style>
+<style id="iphone-duo">
+/* =========================================================================
+   iPHONE DUO SUPPORT (v1.9.1) — Apple's foldable iPhone, September 2026
+   -------------------------------------------------------------------------
+   Safari 27.1 on iPhone Duo renders pages at these CSS viewports (WebKit):
+     outer (cover) display   portrait 382 × 580     landscape 594 × 368
+     inner (folding) display portrait 669 × 867     landscape 951 × 585
+     inner display, Split View (two windows side by side)   385 × 571
+   So the same app must work on (a) a phone screen that is SHORTER than any
+   recent iPhone, (b) a near-square tablet-class screen that still sits
+   below our 900px "phone layout" breakpoint in portrait, and (c) a wide but
+   short desktop-class screen in landscape.
+
+   Every rule here is additive and only matches those shapes; regular
+   iPhones (≈390 × 850) and iPads are not affected. The posture / viewport-
+   segments rules at the end target the half-folded phone (book and laptop
+   poses); those APIs are still behind Safari feature flags, so browsers
+   that do not know them simply ignore the rules (progressive enhancement).
+   Each sub-block is labelled "iPhone Duo:" so it can be found or removed.
+   ========================================================================= */
+
+/* ---- iPhone Duo: outer display, portrait (382×580) — and any phone ≤640px tall ----
+   Vertical space is the constraint. Slimmer header, shorter hero, smaller tap pad
+   and timeline, so the tap pad + tab bar never swallow the whole screen. */
+@media (max-width:620px) and (max-height:640px){
+  .global-nav{height:60px!important}
+  .app-page:not(.hidden){min-height:calc(100dvh - 60px)}
+  #homePage .home-main{padding-top:10px!important}
+  #homePage .hero.home-hero{padding:18px 16px 18px!important}
+  #homePage .home-hero h1{font-size:clamp(1.9rem,9vw,2.6rem)!important;margin:6px 0 10px!important}
+  #homePage .home-hero p{font-size:.92rem!important;line-height:1.45!important}
+  #homePage .home-hero .hero-actions{margin-top:12px!important}
+  #homePage .home-library-section{margin-top:16px!important}
+  main{padding-top:14px}
+  .recorder-header h1,.library-header h1,.warp-header h1,.help-header h1{font-size:clamp(1.8rem,8vw,2.4rem);margin:4px 0 6px}
+  #recorderPage .tap{min-height:70px!important;font-size:1.2rem!important}
+  #recorderPage .tap small{margin-top:2px!important}
+  #recorderPage main{padding-bottom:calc(156px + env(safe-area-inset-bottom,0px))!important}
+  #recorderPage .timeline-shell{height:150px!important}
+  .dashboard-toggle{bottom:calc(146px + env(safe-area-inset-bottom,0px))!important}
+  .score-stage-shell{max-height:min(520px,50dvh)!important}
+  .modal-backdrop.open>.modal{max-height:calc(100dvh - 16px)!important}
+  .tutorial-card{bottom:70px;padding:14px}
+}
+
+/* ---- iPhone Duo: outer display, landscape (594×368) — any phone landscape ≤430px tall ----
+   A fixed tap pad plus a fixed tab bar would leave ~150px for content, so the tap
+   pad goes back into the document flow and the chrome gets as thin as touch targets allow. */
+@media (max-width:900px) and (max-height:430px) and (orientation:landscape){
+  .global-nav{height:52px!important}
+  .app-page:not(.hidden){min-height:calc(100dvh - 52px)}
+  .main-nav{padding-top:4px!important;padding-bottom:calc(4px + env(safe-area-inset-bottom,0px))!important}
+  .main-nav-link{min-height:40px!important}
+  body{padding-bottom:calc(52px + env(safe-area-inset-bottom,0px))!important}
+  main{padding-top:10px;padding-bottom:calc(64px + env(safe-area-inset-bottom,0px))!important}
+  #homePage .home-main{padding:8px 16px calc(64px + env(safe-area-inset-bottom,0px))!important}
+  #homePage .hero.home-hero{padding:16px 20px!important}
+  #homePage .home-hero h1{font-size:clamp(1.7rem,5vw,2.3rem)!important;margin:4px 0 8px!important}
+  #homePage .home-hero p{font-size:.9rem!important}
+  #homePage .home-hero .hero-actions{flex-direction:row!important;flex-wrap:wrap!important;margin-top:10px!important}
+  #homePage .home-hero .hero-primary,#homePage .home-hero .hero-secondary{width:auto!important}
+  #homePage .home-library-section{margin-top:14px!important}
+  #recorderPage .tap{position:static!important;left:auto!important;right:auto!important;bottom:auto!important;width:100%!important;min-height:64px!important;z-index:auto!important;box-shadow:none!important;font-size:1.2rem!important}
+  #recorderPage .tap small{margin-top:2px!important}
+  #recorderPage main{padding-bottom:calc(64px + env(safe-area-inset-bottom,0px))!important}
+  #recorderPage .timeline-shell{height:130px!important}
+  .dashboard-toggle{bottom:calc(58px + env(safe-area-inset-bottom,0px))!important}
+  .score-stage-shell{max-height:min(520px,58dvh)!important}
+  .score-float-bar{bottom:calc(56px + env(safe-area-inset-bottom,0px))}
+  .tutorial-card{bottom:60px;padding:12px}
+  .modal-backdrop{padding:8px}
+  .modal-backdrop.open>.modal{max-height:calc(100dvh - 16px)!important;padding:14px}
+}
+
+/* ---- iPhone Duo: inner display, portrait (669×867) — regular-width foldable, 600–900px ----
+   Still inside the phone layout (bottom tab bar, fixed tap pad) because that is the
+   right interaction model for a hand-held screen, but it is as wide as a small iPad, so
+   the grids that collapsed to one column for phones get their two columns back and the
+   fixed tap pad is capped so it is not a 650px-wide slab. */
+@media (min-width:600px) and (max-width:900px){
+  main{padding-left:max(20px,env(safe-area-inset-left));padding-right:max(20px,env(safe-area-inset-right))}
+  #homePage .home-main{padding-left:20px!important;padding-right:20px!important}
+  #homePage .home-hero .hero-actions{flex-direction:row!important;flex-wrap:wrap!important}
+  #homePage .home-hero .hero-primary,#homePage .home-hero .hero-secondary{width:auto!important}
+  .home-library-grid,.create-choice-grid,.warp-setup-grid,.warp-output-grid,.saved-warp-output-grid,
+  .score-follow-grid,.help-hero-grid,.tap-dual-actions,.music-analysis-grid,.analyze-setup-grid,.analyze-anchor-grid,
+  .match-options{grid-template-columns:1fr 1fr}
+  .quick-start-steps{grid-template-columns:repeat(3,1fr)}
+  .simple-promise-strip{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+  .create-choice-card{min-height:225px}
+  .score-auto-row>*{width:auto}
+  .score-auto-row select,.score-auto-row button{width:auto}
+  .library-search-row{flex-direction:row;align-items:center}
+  #recorderPage .tap{left:max(12px,calc(50% - 300px))!important;right:max(12px,calc(50% - 300px))!important}
+  #recorderPage .timeline-shell{height:240px!important}
+  .score-stage-shell{max-height:min(640px,58dvh)!important}
+  .modal{width:min(520px,100%)}
+}
+
+/* ---- iPhone Duo: inner display, landscape (951×585) — desktop layout on a short screen ----
+   Width puts us in the desktop layout; height is less than a laptop's. Tighten the
+   header and the recorder so the tap pad and timeline share the screen without scrolling.
+   (Home already has max-height rules for short desktop windows above.) */
+@media (min-width:901px) and (max-height:640px){
+  .global-nav{height:60px!important}
+  .app-page:not(.hidden){min-height:calc(100dvh - 60px)}
+  main{padding-top:18px}
+  .recorder-header h1,.library-header h1,.warp-header h1,.help-header h1{font-size:clamp(2rem,4vw,2.8rem);margin:4px 0 8px}
+  #recorderPage .timeline-shell{height:200px!important}
+  .score-stage-shell{max-height:min(680px,60dvh)!important}
+  .modal-backdrop.open>.modal{max-height:calc(100dvh - 24px)!important}
+}
+
+/* ---- iPhone Duo: half-folded "laptop" pose (hinge horizontal; Viewport Segments API, preview) ----
+   The screen is two stacked halves. On the Create screen the whole bottom half becomes
+   the tap pad (the natural "keyboard") and the tempo/timeline stay in the top half.
+   Dialogs and floating controls stay in the top half so nothing sits on the crease.
+   env(viewport-segment-*) takes "column row" indexes; "0 1" is the bottom segment. */
+@media (vertical-viewport-segments:2){
+  #recorderPage .tap{position:fixed!important;left:16px!important;right:16px!important;width:auto!important;
+    top:calc(env(viewport-segment-top 0 1,50vh) + 14px)!important;
+    bottom:calc(72px + env(safe-area-inset-bottom,0px))!important;
+    min-height:0!important;height:auto!important;z-index:85!important;font-size:1.7rem!important}
+  #recorderPage .tap small{display:block!important;margin-top:6px!important}
+  #recorderPage main{padding-bottom:calc(env(viewport-segment-height 0 1,50vh) + 24px)!important}
+  #recorderPage .timeline-shell{height:min(210px,calc(env(viewport-segment-height 0 0,50vh) - 160px))!important}
+  .dashboard-toggle{top:auto!important;bottom:calc(env(viewport-segment-height 0 1,50vh) + 10px)!important;right:12px!important}
+  .score-float-bar{bottom:calc(env(viewport-segment-height 0 1,50vh) + 10px)}
+  .modal-backdrop.open{align-items:start;padding-top:12px}
+  .modal-backdrop.open>.modal{margin-top:0;max-height:calc(env(viewport-segment-height 0 0,100dvh) - 24px)!important}
+  .tutorial-card{bottom:auto;top:calc(env(viewport-segment-height 0 0,50vh) - 24px);transform:translate(-50%,-100%)}
+}
+
+/* ---- iPhone Duo: half-folded "book" pose (hinge vertical; Viewport Segments API, preview) ----
+   Two side-by-side halves (about 475px each at 951 wide). The recorder's two-column grid
+   opens a gap exactly over the hinge so controls and the beat display sit one per half;
+   dialogs, the tutorial card and the practice bar are centered in the LEFT half instead
+   of straddling the crease. The hinge width is right-segment.left − left-segment.right. */
+@media (horizontal-viewport-segments:2){
+  #recorderPage .top-grid{grid-template-columns:1fr 1fr!important;
+    column-gap:max(24px,calc(env(viewport-segment-left 1 0,50vw) - env(viewport-segment-right 0 0,50vw) + 24px))!important}
+  #recorderPage .beat-visual{display:flex!important}
+  .modal-backdrop.open{justify-content:start;padding-left:16px}
+  .modal-backdrop.open>.modal{margin-left:0!important;margin-right:auto!important;
+    width:min(470px,calc(env(viewport-segment-width 0 0,50vw) - 32px))!important}
+  .tutorial-card{left:calc(env(viewport-segment-width 0 0,50vw) / 2);width:min(390px,calc(env(viewport-segment-width 0 0,50vw) - 28px))}
+  .score-float-bar{left:calc(env(viewport-segment-width 0 0,50vw) / 2);max-width:calc(env(viewport-segment-width 0 0,50vw) - 32px)}
+}
+/* ====================== end iPHONE DUO SUPPORT ====================== */
+</style>
 </head>
 <body>
 <noscript><div class="mobile-js-warning">TempoTapp needs JavaScript. On iPhone/iPad, an email/Files attachment preview may show the page but disable the app. Open TempoTapp from a normal web link in Safari/Chrome instead.</div></noscript>
@@ -1639,7 +1789,7 @@ html,body{background:var(--ground)!important}
 <script>
 (() => {
   'use strict';
-  const APP_VERSION='1.9.0';
+  const APP_VERSION='1.9.1';
   const $ = id => document.getElementById(id);
   if($('appVersionLabel'))$('appVersionLabel').textContent=`TempoTapp ${APP_VERSION} · All data stays on this device.`;
   // ---------------------------------------------------------------------------
@@ -5793,6 +5943,20 @@ html,body{background:var(--ground)!important}
     if(scorePdfDoc)renderScorePage(scorePdfPage);
   },180));
   window.addEventListener('resize',()=>{if(currentScreen==='recorder')resizeCanvas()});
+  // ---- iPhone Duo (v1.9.1): fold/unfold redraw ----
+  // Opening or closing the phone changes the viewport size, so the resize listeners above
+  // already redraw every canvas. Half-folding it (book / laptop pose) does NOT change the
+  // viewport size — only the Device Posture API reports it — yet the #iphone-duo stylesheet
+  // re-flows the recorder grid and the tap pad around the hinge. Translate that posture change
+  // into a synthetic resize so the same redraw path runs. Feature-detected; the API is behind
+  // a Safari feature flag today and this is a no-op everywhere else.
+  try{
+    const posture=navigator.devicePosture;
+    if(posture&&typeof posture.addEventListener==='function'){
+      posture.addEventListener('change',()=>window.dispatchEvent(new Event('resize')));
+    }
+  }catch(_){}
+  // ---- end iPhone Duo ----
   // Browser back/forward cache can restore stale scroll locks; normalize on every page show.
   window.addEventListener('pageshow',()=>{normalizePageNavigation();resetViewportToTop();requestAnimationFrame(resetViewportToTop)});
   window.addEventListener('load',()=>{resetViewportToTop();setTimeout(resetViewportToTop,60)},{once:true});

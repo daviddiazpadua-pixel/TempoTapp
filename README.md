@@ -1,4 +1,4 @@
-# TempoTapp 1.9.0
+# TempoTapp 1.9.1
 
 Click-track creator, beat analyzer, and audio warp tool. Single-page web app. Runs in two modes:
 **device-only** (no backend, everything stays on the device) or **cloud accounts** (Firebase; the
@@ -132,6 +132,21 @@ gradients, glows or shadows. Light-only by choice (sheet-music apps are light be
 screen is a white PDF). To change a color, edit the tokens at the top of `#engraved-theme`.
 
 ## Changelog
+
+### 1.9.1 — iPhone Duo
+- Layout support for Apple's foldable iPhone, in `index.html` under `<style id="iphone-duo">` (every
+  rule labelled "iPhone Duo:"). Safari 27.1 viewports it targets: outer display 382×580 / 594×368,
+  inner display 669×867 / 951×585, Split View 385×571.
+- Outer display: slimmer header, shorter hero, smaller fixed tap pad and timeline; in landscape the
+  tap pad returns to the document flow so the fixed pad + tab bar cannot swallow a 368px-tall screen.
+- Inner display portrait (600–900px): keeps the phone interaction model (tab bar, fixed tap pad) but
+  restores the two-column grids and caps the tap pad at 600px. Inner landscape: desktop layout
+  tightened for the short height.
+- Half-folded poses (Viewport Segments / Device Posture APIs, behind Safari feature flags today):
+  laptop pose turns the bottom half into the tap pad; book pose opens the recorder grid over the
+  hinge and keeps dialogs, the tutorial card and the practice bar in the left half. A posture change
+  dispatches a synthetic `resize` so the canvases redraw. No-op in browsers without those APIs.
+- Nothing changes for regular iPhones (≈390×850) or iPads.
 
 ### 1.9.0 — the library keeps the sheet music and the recording
 - Saving a click track can keep the sheet-music PDF and the recording it was tapped to ("Keep with this
