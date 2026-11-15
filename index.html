@@ -843,6 +843,8 @@ html,body{background:var(--ground)!important}
 .score-edge-handle.side::before{width:10px;height:26px}
 @media (pointer:coarse){.score-edge-handle.side{width:28px}}
 .score-measure-box.selected{cursor:move}
+/* a drag on a handle, a dot or the selected box must never turn into a page scroll on touch screens (it ended the drag part-way: "it blocked me") */
+.score-bar-handle,.score-start-handle,.score-edge-handle,.score-beat-mark.draggable,.score-measure-box.selected,.score-stage.edit-resize .score-measure-box,.score-stage.edit-join .score-measure-box{touch-action:none!important}
 .score-beat-mark.draggable{pointer-events:auto;cursor:grab;width:13px;height:13px;border-width:2px;z-index:5}
 .score-beat-mark.draggable.accent{width:16px;height:16px}
 .score-beat-mark.manual{box-shadow:0 0 0 2px rgba(43,95,138,.9)}
@@ -4044,7 +4046,7 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
       for(const cb of track.scoreMeasureBoxes||[]){const src=scoreBoxById(cb.id);if(src){cb.y0=src.y0;cb.y1=src.y1;cb.y=src.y}}
       renderScoreOverlay();if(d.target){const el=$('scoreOverlay').querySelector(`.score-measure-box[data-box-key="${scoreBoxKey(d.target)}"]`);el?.classList.add('merge-target')}return}
     if(d.kind==='start'){d.b.cx0=Math.max(d.b.x0,Math.min(d.b.x1-0.006,x))}
-    else{const lo=(Number.isFinite(d.b.cx0)?Math.max(d.b.x0,d.b.cx0):d.b.x0)+0.006,hi=d.next?d.next.x1-0.006:1;const nx=Math.max(lo,Math.min(hi,x));d.b.x1=nx;if(d.next){d.next.x0=nx;if(!Number.isFinite(d.next.cx0)||d.next.cx0<nx)d.next.cx0=nx}}
+    else{/* v1.9.1: a barline may be pushed anywhere between its own measure's left edge and the next barline — the detected first-note position no longer blocks it (it is clamped into the box instead) */const lo=d.b.x0+0.006,hi=d.next?d.next.x1-0.006:1;const nx=Math.max(lo,Math.min(hi,x));d.b.x1=nx;if(Number.isFinite(d.b.cx0)&&d.b.cx0>nx-0.004)d.b.cx0=Math.max(d.b.x0,nx-0.004);if(d.next){d.next.x0=nx;if(!Number.isFinite(d.next.cx0)||d.next.cx0<nx)d.next.cx0=nx}}
     for(const cb of track.scoreMeasureBoxes||[]){const src=scoreBoxById(cb.id);if(src){cb.x0=src.x0;cb.x1=src.x1;cb.cx0=src.cx0}}renderScoreOverlay()}
   function scoreEditPointerUp(){const d=scoreEditDrag;if(!d)return;scoreEditDrag=null;if(!d.moved){scoreEditHistory.pop();$('scoreEditUndo').disabled=!scoreEditHistory.length;return}
     if(d.kind==='beat'){const m=trackBeatMeta(d.idx);applyScoreEdits(`Beat ${m.beat} of M${scoreMeasureLabel(m.measure)} placed by hand`);return}
