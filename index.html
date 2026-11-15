@@ -1264,6 +1264,8 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
             <label>Score layout<select id="scoreLayoutMode"><option value="auto" selected>Auto detect</option><option value="piano">Piano / grand staff</option><option value="single">Single staff</option></select></label>
             <button class="hero-primary compact-primary" id="scoreAnalyzeButton">Analyze Score</button>
           </div>
+          <!-- v1.9.1: taller boxes for very high / very low notes, never into the next line -->
+          <div class="score-auto-row"><label class="score-follow"><input type="checkbox" id="scoreExpandBoxes"> Expand boxes to catch very high and very low notes</label><span class="score-analysis-status">Each line's boxes grow up and down as far as they can without touching the line above or below.</span></div>
           <div class="score-analysis-progress" aria-hidden="true"><span id="scoreAnalysisProgressBar"></span></div>
           <div class="score-analysis-status" id="scoreAnalysisStatus">Add a PDF and TempoTapp will analyze the score automatically. A few seconds is normal.</div>
           <div class="score-auto-note">If the score is unusual or a barline is missed, use <strong>Fix / Add Marker</strong> below to correct that spot; the rest of the automatic mapping stays intact.</div>
@@ -3840,7 +3842,7 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
         const gray=TempoOMR.toGray(c.getImageData(0,0,canvas.width,canvas.height));results.push(TempoOMR.analyzePage(gray,canvas.width,canvas.height,{layout}));dims.push([canvas.width,canvas.height]);canvas.width=canvas.height=1;await new Promise(r=>setTimeout(r,0));
       }
       const NM=TempoOMR.numberMeasures(results);
-      scoreDetectedRawBoxes=NM.boxes.map(b=>{const [W,H]=dims[b.page-1],sp=b.sp||((b.bottom-b.top)/4)||10;return{page:b.page,x0:b.x0/W,x1:b.x1/W,cx0:(Number.isFinite(b.cx0)?b.cx0:b.x0)/W,y0:Math.max(0,b.top-sp*1.45)/H,y1:Math.min(H,b.bottom+sp*1.25)/H,y:Math.max(0,b.top-sp*0.75)/H,system:b.system,measure:b.measure,confidence:.9}});
+      scoreDetectedRawBoxes=NM.boxes.map(b=>{const [W,H]=dims[b.page-1],sp=b.sp||((b.bottom-b.top)/4)||10;return{page:b.page,x0:b.x0/W,x1:b.x1/W,cx0:(Number.isFinite(b.cx0)?b.cx0:b.x0)/W,y0:Math.max(0,b.top-sp*1.45)/H,y1:Math.min(H,b.bottom+sp*1.25)/H,y:Math.max(0,b.top-sp*1.45)/H+SCORE_DOT_OFF,system:b.system,measure:b.measure,confidence:.9}});
       for(const m of NM.meters){const b=scoreDetectedRawBoxes.find(x=>x.measure===m.measure);if(b)b.meter=m.meter}
       // Second opinion: if the exact reader (not self-confirmed: no printed bar numbers) found exactly the same
       // measures on every page as the image reader, two independent readings agree, so use the exact one,
@@ -3852,6 +3854,7 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
       scoreClickPrefill(scoreDetectedTotal);
       // v1.5.1: a PDF on its own now produces the click track. Only build automatically when there is
       // no click track yet (or the current one came from this score) so a tapped track is never replaced.
+      scoreApplyExpansion();
       if(!track.taps.length||track.fromScore){makeClickTrackFromScore(true)}else autoMapDetectedScore();
       if(scorePdfPage)await renderScorePage(scorePdfPage);
     }catch(err){setScoreAnalysisStatus(err?.message||'Score analysis failed. You can still map the score manually.','warn',100)}finally{scoreAnalysisRunning=false;if(button)button.textContent='Analyze Score';syncScorePdfUi()}
@@ -3877,7 +3880,7 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
   }
   function applyVectorScore(vec){
     const {D,pages}=vec;scoreReadMode='exact';
-    scoreDetectedRawBoxes=D.measures.map(m=>{const r=pages[m.page-1].res,W=r.W,H=r.H,sp=m.sp;return{page:m.page,x0:m.x0/W,x1:m.x1/W,cx0:Math.max(m.x0,Math.min(m.cx0,m.x1-sp))/W,y0:Math.max(0,m.top-sp*1.45)/H,y1:Math.min(H,m.bottom+sp*1.25)/H,y:Math.max(0,m.top-sp*0.75)/H,system:m.system+1000*m.page,measure:m.measure,confidence:1,src:'exact',
+    scoreDetectedRawBoxes=D.measures.map(m=>{const r=pages[m.page-1].res,W=r.W,H=r.H,sp=m.sp;return{page:m.page,x0:m.x0/W,x1:m.x1/W,cx0:Math.max(m.x0,Math.min(m.cx0,m.x1-sp))/W,y0:Math.max(0,m.top-sp*1.45)/H,y1:Math.min(H,m.bottom+sp*1.25)/H,y:Math.max(0,m.top-sp*1.45)/H+SCORE_DOT_OFF,system:m.system+1000*m.page,measure:m.measure,confidence:1,src:'exact',
       meter:m.meter||undefined,meterAlt:m.meterAlt?m.meterAlt.join('+'):undefined,printed:Number.isFinite(m.printed)?m.printed:undefined,title:m.title||undefined,restart:!!m.restart,
       ev:(m.events||[]).map(e=>({kind:e.kind,frac:+e.frac.toFixed(3),...(e.kind==='set'?{qpm:+e.qpm.toFixed(2),bpm:e.bpm,unit:e.unit}:{}),...(e.molto?{molto:true}:{}),...(e.poco?{poco:true}:{})})),
       cols:(m.cols||[]).map(c=>+(c/W).toFixed(4))}});
@@ -3886,7 +3889,7 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
     // a saved click track for one section (reopened, PDF added again): find that section from its saved boxes
     const saved=track.scoreMeasureBoxes||[];if(track.taps.length&&!track.fromScore&&saved.length&&scoreSections.length){const s0=saved[0],hit=scoreBoxesSorted().find(b=>b.page===s0.page&&Math.abs(b.x0-s0.x0)<.01&&Math.abs(b.y-s0.y)<.01);if(hit){const k=scoreSections.findIndex(x=>x.start===hit.measure),n=new Set(saved.map(b=>b.measure)).size;if(k>=0&&Math.abs(n-(scoreSections[k].end-scoreSections[k].start+1))<=2)scoreSectionIdx=k}}
     syncScoreSectionUi();
-    scoreClickPrefill(scoreSectionRange().len);
+    scoreClickPrefill(scoreSectionRange().len);scoreApplyExpansion();
     if(!track.taps.length||track.fromScore){makeClickTrackFromScore(true)}else autoMapDetectedScore();
     const check=rep.crossChecked?` · image reading and notation data agree on every page`:checked?(bad.length?` · ⚠ bar count disagrees with the printed bar numbers near ${bad.slice(0,3).map(x=>`bar ${x.printedFrom}`).join(', ')}: check those lines`:` · checked against ${rep.printed} printed bar numbers: all agree`):'';
     setScoreAnalysisStatus(`Read exactly from the PDF's notation · ${scoreDetectedTotal} measures on ${new Set(scoreDetectedRawBoxes.map(b=>b.page)).size} pages${check}.${scoreSections.length?` ${scoreSections.length} sections found: pick one under Section.`:''} ${scoreLastBuildMsg}`,bad.length?'warn':'good',100);
@@ -3977,7 +3980,7 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
     const pos=k=>L+w*(k-1),snap=k=>{const t=pos(k);let best=null;for(const c of cols){const d=Math.abs(c-t);if(d<=w*.42&&(best===null||d<Math.abs(best-t)))best=c}return best};
     const k=meta.beat,me=snap(k);if(me===null)return x;const prev=k>1?(snap(k-1)??pos(k-1)):-1,next=k<beats?(snap(k+1)??pos(k+1)):2;return me>prev&&me<next?me-0.0015:x}
   function scorePointForBeat(index){
-    const anchors=[...(track.scoreAnchors||[])].sort((a,b)=>a.beatIndex-b.beatIndex),exactManual=anchors.find(a=>Number(a.beatIndex)===index&&a.source!=='auto');if(exactManual)return exactManual;
+    const anchors=[...(track.scoreAnchors||[])].sort((a,b)=>a.beatIndex-b.beatIndex),exactManual=anchors.find(a=>Number(a.beatIndex)===index&&a.source!=='auto');if(exactManual){const mm=trackBeatMeta(index),home=(track.scoreMeasureBoxes||[]).find(b=>Number(b.measure)===Number(mm.measure)&&Number(b.page)===Number(exactManual.page));return home?{...exactManual,y:scoreDotY(home)}:exactManual}
     const meta=trackBeatMeta(index),parts=(track.scoreMeasureBoxes||[]).filter(b=>Number(b.measure)===Number(meta.measure));if(parts.length){const beats=Math.max(1,meta.beatsPerMeasure||1);let f=(meta.beat-1)/beats;const L=b=>Number.isFinite(b.cx0)&&b.cx0>b.x0&&b.cx0<b.x1?b.cx0:b.x0,tot=parts.reduce((a,b)=>a+(b.x1-L(b)),0)||1;let box=parts[0];for(const b of parts){const share=(b.x1-L(b))/tot;if(f<share||b===parts.at(-1)){box=b;f=f/Math.max(share,1e-6);break}f-=share}const x0=L(box),pad=Math.min(.004,(box.x1-x0)*.06);let x=Math.min(box.x1-pad,x0+pad+(box.x1-x0-pad)*Math.max(0,Math.min(.97,f)));x=scoreSnapToNotes(box,x,meta,beats,parts);return{page:box.page,x,y:box.y,beatIndex:index,auto:true}}
     const exact=anchors.find(a=>Number(a.beatIndex)===index);if(exact)return exact;if(!anchors.length)return null;
     let prev=null,next=null;for(const a of anchors){if(a.beatIndex<index)prev=a;else if(a.beatIndex>index){next=a;break}}
@@ -4003,6 +4006,7 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
     const seen=new Set(),man=kept.reverse().filter(a=>{if(seen.has(a.beatIndex))return false;seen.add(a.beatIndex);return true});
     track.scoreAnchors=[...(track.scoreAnchors||[]).filter(a=>a.source==='auto'),...man].sort((a,b)=>a.beatIndex-b.beatIndex)}
   function applyScoreEdits(msg){
+    normalizeScoreDotLines();
     for(const a of track.scoreAnchors||[])if(a.source!=='auto'&&!a.beat)a.beat=trackBeatMeta(a.beatIndex).beat;
     renumberScoreBoxes();scoreClickPrefill(scoreDetectedTotal);
     if(track.fromScore||!track.taps.length)makeClickTrackFromScore(false);else autoMapDetectedScore();
@@ -4011,9 +4015,22 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
   function undoScoreEdit(){const h=scoreEditHistory.pop();if(!h)return;scoreDetectedRawBoxes=h.boxes;scoreDetectedMeters=h.meters;scoreDetectedTotal=h.total;if(h.anchors)track.scoreAnchors=h.anchors;$('scoreEditUndo').disabled=!scoreEditHistory.length;applyScoreEdits('Undone')}
   function setScoreEditMode(m){scoreEditMode=scoreEditMode===m?'off':m;if(scoreEditMode!=='off'&&scoreMappingActive)endScoreMapping();document.querySelectorAll('[data-score-edit]').forEach(b=>b.classList.toggle('on',b.dataset.scoreEdit===scoreEditMode));$('scoreStage')?.classList.toggle('edit-remove',scoreEditMode==='remove');$('scoreStage')?.classList.toggle('edit-join',scoreEditMode==='join');$('scoreStage')?.classList.toggle('edit-resize',scoreEditMode==='resize');if(scoreEditMode!=='resize')scoreSelectedBoxId=null;
     const hint=$('scoreEditHint');if(hint){hint.classList.toggle('hidden',scoreEditMode==='off');hint.textContent=scoreEditMode==='move'?'Drag a red barline left or right to where the real barline is. Drag a green ▼ to where beat 1 of that measure starts.':scoreEditMode==='add'?'Click inside a measure exactly where a missed barline is. A new measure is created and every later measure renumbers.':scoreEditMode==='remove'?'Click a red barline that isn’t a real barline. The two measures merge and every later measure renumbers.':
-      scoreEditMode==='resize'?'Tap a measure to select it. Drag any blue edge (left, right, top, bottom) so the box covers the whole measure, or drag inside the selected box to move it. Drag the top or bottom edge over the box above or below and the two become one measure. Drag a beat dot to exactly where that beat is played. Dots ride along when you move a box or its top edge.':
+      scoreEditMode==='resize'?'Tap a measure to select it. Drag any blue edge (left, right, top, bottom) so the box covers the whole measure, or drag inside the selected box to move it. Drag the top or bottom edge over the box above or below and the two become one measure. Drag a beat dot sideways to exactly where that beat is played — dots always sit on the top edge of their box and ride along when the box moves.':
       scoreEditMode==='join'?'Click any measure on a line that was split from the line under it (piano: right hand and left hand read as separate measures). The two lines join into one system.':''}
     ensureScoreContFlags();renderScoreOverlay()}
+  // v1.9.1 — the beat dots always sit on the top edge of their box (a fixed offset below it), so a dot placed by
+  // hand can only move sideways, and the dots follow when a box is moved, resized or expanded.
+  const SCORE_DOT_OFF=0.006;
+  function scoreDotY(b){return Math.min(b.y1,b.y0+SCORE_DOT_OFF)}
+  function normalizeScoreDotLines(){for(const b of scoreDetectedRawBoxes)b.y=scoreDotY(b);for(const cb of track.scoreMeasureBoxes||[]){const src=scoreBoxById(cb.id);cb.y=src?src.y:scoreDotY(cb)}}
+  // taller boxes: each line grows up and down as far as the free space allows (half the gap to the neighbouring
+  // line, at most one box height), from the originals as read, so the option can be switched off again
+  function scoreApplyExpansion(){const on=!!$('scoreExpandBoxes')?.checked;const pages=[...new Set(scoreDetectedRawBoxes.map(b=>b.page))];
+    for(const b of scoreDetectedRawBoxes){if(!Number.isFinite(b.oy0)){b.oy0=b.y0;b.oy1=b.y1}}
+    for(const p of pages){const sys=[...new Set(scoreDetectedRawBoxes.filter(b=>b.page===p).map(b=>b.system))].map(id=>{const bx=scoreDetectedRawBoxes.filter(b=>b.page===p&&b.system===id);return{id,bx,top:Math.min(...bx.map(b=>b.oy0)),bottom:Math.max(...bx.map(b=>b.oy1))}}).sort((a,b)=>a.top-b.top);
+      sys.forEach((S,i)=>{const h=S.bottom-S.top,cap=h*0.6,margin=0.004,up=i>0?Math.max(0,(S.top-sys[i-1].bottom)/2-margin):Math.min(S.top,cap),down=i<sys.length-1?Math.max(0,(sys[i+1].top-S.bottom)/2-margin):Math.min(1-S.bottom,cap);
+        for(const b of S.bx){b.y0=on?Math.max(0,S.top-Math.min(up,cap)):b.oy0;b.y1=on?Math.min(1,S.bottom+Math.min(down,cap)):b.oy1}})}
+    normalizeScoreDotLines()}
   function scoreStageFrac(e){const r=$('scoreStage').getBoundingClientRect();return{x:Math.max(0,Math.min(1,(e.clientX-r.left)/r.width)),y:Math.max(0,Math.min(1,(e.clientY-r.top)/r.height))}}
   function scoreBoxById(id){return scoreDetectedRawBoxes.find(b=>String(b.id)===String(id))}
   function scoreNextInSystem(b){const L=scoreBoxesSorted(),i=L.indexOf(b),n=L[i+1];return n&&n.page===b.page&&n.system===b.system?n:null}
@@ -4036,15 +4053,14 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
     if(scoreEditMode==='move'){scoreEditSnapshot();scoreEditDrag={b,kind:h.classList.contains('score-start-handle')?'start':'bar',next:h.classList.contains('score-bar-handle')?scoreNextInSystem(b):null,pid:e.pointerId,moved:false};try{h.setPointerCapture(e.pointerId)}catch{}}
   }
   function scoreEditPointerMove(e){const d=scoreEditDrag;if(!d)return;const {x,y}=scoreStageFrac(e);d.moved=true;
-    if(d.kind==='beat'){const cx=Math.max(0,Math.min(1,x)),cy=Math.max(0,Math.min(1,y));track.scoreAnchors=(track.scoreAnchors||[]).filter(a=>Number(a.beatIndex)!==d.idx);track.scoreAnchors.push({beatIndex:d.idx,beat:trackBeatMeta(d.idx).beat,page:scorePdfPage,x:cx,y:cy,source:'manual'});track.scoreAnchors.sort((a,b)=>a.beatIndex-b.beatIndex);renderScoreOverlay();return}
-    if(d.kind==='move'){const dx=x-d.fx,dy=y-d.fy,w=d.x1-d.x0,hgt=d.y1-d.y0;d.b.x0=Math.max(0,Math.min(1-w,d.x0+dx));d.b.x1=d.b.x0+w;d.b.y0=Math.max(0,Math.min(1-hgt,d.y0+dy));d.b.y1=d.b.y0+hgt;if(Number.isFinite(d.cx0))d.b.cx0=d.cx0+(d.b.x0-d.x0);d.b.y=d.y+(d.b.y0-d.y0);
-      if(!d.anch){d.anch=(track.scoreAnchors||[]).filter(a=>a.source!=='auto'&&Number(a.page)===d.b.page&&a.x>=d.x0&&a.x<=d.x1&&a.y>=d.y0-0.03&&a.y<=d.y1).map(a=>({a,x:a.x,y:a.y}))}for(const r of d.anch){r.a.x=r.x+(d.b.x0-d.x0);r.a.y=r.y+(d.b.y0-d.y0)} // hand-placed dots inside the box move with it
+    if(d.kind==='beat'){const cx=Math.max(0,Math.min(1,x)),meta=trackBeatMeta(d.idx),home=scoreDetectedRawBoxes.filter(b=>b.page===scorePdfPage&&Number(b.measure)===Number(meta.measure)),cy=home.length?scoreDotY(home[0]):Math.max(0,Math.min(1,y));track.scoreAnchors=(track.scoreAnchors||[]).filter(a=>Number(a.beatIndex)!==d.idx);track.scoreAnchors.push({beatIndex:d.idx,beat:meta.beat,page:scorePdfPage,x:cx,y:cy,source:'manual'});track.scoreAnchors.sort((a,b)=>a.beatIndex-b.beatIndex);renderScoreOverlay();return}
+    if(d.kind==='move'){const dx=x-d.fx,dy=y-d.fy,w=d.x1-d.x0,hgt=d.y1-d.y0;d.b.x0=Math.max(0,Math.min(1-w,d.x0+dx));d.b.x1=d.b.x0+w;d.b.y0=Math.max(0,Math.min(1-hgt,d.y0+dy));d.b.y1=d.b.y0+hgt;if(Number.isFinite(d.cx0))d.b.cx0=d.cx0+(d.b.x0-d.x0);d.b.y=scoreDotY(d.b);
+      if(!d.anch){d.anch=(track.scoreAnchors||[]).filter(a=>a.source!=='auto'&&Number(a.page)===d.b.page&&a.x>=d.x0&&a.x<=d.x1&&a.y>=d.y0-0.03&&a.y<=d.y1).map(a=>({a,x:a.x,y:a.y}))}for(const r of d.anch){r.a.x=r.x+(d.b.x0-d.x0);r.a.y=scoreDotY(d.b)} // hand-placed dots inside the box move with it
       for(const cb of track.scoreMeasureBoxes||[]){const src=scoreBoxById(cb.id);if(src)Object.assign(cb,{x0:src.x0,x1:src.x1,cx0:src.cx0,y0:src.y0,y1:src.y1,y:src.y})}renderScoreOverlay();return}
     if(d.kind==='left'||d.kind==='right'){if(d.kind==='left'){d.b.x0=Math.max(0,Math.min(d.b.x1-0.01,x));if(Number.isFinite(d.b.cx0)&&d.b.cx0<d.b.x0)d.b.cx0=d.b.x0}else{d.b.x1=Math.min(1,Math.max(d.b.x0+0.01,x));if(Number.isFinite(d.b.cx0)&&d.b.cx0>d.b.x1-0.004)d.b.cx0=d.b.x1-0.004}
       for(const cb of track.scoreMeasureBoxes||[]){const src=scoreBoxById(cb.id);if(src){cb.x0=src.x0;cb.x1=src.x1;cb.cx0=src.cx0}}renderScoreOverlay();return}
     if(d.kind==='top'||d.kind==='bottom'){
-      if(d.kind==='top'){const ny=Math.min(d.b.y1-0.01,y);d.b.y=d.b.y+(ny-d.b.y0);d.b.y0=ny}else d.b.y1=Math.max(d.b.y0+0.01,y); // the beat dots ride on the top edge
-      if(d.b.y<d.b.y0||d.b.y>d.b.y1)d.b.y=Math.max(d.b.y0,Math.min(d.b.y1,d.b.y));
+      if(d.kind==='top')d.b.y0=Math.min(d.b.y1-0.01,y);else d.b.y1=Math.max(d.b.y0+0.01,y);d.b.y=scoreDotY(d.b); // the beat dots ride on the top edge
       // a box in the neighbouring system that the dragged edge now covers past its middle becomes the merge target
       const ov=(p,q)=>Math.min(p.x1,q.x1)-Math.max(p.x0,q.x0);d.target=null;
       for(const o of scoreDetectedRawBoxes){if(o===d.b||o.page!==d.b.page||o.system===d.b.system)continue;if(ov(o,d.b)<Math.min(o.x1-o.x0,d.b.x1-d.b.x0)*0.5)continue;
@@ -6197,6 +6213,7 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
   $('scorePrevPage').addEventListener('click',()=>renderScorePage(scorePdfPage-1));
   $('scoreNextPage').addEventListener('click',()=>renderScorePage(scorePdfPage+1));
   $('scoreRemovePdfButton').addEventListener('click',()=>{if(scoreFullscreen)toggleScoreFullscreen(false);removeScorePdf()});
+  $('scoreExpandBoxes').addEventListener('change',()=>{if(!scoreDetectedRawBoxes.length)return;scoreEditSnapshot();scoreApplyExpansion();applyScoreEdits($('scoreExpandBoxes').checked?'Boxes expanded to the free space around each line':'Boxes back to the staff as read')});
   $('scoreFitPageButton').addEventListener('click',toggleScoreFitPage);$('scoreFullscreenButton').addEventListener('click',()=>toggleScoreFullscreen());
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&scoreFullscreen)toggleScoreFullscreen(false)});syncScoreViewUi();
   $('scoreStartMappingButton').addEventListener('click',startScoreMapping);
