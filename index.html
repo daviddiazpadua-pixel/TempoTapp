@@ -4006,7 +4006,9 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
     const pos=k=>L+w*(k-1),snap=k=>{const t=pos(k);let best=null;for(const c of cols){const d=Math.abs(c-t);if(d<=w*.42&&(best===null||d<Math.abs(best-t)))best=c}return best};
     const k=meta.beat,me=snap(k);if(me===null)return x;const prev=k>1?(snap(k-1)??pos(k-1)):-1,next=k<beats?(snap(k+1)??pos(k+1)):2;return me>prev&&me<next?me-0.0015:x}
   function scorePointForBeat(index){
-    const anchors=[...(track.scoreAnchors||[])].sort((a,b)=>a.beatIndex-b.beatIndex),exactManual=anchors.find(a=>Number(a.beatIndex)===index&&a.source!=='auto');if(exactManual){const mm=trackBeatMeta(index),home=(track.scoreMeasureBoxes||[]).find(b=>Number(b.measure)===Number(mm.measure)&&Number(b.page)===Number(exactManual.page));return home?{...exactManual,y:scoreDotY(home)}:exactManual}
+    const anchors=[...(track.scoreAnchors||[])].sort((a,b)=>a.beatIndex-b.beatIndex),exactManual=anchors.find(a=>Number(a.beatIndex)===index&&a.source!=='auto');if(exactManual){const mm=trackBeatMeta(index),home=(track.scoreMeasureBoxes||[]).find(b=>Number(b.measure)===Number(mm.measure)&&Number(b.page)===Number(exactManual.page));
+      // v1.9.1: a hand-placed dot is stored as a fraction of its measure's box (fx), so it rides along when the box is resized, moved or expanded
+      return home?{...exactManual,x:Number.isFinite(exactManual.fx)?home.x0+exactManual.fx*(home.x1-home.x0):exactManual.x,y:scoreDotY(home)}:exactManual}
     const meta=trackBeatMeta(index),parts=(track.scoreMeasureBoxes||[]).filter(b=>Number(b.measure)===Number(meta.measure));if(parts.length){const beats=Math.max(1,meta.beatsPerMeasure||1);let f=(meta.beat-1)/beats;const L=b=>Number.isFinite(b.cx0)&&b.cx0>b.x0&&b.cx0<b.x1?b.cx0:b.x0,tot=parts.reduce((a,b)=>a+(b.x1-L(b)),0)||1;let box=parts[0];for(const b of parts){const share=(b.x1-L(b))/tot;if(f<share||b===parts.at(-1)){box=b;f=f/Math.max(share,1e-6);break}f-=share}const x0=L(box),pad=Math.min(.004,(box.x1-x0)*.06);let x=Math.min(box.x1-pad,x0+pad+(box.x1-x0-pad)*Math.max(0,Math.min(.97,f)));x=scoreSnapToNotes(box,x,meta,beats,parts);return{page:box.page,x,y:box.y,beatIndex:index,auto:true}}
     const exact=anchors.find(a=>Number(a.beatIndex)===index);if(exact)return exact;if(!anchors.length)return null;
     let prev=null,next=null;for(const a of anchors){if(a.beatIndex<index)prev=a;else if(a.beatIndex>index){next=a;break}}
@@ -4032,7 +4034,7 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
     const seen=new Set(),man=kept.reverse().filter(a=>{if(seen.has(a.beatIndex))return false;seen.add(a.beatIndex);return true});
     track.scoreAnchors=[...(track.scoreAnchors||[]).filter(a=>a.source==='auto'),...man].sort((a,b)=>a.beatIndex-b.beatIndex)}
   function applyScoreEdits(msg){
-    normalizeScoreDotLines();
+    normalizeScoreDotLines();setTimeout(normalizeScoreDotLines,0);
     for(const a of track.scoreAnchors||[])if(a.source!=='auto'&&!a.beat)a.beat=trackBeatMeta(a.beatIndex).beat;
     renumberScoreBoxes();scoreClickPrefill(scoreDetectedTotal);
     if(track.fromScore||!track.taps.length)makeClickTrackFromScore(false);else autoMapDetectedScore();
@@ -4048,7 +4050,8 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
   // hand can only move sideways, and the dots follow when a box is moved, resized or expanded.
   const SCORE_DOT_OFF=0.006;
   function scoreDotY(b){return Math.min(b.y1,b.y0+SCORE_DOT_OFF)}
-  function normalizeScoreDotLines(){for(const b of scoreDetectedRawBoxes)b.y=scoreDotY(b);for(const cb of track.scoreMeasureBoxes||[]){const src=scoreBoxById(cb.id);cb.y=src?src.y:scoreDotY(cb)}}
+  function normalizeScoreDotLines(){for(const b of scoreDetectedRawBoxes)b.y=scoreDotY(b);for(const cb of track.scoreMeasureBoxes||[]){const src=scoreBoxById(cb.id);cb.y=src?src.y:scoreDotY(cb)}
+    for(const a of track.scoreAnchors||[]){if(a.source==='auto')continue;const mm=trackBeatMeta(a.beatIndex),home=(track.scoreMeasureBoxes||[]).find(b=>Number(b.measure)===Number(mm.measure)&&Number(b.page)===Number(a.page));if(!home)continue;const w=Math.max(1e-6,home.x1-home.x0);if(!Number.isFinite(a.fx))a.fx=Math.max(0,Math.min(1,(a.x-home.x0)/w));a.x=home.x0+a.fx*w;a.y=scoreDotY(home)}}
   // taller boxes: each line grows up and down as far as the free space allows (half the gap to the neighbouring
   // line, at most one box height), from the originals as read, so the option can be switched off again
   function scoreApplyExpansion(){const on=!!$('scoreExpandBoxes')?.checked;const pages=[...new Set(scoreDetectedRawBoxes.map(b=>b.page))];
@@ -4079,9 +4082,9 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
     if(scoreEditMode==='move'){scoreEditSnapshot();scoreEditDrag={b,kind:h.classList.contains('score-start-handle')?'start':'bar',next:h.classList.contains('score-bar-handle')?scoreNextInSystem(b):null,pid:e.pointerId,moved:false};try{h.setPointerCapture(e.pointerId)}catch{}}
   }
   function scoreEditPointerMove(e){const d=scoreEditDrag;if(!d)return;const {x,y}=scoreStageFrac(e);d.moved=true;
-    if(d.kind==='beat'){const cx=Math.max(0,Math.min(1,x)),meta=trackBeatMeta(d.idx),home=scoreDetectedRawBoxes.filter(b=>b.page===scorePdfPage&&Number(b.measure)===Number(meta.measure)),cy=home.length?scoreDotY(home[0]):Math.max(0,Math.min(1,y));track.scoreAnchors=(track.scoreAnchors||[]).filter(a=>Number(a.beatIndex)!==d.idx);track.scoreAnchors.push({beatIndex:d.idx,beat:meta.beat,page:scorePdfPage,x:cx,y:cy,source:'manual'});track.scoreAnchors.sort((a,b)=>a.beatIndex-b.beatIndex);renderScoreOverlay();return}
+    if(d.kind==='beat'){const cx=Math.max(0,Math.min(1,x)),meta=trackBeatMeta(d.idx),home=scoreDetectedRawBoxes.filter(b=>b.page===scorePdfPage&&Number(b.measure)===Number(meta.measure)),cy=home.length?scoreDotY(home[0]):Math.max(0,Math.min(1,y));track.scoreAnchors=(track.scoreAnchors||[]).filter(a=>Number(a.beatIndex)!==d.idx);const fx=home.length?Math.max(0,Math.min(1,(cx-home[0].x0)/Math.max(1e-6,home[0].x1-home[0].x0))):undefined;track.scoreAnchors.push({beatIndex:d.idx,beat:meta.beat,page:scorePdfPage,x:cx,y:cy,fx,source:'manual'});track.scoreAnchors.sort((a,b)=>a.beatIndex-b.beatIndex);renderScoreOverlay();return}
     if(d.kind==='move'){const dx=x-d.fx,dy=y-d.fy,w=d.x1-d.x0,hgt=d.y1-d.y0;d.b.x0=Math.max(0,Math.min(1-w,d.x0+dx));d.b.x1=d.b.x0+w;d.b.y0=Math.max(0,Math.min(1-hgt,d.y0+dy));d.b.y1=d.b.y0+hgt;if(Number.isFinite(d.cx0))d.b.cx0=d.cx0+(d.b.x0-d.x0);d.b.y=scoreDotY(d.b);
-      if(!d.anch){d.anch=(track.scoreAnchors||[]).filter(a=>a.source!=='auto'&&Number(a.page)===d.b.page&&a.x>=d.x0&&a.x<=d.x1&&a.y>=d.y0-0.03&&a.y<=d.y1).map(a=>({a,x:a.x,y:a.y}))}for(const r of d.anch){r.a.x=r.x+(d.b.x0-d.x0);r.a.y=scoreDotY(d.b)} // hand-placed dots inside the box move with it
+      // hand-placed dots are fractions of the box (fx), so they move with it by themselves
       for(const cb of track.scoreMeasureBoxes||[]){const src=scoreBoxById(cb.id);if(src)Object.assign(cb,{x0:src.x0,x1:src.x1,cx0:src.cx0,y0:src.y0,y1:src.y1,y:src.y})}renderScoreOverlay();return}
     if(d.kind==='left'||d.kind==='right'){if(d.kind==='left'){d.b.x0=Math.max(0,Math.min(d.b.x1-0.01,x));if(Number.isFinite(d.b.cx0)&&d.b.cx0<d.b.x0)d.b.cx0=d.b.x0}else{d.b.x1=Math.min(1,Math.max(d.b.x0+0.01,x));if(Number.isFinite(d.b.cx0)&&d.b.cx0>d.b.x1-0.004)d.b.cx0=d.b.x1-0.004}
       for(const cb of track.scoreMeasureBoxes||[]){const src=scoreBoxById(cb.id);if(src){cb.x0=src.x0;cb.x1=src.x1;cb.cx0=src.cx0}}renderScoreOverlay();return}
