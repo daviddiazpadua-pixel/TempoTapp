@@ -144,7 +144,9 @@ Score reader (`vendor/score-omr.js`, `vendor/score-vector.js`, Create screen):
 - Measure boxes are a clear ink outline with a numbered tag (active measure red).
 - Fix measures gained **Adjust box** (tap a measure; drag its top/bottom edge; drag over the box below or
   above to merge the two into one measure) and **Join lines** (tap a measure to join its line with the one
-  beneath — a whole mis-split piano line in one tap). Both undo. Drag listeners moved to the window so a
+  beneath — a whole mis-split piano line in one tap). Adjust box also has left/right edges, drag-inside to
+  move the selected box, and draggable beat dots (a dragged dot becomes a manual anchor for that beat;
+  undo restores it). Both undo. Drag listeners moved to the window so a
   fast drag no longer stops when the overlay re-renders.
 - **Fit page** (whole page on screen, no inner scrolling; default on phones) and **Full screen** (the score
   workspace becomes a fixed overlay — works on iPhone where the Fullscreen API is unavailable; Escape exits).
