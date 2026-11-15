@@ -164,6 +164,12 @@ Click track creation:
   track from the score with the edits; they are saved with the track (`score_edits`) and restored on open.
 - Create hub is two panels (From Sheet Music, With Audio); From Scratch moved to a link row below them,
   and its Metronome guide is off by default.
+- **Practice mode** (button in the score toolbar): full-screen score with only a practice bar — Play/Stop,
+  From measure, Speed 40–120% (clicks and score follow at that rate), Smooth cursor, Count-in on/off, Exit.
+  Editing tools and the mapping bar are hidden; Escape exits.
+- **Smooth cursor** (practice bar, and a checkbox in the score click card): a circle glides along the beat
+  line between beats in proportion to elapsed time instead of the highlight jumping beat to beat; at the end
+  of a line it glides to the end of the measure. Off by default (the jump mode is unchanged).
 - "Analyze a Recording" is hidden (`SHOW_ANALYZE`, fenced `OPTIONAL FEATURE: ANALYZE`): automatic beat
   detection is not reliable enough for rubato classical playing, so the score is the source of timing.
   The page and code are intact; set `window.TEMPOTAPP_SHOW_ANALYZE=true` in `vendor/cloud-config.js` to show it.
