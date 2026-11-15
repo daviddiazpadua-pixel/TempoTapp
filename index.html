@@ -1282,7 +1282,7 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
             </div>
           </div>
           <!-- v1.9.1: tap your own timing over a passage (ritardando, accelerando, fermata) -->
-          <div class="score-auto-row score-retime-row"><label>Tap your own timing from measure<input id="scoreRetimeMeasure" type="number" inputmode="numeric" min="1" step="1" value="1"></label><button class="hero-primary compact-primary" id="scoreRetimeButton">Tap from here</button><span class="score-analysis-status">Count-in, then the score follows while you tap. Press End when the passage is done; the rest of the piece follows your last beat.</span></div>
+          <div class="score-auto-row score-retime-row"><label>Tap your own timing from measure<input id="scoreRetimeMeasure" type="number" inputmode="numeric" min="1" step="1" value="1"></label><button class="hero-primary compact-primary" id="scoreRetimeButton">Tap from here</button><span class="score-analysis-status">3, 2, 1 — then tap every beat yourself at the speed you want; the score moves one marked beat per tap (no metronome). Press End when the passage is done; the rest of the piece follows your last beat.</span></div>
           <div class="score-auto-row"><button class="secondary compact-primary" id="scoreClickPlayButton" disabled>▶ Play Click Track</button><button class="secondary compact-primary" id="scoreClickStopButton" disabled>■ Stop</button><span class="score-analysis-status" id="scoreClickPlayStatus"></span></div>
         </div>
       </div>
@@ -4139,6 +4139,9 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
   function guidedPerfForRecordMs(ms){return segmentStartReal+(ms-segmentBaseMs)}
   function guidedPump(){
     if(!guided||!recording)return;const now=currentRecordTime(),look=130;
+    // v1.9.1 silent mode (Tap from measure): no metronome — the next beat comes only from your tap. Ends by itself
+    // once every planned beat has been tapped.
+    if(guided.silent){if(guided.planIdx>=guided.planned.length)endRecording();return}
     while(guided.nextExpected<=now+look){
       if(guided.mode==='score'&&guided.planIdx>=guided.planned.length){if(now>guided.nextExpected)endRecording();return} // the planned passage is over
       const t=Math.round(guided.nextExpected),i=track.taps.length;
@@ -4164,10 +4167,14 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
       if(guided.mode==='score')guided.planIdx=best-guided.from+1;guided.nextExpected=now+guidedPlannedInterval();guided.lastInterval=guidedPlannedInterval();
       clickSound(trackBeatMeta(best).downbeat||isAccent(best)||style==='accent');animateConductor(best?now-track.taps[best-1]:520);timingFeedback(bd*(track.taps[best]<=now?1:-1));guidedFollow(best);
       $('status').textContent=`Beat taken over · M${scoreMeasureLabel(trackBeatMeta(best).measure)}.${trackBeatMeta(best).beat}`;renderDetails();return}
-    // no metronome beat near: a beat of your own (the metronome re-phases from it)
+    // no metronome beat near: a beat of your own (the metronome re-phases from it) — in silent mode, every tap
+    if(guided.silent&&guided.planIdx>=guided.planned.length)return; // the passage is complete; End is on its way
+    if(guided.silent&&guided.planIdx===0){// first tap = beat 1 of the chosen measure, one planned beat after the measure before it (your reaction time after "Go" is not recorded)
+      const want=guided.from>0?segmentBaseMs+guided.lastInterval:segmentBaseMs;segmentStartReal+= (now-want);now=want}
     const i=track.taps.length;track.taps.push(Math.round(now));track.tapAccents=track.tapAccents||[];track.tapAccents.push(style==='accent'?1:style==='plain'?0:null);
-    if(guided.mode==='score')guided.planIdx=i-guided.from+1;guided.nextExpected=now+guidedPlannedInterval();guided.lastInterval=guidedPlannedInterval();
-    clickSound(trackBeatMeta(i).downbeat||isAccent(i)||style==='accent');animateConductor(i?now-track.taps[i-1]:520);guidedFollow(i);$('status').textContent='Your beat recorded · the metronome continues from it.';renderDetails();
+    if(guided.mode==='score')guided.planIdx=i-guided.from+1;if(i>0)guided.lastInterval=Math.max(60,now-track.taps[i-1]);if(!guided.silent){guided.nextExpected=now+guidedPlannedInterval();guided.lastInterval=guidedPlannedInterval()}
+    clickSound(trackBeatMeta(i).downbeat||isAccent(i)||style==='accent');animateConductor(i?now-track.taps[i-1]:520);guidedFollow(i);
+    const meta=trackBeatMeta(i);$('status').textContent=guided.silent?`M${scoreMeasureLabel(meta.measure)} beat ${meta.beat} · ${guided.planned.length-guided.planIdx} beat${guided.planned.length-guided.planIdx===1?'':'s'} left in the piece`:'Your beat recorded · the metronome continues from it.';renderDetails();
   }
   function guidedFinish(){
     if(!guided)return;const g=guided;guided=null;clearInterval(g.timer);
@@ -4178,7 +4185,7 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
       const k=track.taps.length-g.from;for(let j=k;j<g.planned.length;j++){const d=g.planned[j]-(j>0?g.planned[j-1]:g.planned[0]-g.lastInterval);track.taps.push(Math.round(track.taps.at(-1)+Math.max(60,d)));track.tapAccents.push(g.accents[j]??null)}
       track.durationMs=Math.round(track.taps.at(-1)+g.tailMs);
       const touched=[...Array(k).keys()].filter(j=>!g.auto.has(g.from+j)).length;if(touched)track.fromScore=false;
-      $('status').textContent=touched?`Retimed from M${scoreMeasureLabel(trackBeatMeta(g.from).measure)} · ${touched} beat${touched===1?'':'s'} tapped by you · the rest follows your last beat.`:'No taps — the click track is unchanged.';
+      $('status').textContent=touched?`Retimed from M${scoreMeasureLabel(trackBeatMeta(g.from).measure)} · ${touched} beat${touched===1?'':'s'} tapped by you${k<g.planned.length?' · the rest of the piece keeps its planned durations after your last beat':' · the whole passage is yours'}.`:'No taps — the click track is unchanged.';
       renderDetails();syncScorePdfUi();renderScoreOverlay();return}
     track.durationMs=Math.max(track.durationMs,track.taps.length?track.taps.at(-1)+g.lastInterval:0);$('status').textContent=`Recording ended · ${track.taps.length} beats (${g.userCount||[...track.taps.keys()].filter(i=>!g.auto.has(i)).length} tapped by you, the rest from the metronome).`
   }
@@ -4199,12 +4206,13 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
     if(scorePracticeActive)stopScorePractice(true);if(listenActive)stopListenWithAudio(true);
     await unlockAudioForMobile().catch(()=>{});
     const planned=track.taps.slice(from),accents=(track.tapAccents||[]).slice(from),tailMs=Math.max(60,track.durationMs-track.taps.at(-1)),prevIv=from>0?track.taps[from]-track.taps[from-1]:(planned[1]-planned[0])||60000/Math.max(20,track.targetBpm||100);
-    const bpb=scoreBeatsPerMeasure(trackMeterAtMeasure(m));$('status').textContent=`Count-in, then tap from measure ${scoreMeasureLabel(m)}…`;guidedPadShow(true);if($('guidedPadInfo'))$('guidedPadInfo').textContent=`From M${scoreMeasureLabel(m)} · count-in`;
-    renderScoreOverlay(from);await runCountdown($('recCountdown'),{n:bpb,ms:Math.max(250,Math.min(1500,prevIv))});if(recording||playing){guidedPadShow(false);return}
+    const bpb=scoreBeatsPerMeasure(trackMeterAtMeasure(m));$('status').textContent=`3, 2, 1 — then tap every beat from measure ${scoreMeasureLabel(m)} (${bpb} per measure) at the speed you want.`;guidedPadShow(true);if($('guidedPadInfo'))$('guidedPadInfo').textContent=`From M${scoreMeasureLabel(m)} · 3, 2, 1…`;
+    renderScoreOverlay(from);await runCountdown($('recCountdown'),{n:3,ms:Math.max(350,Math.min(1200,prevIv))});if(recording||playing){guidedPadShow(false);return}
     track.taps.length=from;track.tapAccents=(track.tapAccents||[]).slice(0,from);track.durationMs=from>0?track.taps[from-1]:0;
     segmentBaseMs=from>0?track.taps[from-1]:0;segmentStartReal=performance.now();recording=true;frozenViewMs=segmentBaseMs;tapAlongActive=false;renderDetails();startAnimation();
-    guided={mode:'score',from,planned,accents,tailMs,planIdx:0,auto:new Map(),lastInterval:prevIv,nextExpected:from>0?segmentBaseMs+prevIv:segmentBaseMs,timer:null};
-    guided.timer=setInterval(guidedPump,15);guidedPump();$('timingFeedback').textContent='The score follows. Tap where you want the timing to be yours; press End when the passage is done.';
+    // silent: no metronome — the score advances one marked beat per tap, so each measure takes exactly the tempo you tap
+    guided={mode:'score',silent:true,from,planned,accents,tailMs,planIdx:0,auto:new Map(),lastInterval:prevIv,nextExpected:Infinity,timer:null};
+    guided.timer=setInterval(guidedPump,50);$('timingFeedback').textContent=`Tap each beat (${bpb} per measure) at the speed you want — the score moves one beat per tap. Press End when the passage is done; the rest of the piece follows your last beat.`;
   }
   function recordTap(style='auto',ts){if(guidedActive()&&!playing){const now=currentRecordTime(ts),prev=track.taps.length?Math.max(...track.taps.filter(t=>t<=now)):null;if(prev!==null&&now<=prev+12)return;guidedTap(now,style);return}
     if(recording&&!playing)track.fromScore=false;/* v1.5.1: hand-tapped edits make this the user's own track */ if(!recording||playing){if(!recording)$('status').textContent=tapAlongUrl?'Press Play & Tap or Start Clicks first.':'Press Start Clicks first.';return}if(tapAlongActive&&tapAlongAudio()?.paused){setTapAlongStatus('The recording is paused. Press Play & Tap to continue.','error');return}const now=currentRecordTime(ts),prev=track.taps.length?track.taps.at(-1):null;if(prev!==null&&now<=prev+12){$('status').textContent='That tap was too close to the previous beat.';return}const i=track.taps.length;track.taps.push(now);track.tapAccents=track.tapAccents||[];track.tapAccents.push(style==='accent'?1:style==='plain'?0:null);const auto=trackBeatMeta(i).downbeat||isAccent(i),accent=explicitTapAccent(i,auto);clickSound(accent);animateConductor(prev===null?520:now-prev);timingFeedback(nearestGuideDelta(now));$('status').textContent=style==='accent'?'Accented beat recorded.':(track.taps.length===1?'First tap recorded.':(tapAlongActive?'Beat locked to the recording.':'Beat recorded.'));renderDetails(); }

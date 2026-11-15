@@ -152,9 +152,11 @@ Click track creation:
 - **Metronome guide** (From Scratch, on by default): the metronome at the Target BPM lays down every beat;
   tapping takes that beat over and the metronome re-phases from it; stop tapping and it continues. A whole
   piece is recorded by the metronome and only the ritardando/accelerando is tapped. (`guided*` functions.)
-- **Tap your own timing from measure N** (From Sheet Music): count-in, then the score-built click track plays
-  from that measure with the score following; your taps retime the passage; End leaves the rest of the piece
-  at its planned durations, following on from your last beat. The same engine as the metronome guide.
+- **Tap your own timing from measure N** (From Sheet Music): a 3-2-1 count-in, then no metronome — the score
+  advances one marked beat per tap, so every measure gets exactly the tempo you tap (beats per measure from the
+  score's time signature). The first tap is anchored one planned beat after the measure before, so reaction
+  time after "Go" is not recorded. End (or tapping the last beat) leaves the rest of the piece at its planned
+  durations, following on from your last beat. Same engine as the metronome guide, in silent mode.
 - **Tempo changes & holds** (score click card): "From measure N: X BPM" entries (each holds until the next
   entry) and "Hold measure N beat B for +E beats" (fermata / stretched note). Apply rebuilds the click
   track from the score with the edits; they are saved with the track (`score_edits`) and restored on open.
