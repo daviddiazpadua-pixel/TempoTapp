@@ -893,6 +893,9 @@ body.score-fullscreen-open .guided-pad{z-index:965;bottom:calc(16px + env(safe-a
 .score-workspace.score-fullscreen .score-toolbar{position:sticky;top:0;z-index:5;background:var(--ground,#f1f0eb);padding:max(6px,env(safe-area-inset-top,0px)) 0 8px;margin:0}
 .score-workspace.score-fullscreen .score-stage-shell{max-height:none!important;border-radius:8px}
 .score-workspace.score-fullscreen .score-toolbar-spacer{display:none}
+.score-fs-only{display:none!important}
+.score-workspace.score-fullscreen .score-fs-only{display:inline-flex!important}
+.score-workspace.score-fullscreen .score-view-tools{order:-1} /* play, fit page and exit come first in the sticky bar */
 body.score-fullscreen-open{overflow:hidden!important}
 body.score-fullscreen-open .main-nav,body.score-fullscreen-open .dashboard-toggle{display:none!important}
 body.score-fullscreen-open .score-float-bar{z-index:960}
@@ -1319,6 +1322,8 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
           <button class="secondary compact-primary" id="scoreEditUndo" type="button" disabled>Undo</button>
         </div>
         <div class="score-toolbar-group score-view-tools">
+          <!-- v1.9.1: play/stop in the toolbar while the score fills the screen, so there is nothing to scroll to -->
+          <button class="hero-primary compact-primary score-fs-only" id="scoreFsPlayButton" type="button">▶ Play</button>
           <button class="secondary compact-primary" id="scoreFitPageButton" type="button" aria-pressed="false">Fit page</button>
           <button class="secondary compact-primary" id="scoreFullscreenButton" type="button" aria-pressed="false">Full screen</button>
           <button class="secondary compact-primary" id="scoreRemovePdfButton">Remove PDF</button>
@@ -3765,7 +3770,7 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
     if(r.top<70||r.bottom>vh-140)window.scrollTo({top:window.scrollY+r.top-vh*.4,behavior:'smooth'})}
   for(const ev of ['wheel','touchmove'])window.addEventListener(ev,()=>{if(scorePracticeActive||playing)scoreUserScrollAt=Date.now()},{passive:true});
   window.addEventListener('keydown',e=>{if((scorePracticeActive||playing)&&['PageUp','PageDown','ArrowUp','ArrowDown','Home','End'].includes(e.key))scoreUserScrollAt=Date.now()});
-  function syncScoreClickPlayUi(){const fb=$('scoreFloatBar');if(fb){const on=(scorePracticeActive||(playing&&!!scorePdfDoc&&!listenActive))&&currentScreen==='recorder';fb.classList.toggle('hidden',!on);if(on&&$('scoreFloatInfo'))$('scoreFloatInfo').textContent=scorePracticeActive?($('scorePracticeStatus')?.textContent||'Practicing').replace(/^Following /,''):'Playing the click track'}const pb=$('scoreClickPlayButton'),sb=$('scoreClickStopButton');if(!pb||!sb)return;const busy=playing||scorePracticeActive;pb.disabled=!track.taps.length||recording||busy;sb.disabled=!busy;const st=$('scoreClickPlayStatus');if(st)st.textContent=playing?'Playing…':scorePracticeActive?'Practicing with the score…':''}
+  function syncScoreClickPlayUi(){const fsb=$('scoreFsPlayButton');if(fsb){const busy=playing||scorePracticeActive;fsb.textContent=busy?'■ Stop':'▶ Play';fsb.disabled=!track.taps.length||recording;fsb.classList.toggle('secondary',busy);fsb.classList.toggle('hero-primary',!busy)}const fb=$('scoreFloatBar');if(fb){const on=(scorePracticeActive||(playing&&!!scorePdfDoc&&!listenActive))&&currentScreen==='recorder';fb.classList.toggle('hidden',!on);if(on&&$('scoreFloatInfo'))$('scoreFloatInfo').textContent=scorePracticeActive?($('scorePracticeStatus')?.textContent||'Practicing').replace(/^Following /,''):'Playing the click track'}const pb=$('scoreClickPlayButton'),sb=$('scoreClickStopButton');if(!pb||!sb)return;const busy=playing||scorePracticeActive;pb.disabled=!track.taps.length||recording||busy;sb.disabled=!busy;const st=$('scoreClickPlayStatus');if(st)st.textContent=playing?'Playing…':scorePracticeActive?'Practicing with the score…':''}
   function scoreMeterOption(meter){const sel=$('scoreClickMeter');if(sel&&![...sel.options].some(o=>o.value===meter)){const o=document.createElement('option');o.value=o.textContent=meter;sel.appendChild(o)}}
   let scoreTempoBase=null,scoreLastBuildMsg=''; // printed tempo at the start of the chosen section ({bpm,unit,qpm}); the BPM field scales the whole map
   function scoreUnitGlyph(u){return u===1?'♩':u===1.5?'♩.':u===.5?'♪':u===.75?'♪.':u===2?'𝅗𝅥':u===3?'𝅗𝅥.':u===4?'𝅝':'♩'}
@@ -6184,7 +6189,8 @@ body>main,body>.hero{background:var(--ground,#f1f0eb)}
   $('scoreMakeClickButton').addEventListener('click',()=>makeClickTrackFromScore(false));
   $('scoreSectionSelect')?.addEventListener('change',e=>{scoreSectionIdx=Number(e.target.value);if(scorePracticeActive)stopScorePractice(true);scoreClickPrefill(scoreSectionRange().len);if(track.fromScore||!track.taps.length){makeClickTrackFromScore(false);const b=scoreBoxesSorted().find(x=>x.measure===scoreSectionRange().s);if(b&&b.page!==scorePdfPage)renderScorePage(b.page)}else autoMapDetectedScore()});
   $('scoreFollowTempo')?.addEventListener('change',()=>{if(track.fromScore&&scoreDetectedRawBoxes.length)makeClickTrackFromScore(false)});
-  $('scoreClickPlayButton').addEventListener('click',async()=>{await unlockAudioForMobile().catch(()=>{});if(scorePdfDoc&&(track.scoreMeasureBoxes||[]).length)startScorePractice();else replay()});
+  $('scoreClickPlayButton').addEventListener('click',async()=>{await unlockAudioForMobile().catch(()=>{});if(scorePdfDoc&&(track.scoreMeasureBoxes||[]).length)startScorePractice();else replay()})
+  $('scoreFsPlayButton').addEventListener('click',async()=>{if(scorePracticeActive||playing){if(scorePracticeActive)stopScorePractice(true);if(playing)stopReplay(true);syncScoreClickPlayUi();return}await unlockAudioForMobile().catch(()=>{});if(scorePdfDoc&&(track.scoreMeasureBoxes||[]).length)startScorePractice();else replay();syncScoreClickPlayUi()});
   $('scoreClickStopButton').addEventListener('click',()=>{if(scorePracticeActive)stopScorePractice(true);if(playing)stopReplay(true);syncScoreClickPlayUi()});
   for(const id of ['scoreClickBpm','scoreClickMeter','scoreClickMeasures'])$(id).addEventListener('change',()=>{if(track.fromScore&&scoreDetectedRawBoxes.length)makeClickTrackFromScore(false)});
   $('scoreLayoutMode').addEventListener('change',()=>{if(scorePdfDoc)analyzeScorePdf(false)});
